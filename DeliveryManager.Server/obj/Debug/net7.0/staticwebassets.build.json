@@ -1,0 +1,23 @@
+{
+  "Version": 1,
+  "Hash": "MemAuwLvFq7RNw1vJg7R7MND1PZt8MG8eGtzT1cTkm8=",
+  "Source": "DeliveryManager.Server",
+  "BasePath": "_content/DeliveryManager.Server",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [
+    {
+      "Identity": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\deliverymanager.client.esproj",
+      "Version": 2,
+      "Source": "deliverymanager.client",
+      "GetPublishAssetsTargets": "GetCurrentProjectPublishStaticWebAssetItems",
+      "AdditionalPublishProperties": "Configuration=Debug;Platform=AnyCPU",
+      "AdditionalPublishPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained",
+      "GetBuildAssetsTargets": "GetCurrentProjectBuildStaticWebAssetItems",
+      "AdditionalBuildProperties": "Configuration=Debug;Platform=AnyCPU",
+      "AdditionalBuildPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained"
+    }
+  ],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\DeliveryManager.Server.props" />
+</Project>

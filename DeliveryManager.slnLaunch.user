@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Name": "DeliveryManager.Server\\DeliveryManager.Server.csproj",
+        "Action": "Start"
+      },
+      {
+        "Name": "deliverymanager.client\\deliverymanager.client.esproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

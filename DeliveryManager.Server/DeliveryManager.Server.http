@@ -1,0 +1,6 @@
+@DeliveryManager.Server_HostAddress = http://localhost:7200
+
+GET {{DeliveryManager.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
