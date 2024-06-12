@@ -56,9 +56,9 @@ namespace DeliveryManager.Server.Controllers
         [HttpGet]
         [Route("GetDriver")]
 
-        public JsonResult GetDriver(string USERNAME, string PASSWORD)
+        public JsonResult GetDriver(string USERNAME)
         {
-            string query = "select POWERUNIT from dbo.USERS where USERNAME=@USERNAME and PASSWORD=@PASSWORD";
+            string query = "select POWERUNIT from dbo.USERS where USERNAME=@USERNAME";
             DataTable table = new DataTable();
             string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
             SqlDataReader myReader;
@@ -67,8 +67,7 @@ namespace DeliveryManager.Server.Controllers
                 myCon.Open();
                 using (SqlCommand myCommand = new SqlCommand(query, myCon))
                 {
-                    myCommand.Parameters.AddWithValue("@USERNAME", USERNAME);
-                    myCommand.Parameters.AddWithValue("@PASSWORD", PASSWORD);
+                    myCommand.Parameters.AddWithValue("@USERNAME", USERNAME);;
                     myReader = myCommand.ExecuteReader();
                     table.Load(myReader);
                     myReader.Close();
@@ -186,11 +185,11 @@ namespace DeliveryManager.Server.Controllers
             }
             if (table.Rows.Count > 0)
             {
-                return new JsonResult("Valid Power Unit.");
+                return new JsonResult("Valid");
             }
             else
             {
-                return new JsonResult("Invalid Power Unit.");
+                return new JsonResult("Invalid");
             }
 
         }

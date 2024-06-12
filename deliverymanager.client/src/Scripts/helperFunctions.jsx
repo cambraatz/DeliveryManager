@@ -32,3 +32,28 @@ export const getDate = () => {
     const currDate = year + "-" + month + "-" + day;
     return currDate;
 };
+
+export const getTime = () => {
+    const now = new Date();
+    var hours = now.getHours();
+    if (hours < 10) {
+        hours = "0" + hours;
+    }
+    var minutes = now.getMinutes();
+    if (minutes < 10) {
+        minutes = "0" + minutes
+    }
+    const currTime = hours + ":" + minutes;
+    return currTime;
+};
+
+export const scrapeTime = (time) => {
+    const hour = time.slice(0, 2);
+    const minute = time.slice(3);
+    return hour + minute;
+};
+
+export const scrapeFile = (file) => {
+    const relLink = file.slice(12);
+    return relLink;
+};

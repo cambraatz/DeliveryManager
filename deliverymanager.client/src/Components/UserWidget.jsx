@@ -1,4 +1,4 @@
-import React from 'react';
+/* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
 import userIcon from "../images/userIcon.png";
 import { useNavigate } from "react-router-dom";
@@ -15,13 +15,6 @@ const UserWidget = (props) => {
             document.getElementById("Logout").style.visibility = "visible";
         }
     });
-
-    const [logoutPrompt, setLogoutPrompt] = useState("");
-
-    const handleCancel = () => {
-        setLogoutPrompt("");
-        return
-    }
 
     const navigate = useNavigate();
 
@@ -41,23 +34,6 @@ const UserWidget = (props) => {
         document.getElementById("popupLogoutWindow").style.opacity = 0;
         document.getElementById("popupLogoutWindow").style.pointerEvents = "none";
     };
-
-    /*
-    const handleClick = () => {
-        if (user === "Sign In") {
-            return;
-        }
-        setLogoutPrompt(
-            <div id="popup">
-                <div id="popup_inner">
-                    <button onClick={handleLogout}>Yes</button>
-                    <button onClick={handleCancel}>No</button>
-                </div>
-            </div> 
-        );
-
-    };
-    */
     
     return(
         <div>

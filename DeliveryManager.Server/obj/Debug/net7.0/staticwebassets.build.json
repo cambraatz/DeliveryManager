@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "MemAuwLvFq7RNw1vJg7R7MND1PZt8MG8eGtzT1cTkm8=",
+  "Hash": "nMsm3cwQE28YhDoOCd3kM2bpQ4jYj73VtOuhjTkehVA=",
   "Source": "DeliveryManager.Server",
   "BasePath": "_content/DeliveryManager.Server",
   "Mode": "Default",
@@ -11,10 +11,10 @@
       "Version": 2,
       "Source": "deliverymanager.client",
       "GetPublishAssetsTargets": "GetCurrentProjectPublishStaticWebAssetItems",
-      "AdditionalPublishProperties": "Configuration=Debug;Platform=AnyCPU",
+      "AdditionalPublishProperties": "",
       "AdditionalPublishPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained",
       "GetBuildAssetsTargets": "GetCurrentProjectBuildStaticWebAssetItems",
-      "AdditionalBuildProperties": "Configuration=Debug;Platform=AnyCPU",
+      "AdditionalBuildProperties": "",
       "AdditionalBuildPropertiesToRemove": "WebPublishProfileFile;TargetFramework;RuntimeIdentifier;SelfContained"
     }
   ],

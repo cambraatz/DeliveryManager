@@ -15,7 +15,7 @@ namespace DeliveryManager.Server.Controllers
         {
             _configuration = configuration;
         }
-
+        /*
         [HttpGet]
         [Route("GetManifest")]
 
@@ -39,7 +39,7 @@ namespace DeliveryManager.Server.Controllers
 
             return new JsonResult(table);
         }
-
+        */
         [HttpGet]
         [Route("GetDriverLog")]
 
@@ -129,7 +129,7 @@ namespace DeliveryManager.Server.Controllers
                 //return new JsonResult("No Deliveries On Record.");
             }
         }
-
+        /*
         [HttpGet]
         [Route("GetDelivery")]
 
@@ -154,6 +154,7 @@ namespace DeliveryManager.Server.Controllers
 
             return new JsonResult(table);
         }
+        */
         /*
         [HttpPut]
         [Route("UpdateDelivery")]

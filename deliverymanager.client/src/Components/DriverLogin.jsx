@@ -1,74 +1,55 @@
-import { useState, useEffect, React } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
-import UserWidget from './UserWidget';
 import Header from './Header';
-import { scrapeDate, renderDate } from '../Scripts/helperFunctions';
+import Popup from './Popup';
+import { scrapeDate, renderDate, getDate } from '../Scripts/helperFunctions';
 
+/* 
+// DriverLogin serves as the home page for the driver application...
+// Function handles log in credential and delivery validation...
+*/
 const DriverLogin = () => {
-    //
-    /* Header information for API call reference */
-    const term = "Delivery";
-    //const API_URL = "http://localhost:5269/";
-    //const API_URL = "http://localhost:5173/";
-    //const API_URL = "http://localhost:7200/";
-    //const API_URL = "http://localhost:47317/";
+    /*
+    // Header information for API call reference ...
+    */
     //const API_URL = "http://localhost:5113/";
-
     const API_URL = "http://tcsservices.com:40730/"
+
     const headers = {
         'Content-Type': 'application/json',
     };
 
-    //
-    /* Date and time data and processing functions */
-    const now = new Date();
-    
-    const year = now.getFullYear();
-    var month = now.getMonth() + 1;
-    if (month < 10) {
-        month = "0" + month;
-    }
-    var day = now.getDate();
-    if (day < 10) {
-        day = "0" + day;
-    }
-    const currDate = year + "-" + month + "-" + day;
+    /*
+    // Date processing functions ...
+    */
+    const currDate = getDate();
 
-    const scrapeDate = (date) => {
-        const year = date.slice(0,4);
-        const month = date.slice(5,7);
-        const day = date.slice(8);
-        return month + day + year;
-    };
-
-    const renderDate = (date) => {
-        const year = date.slice(0,4);
-        const month = date.slice(5,7);
-        const day = date.slice(8);
-        return year + "-" + month + "-" + day;
-    };
-
-    //
-    // Application State Information...
+    /*
+    // Site state & location processing functions...
+    */
+    const [message, setMessage] = useState(null);
     const [status, setStatus] = useState("");
-    const [loading, setLoading] = useState(false);
 
+    // state 'driverCredentials' to be passed to next page...
     const [driverCredentials, setDriverCredentials] = useState({
         USERNAME: '',
         PASSWORD: '',
         POWERUNIT: null,
     })
 
+    // state 'formData' for rendering forms on page...
     const [formData, setFormData] = useState({
         deliveryDate: currDate,
         powerUnit: driverCredentials.POWERUNIT,
     });
 
+    // state 'updateData' to be passed to next page...
     const [updateData, setUpdateData] = useState({
         MFSTDATE: scrapeDate(currDate),
         POWERUNIT: "000"
     });
 
+    // handle login form changes...
     const handleLoginChange = (e) => {
         let val = e.target.value;
         switch(e.target.id) {
@@ -89,6 +70,7 @@ const DriverLogin = () => {
         }
     };
 
+    // handle delivery query form changes...
     const handleDeliveryChange = (e) => {
         let val = e.target.value;
         switch(e.target.id) {
@@ -116,170 +98,177 @@ const DriverLogin = () => {
                 break;
         }
     };
-
-    //
-    // API Calls and Functionality...
+    
+    /*
+    // API Calls and Functionality ...
+    */
     const navigate = useNavigate();
 
+    //
+    // check delivery validity onLoad and after message state change...
+    useEffect(() => {
+        checkDelivery(message);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [message])
+
+    //
+    // handleClick on initial Login button...
     const handleSubmit = (e) => {
         e.preventDefault();
-        //alert("handleSubmit: username: " + driverCredentials.USERNAME + " password: " + driverCredentials.PASSWORD);
         validateCredentials(driverCredentials.USERNAME,driverCredentials.PASSWORD);
     };
 
+    //
+    // validate credentials, prompt for correction in fail or open popup in success...
     async function validateCredentials(username, password){
-        //alert("validateCredentials: username: " + username + " password: " + password);
-        await fetch(API_URL + "api/Registration/Login?USERNAME=" + username + "&PASSWORD=" + password, {
+        const response = await fetch(API_URL + "api/Registration/Login?USERNAME=" + username + "&PASSWORD=" + password, {
             method: 'POST',
             headers: {'Content-Type': 'application/json; charset=UTF-8'},
         })
-        .then(response => response.json())
-        .then(data => {
-            let response = data;
-            //alert(response);
-            if (response === "Valid Login.") {
-                //setLoading(true)
-                setStatus("Verifying Driver Information.");
-                getPowerUnit(username, password);
-                //setLoading(false)
-                //navigate('driverlog', {state: driverCredentials})
-            }
-            else {
-                setStatus("Login Credentials Not Found, Try Again.");
-                //alert("not valid user");
-                //alert(data)
-                //setDriverCredentials(data)
-                //navigate('driverlog', {state: driverCredentials})
-            }
-            openPopup();
-        })
-    };
+        const data = await response.json();
 
-    async function getPowerUnit(username, password){
-        //alert("getPowerUnit: username: " + username + " password: " + password);
-        await fetch(API_URL + "api/Registration/GetDriver?USERNAME=" + username + "&PASSWORD=" + password, {
+        if (data === "Valid Login.") {
+            setStatus("Verifying Delivery Information.");
+            getPowerUnit(username, password);
+            openPopup("popupLoginWindow");
+
+            // reset styling to default...
+            document.getElementById("USERNAME").style.border = "";
+            document.getElementById("USERNAME").style.borderRadius = "";
+            document.getElementById("PASSWORD").style.border = "";
+            document.getElementById("PASSWORD").style.borderRadius = "";
+        }
+        else {
+            setStatus("Login Credentials Not Found, Try Again.");
+
+            // trigger red borders for errors...
+            document.getElementById("USERNAME").style.border = "1.5px solid red";
+            document.getElementById("USERNAME").style.borderRadius = "3px";
+            document.getElementById("PASSWORD").style.border = "1.5px solid red";
+            document.getElementById("PASSWORD").style.borderRadius = "3px";
+        }
+    }
+
+    //
+    // pull existing powerunit from records associated to provided credentials...
+    async function getPowerUnit(username){
+        const response = await fetch(API_URL + "api/Registration/GetDriver?USERNAME=" + username, {
             method: 'GET',
             headers: {'Content-Type': 'application/json; charset=UTF-8'},
         })
-        .then(response => response.json())
-        .then(data => {
-            let object = data; 
-            setDriverCredentials({
-                ...driverCredentials,
-                POWERUNIT: object[0].POWERUNIT
-            });
-            setUpdateData({
-                ...updateData,
-                POWERUNIT: object[0].POWERUNIT
-            });
-        })
-    };
+        const data = await response.json(); 
 
-    
-    useEffect(() => {
-        setLoading(false);
-    }, [driverCredentials]);
-
-    async function updatePowerunit(username, password, powerunit){
-        //alert("deleting driver")
-        await fetch(API_URL + "api/Registration/ChangePowerunit?USERNAME=" + username + "&PASSWORD=" + password, "&POWERUNIT=" + powerunit, {
-            method: "PUT",
-            headers,
-        })
-        .then(response => response.json())
-        .then(result => {
-            console.log(result);
-            //setLoading(false);
+        // update state variables with latest powerunit...
+        setDriverCredentials({
+            ...driverCredentials,
+            POWERUNIT: data[0].POWERUNIT
         });
-    };
+        setUpdateData({
+            ...updateData,
+            POWERUNIT: data[0].POWERUNIT
+        });
+    }
 
+    //
+    // delete identified driver to make room for new recorded driver...
     async function handleDelete(powerunit){
-        //alert("deleting driver")
         const response = await fetch(API_URL + "api/Registration/DeleteDriver?POWERUNIT=" + powerunit, {
             method: "DELETE",
             headers,
         })
-        console.log(response);
+        //console.log(response);
         return response;
+    }
 
-        //.then(response => response.json())
-        //.then(result => {
-            //console.log(result);
-            //setLoading(false);
-        //});
-    };
-
+    //
+    // update the provided driver's records with new powerunit...
     async function handleCreate(username,password,powerunit){
-        //alert("creating driver: " + username + "pasword: " + password + "powerunit: " + powerunit)
-            
         const driverString = '?USERNAME='+username+'&PASSWORD='+password+'&POWERUNIT='+powerunit
 
         const response = await fetch(API_URL + "api/Registration/AddPowerunit" + driverString, {
             method: 'POST',
             headers: {'Content-Type': 'application/json; charset=UTF-8'},
         })
-        console.log(response);
+        //console.log(response);
         return response;
+    }
 
-        //.then(response => response.json())
-        //.then(result => {
-            //console.log(result);
-            //setLoading(false);
-        //});
-    };
+    //
+    // validate given delivery exists in database
+    async function validateDeliveries(mfstdate,powerunit){
+        const driverString = '?MFSTDATE='+mfstdate+'&POWERUNIT='+powerunit
+        const response = await fetch(API_URL + "api/Registration/VerifyPowerunit" + driverString, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        })
+        const data = await response.json();
 
+        // set message state according to validity of delivery information...
+        if(data === "Valid"){
+            setMessage("Delivery Information Found");
+        }
+        else{
+            setMessage("Invalid Delivery Information");
+        }
+        return data;
+    }
+
+    //
+    // onClick response to validate date and power unit data prior to pulling manifest...
     async function handleUpdate() {
-        //alert(JSON.stringify(driverCredentials));
-        console.log("driverCredentials (pre-delete):" + JSON.stringify(driverCredentials));
-        
-        //updateDelivery(delivery.MFSTKEY);
-        //setLoading(true);
-
+        // delete existing driver credentials from db...
         await handleDelete(driverCredentials.POWERUNIT);
+
+        // update driver credentials state...
         setDriverCredentials({
             ...driverCredentials,
             POWERUNIT: updateData.POWERUNIT
         });
         
-        //add logic to validate powerunit/delivery date
+        // create new driver credentials in db...
         await handleCreate(driverCredentials.USERNAME,driverCredentials.PASSWORD,updateData.POWERUNIT);
-        //updatePowerunit(driverCredentials.USERNAME,driverCredentials.PASSWORD,updateData.POWERUNIT);
 
-        // package delivery/driver information
-        const deliveryData = {
-            delivery: updateData,
-            driver: driverCredentials
-        };
+        // validate current delivery information prior to redirect...
+        await validateDeliveries(updateData.MFSTDATE,updateData.POWERUNIT);
+    }
 
-        //navigate(`/driverlog`, {state: driverCredentials});
-        //alert(JSON.stringify(deliveryData));
-        console.log("deliveryData (post-create):" + JSON.stringify(deliveryData));
-        navigate(`/driverlog`, {state: deliveryData});
+    //
+    // onEffect function to load manifest only once valid deliveries have been verified...
+    const checkDelivery = () => {
+        // if delivery is valid, proceed to driver log...
+        if(message === "Delivery Information Found"){
+            // package delivery/driver information
+            const deliveryData = {
+                delivery: updateData,
+                driver: driverCredentials
+            };
+
+            navigate(`/driverlog`, {state: deliveryData});
+        }
     };
 
-    const Login = () => {
-        //alert(driverCredentials["POWERUNIT"])
-        navigate('driverlog', {state: driverCredentials})
-        //setLoading(false)
-    };
-
+    //
+    // open popup for delivery confirmation...
     const openPopup = () => {
         document.getElementById("popupLoginWindow").style.visibility = "visible";
         document.getElementById("popupLoginWindow").style.opacity = 1;
-        document.getElementById("popupLoginWindow").style.pointerEvents = "auto";
+        document.getElementById("popupLoginWindow").style.pointerEvents = "auto";  
     };
 
+    //
+    // close popup for delivery confirmation...
     const closePopup = () => {
         document.getElementById("popupLoginWindow").style.visibility = "hidden";
         document.getElementById("popupLoginWindow").style.opacity = 0;
         document.getElementById("popupLoginWindow").style.pointerEvents = "none";
+        
+        // reset status and message to original state...
         setStatus("");
+        setMessage(null);
     };
 
-    if(loading) {
-        return(<h3>Verifying Driver Credentials...</h3>)
-    }
-
+    //
+    // render template...
     return(
         <div id="webpage">
             <Header 
@@ -293,9 +282,6 @@ const DriverLogin = () => {
                 PRONUMBER = {null}
                 MFSTKEY = {null}
             />
-            {/*<UserWidget driver="Sign In" status="Off"/>
-            <h2>TCS Driver Manifest Shipment Checkoff</h2>*
-            <h3 className="prompt">Enter your login credentials</h3>*/}
             <div id="Delivery_Login_Div">
                 <form id="loginForm" onSubmit={handleSubmit}>
                     <div>
@@ -308,31 +294,24 @@ const DriverLogin = () => {
                     </div>
                     <h3>{status}</h3>
                     <h4><a href="mailto:cameronbraatz@gmail.com">Not an existing user?</a></h4>
-                    <button type="submit">Log In</button>
-                    {/*<button type="submit" onClick={openPopup}>Log In</button>*/}
+                    <button type="submit">Login</button>
                 </form>
             </div>
             <div id="popupLoginWindow" className="overlay">
                 <div className="popupLogin">
                     <div id="popupLoginExit" className="content">
-                        <h1 id="close" onClick={closePopup}>&times;</h1>
+                        <h1 id="close" className="popupLoginWindow" onClick={closePopup}>&times;</h1>
                     </div>
-                    <div id="popupLoginPrompt" className="content">
-                        <p>Confirm Delivery Info</p>
-                    </div>
-                    <div className="popupLoginContent">
-                        <div>
-                            <label>Delivery Date:</label>
-                            <input type="date" id="dlvdate" value={formData.deliveryDate} className="input_form" onChange={handleDeliveryChange} />
-                        </div>
-                        <div>
-                            <label>Power Unit:</label>
-                            <input type="text" id="powerunit" value={updateData.POWERUNIT} className="input_form" onChange={handleDeliveryChange} />
-                        </div>
-                        <div id="popupLoginInner">
-                            <button onClick={handleUpdate}>Continue</button>
-                        </div>
-                    </div>
+                    <Popup 
+                        message={message}
+                        date={formData.deliveryDate}
+                        powerunit={updateData.POWERUNIT}
+                        closePopup={closePopup}
+                        handleDeliveryChange={handleDeliveryChange}
+                        handleUpdate={handleUpdate}
+                        updateData={updateData}
+                        driverCredentials={driverCredentials}
+                    />
                 </div>
             </div>
         </div>

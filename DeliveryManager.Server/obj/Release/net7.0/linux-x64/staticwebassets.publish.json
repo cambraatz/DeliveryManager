@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "7oY1SZ9Y32LExogvQaZzm5jr940sdI1awAvxUOocAYw=",
+  "Hash": "Msxk7S/wrFzY/jLQmS7yfmvJDexncb60j76QjebJAjI=",
   "Source": "DeliveryManager.Server",
   "BasePath": "_content/DeliveryManager.Server",
   "Mode": "Default",
@@ -21,12 +21,12 @@
   "DiscoveryPatterns": [],
   "Assets": [
     {
-      "Identity": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\assets\\index-C0YKJ8qj.css",
+      "Identity": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\assets\\index-BEcYvpgj.css",
       "SourceId": "deliverymanager.client",
       "SourceType": "Discovered",
       "ContentRoot": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\",
       "BasePath": "/",
-      "RelativePath": "assets/index-C0YKJ8qj.css",
+      "RelativePath": "assets/index-BEcYvpgj.css",
       "AssetKind": "Publish",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -37,15 +37,15 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\assets\\index-C0YKJ8qj.css"
+      "OriginalItemSpec": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\assets\\index-BEcYvpgj.css"
     },
     {
-      "Identity": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\assets\\index-CPgieZMt.js",
+      "Identity": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\assets\\index-DjzFkFUU.js",
       "SourceId": "deliverymanager.client",
       "SourceType": "Discovered",
       "ContentRoot": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\",
       "BasePath": "/",
-      "RelativePath": "assets/index-CPgieZMt.js",
+      "RelativePath": "assets/index-DjzFkFUU.js",
       "AssetKind": "Publish",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -56,7 +56,7 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "PreserveNewest",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\assets\\index-CPgieZMt.js"
+      "OriginalItemSpec": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\assets\\index-DjzFkFUU.js"
     },
     {
       "Identity": "C:\\Users\\camer\\Desktop\\Apps\\DeliveryManager\\deliverymanager.client\\dist\\assets\\userIcon-BxHM533X.png",

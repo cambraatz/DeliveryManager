@@ -42,3 +42,4 @@ C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\bin\Debug\net
 C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\bin\Debug\net7.0\Microsoft.AspNetCore.Mvc.NewtonsoftJson.dll
 C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\bin\Debug\net7.0\Newtonsoft.Json.dll
 C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\bin\Debug\net7.0\Newtonsoft.Json.Bson.dll
+C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\obj\Debug\net7.0\DeliveryManager.Server.sourcelink.json

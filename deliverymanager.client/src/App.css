@@ -74,6 +74,10 @@ header h1, header h2, header h3, header h4, header h5 {
     z-index: 100;
 }
 
+#MDPU_Row h3 span {
+    padding-left: 5px;
+}
+
 #popupLogoutInner {
     display: flex;
     flex-direction: column;
@@ -434,6 +438,11 @@ td, th {
     #notes_Div input {
         width: 100%;
     }
+
+.invalid_input {
+    border: solid 1.5px red;
+    border-radius: 3px; 
+}
 
 @media only screen and (max-width:800px) {
     h1 {

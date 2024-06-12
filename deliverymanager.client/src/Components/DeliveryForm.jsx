@@ -1,101 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from "react-router-dom";
-//import TextField from '@mui/material/TextField';
 import { useLocation } from 'react-router-dom';
-import * as React from 'react';
-//import UserWidget from './UserWidget';
 import Header from './Header';
+import { scrapeDate, renderDate, scrapeTime, scrapeFile, getDate, getTime } from '../Scripts/helperFunctions';
 
 const DeliveryForm = () => {
-    const term = "Delivery";
-    //const API_URL = "http://localhost:5173/";
-    //const API_URL = "http://localhost:7200/";
+    /*
+    // Header information for API call reference...
+    */
     //const API_URL = "http://localhost:5113/";
-
     const API_URL = "http://tcsservices.com:40730/"
+
     const headers = {
         'Content-Type': 'application/json',
     };
 
-    const location = useLocation();
-
-    const now = new Date();
-
-    const year = now.getFullYear();
-    var month = now.getMonth() + 1;
-    if (month < 10) {
-        month = "0" + month;
-    }
-    var day = now.getDate();
-    if (day < 10) {
-        day = "0" + day;
-    }
-    const currDate = year + "-" + month + "-" + day;
-
-    var hours = now.getHours();
-    if (hours < 10) {
-        hours = "0" + hours;
-    }
-    var minutes = now.getMinutes();
-    if (minutes < 10) {
-        minutes = "0" + minutes
-    }
-    const currTime = hours + ":" + minutes;
-
-    const translateDate = (date) => {
-        const month = date.slice(0, 2);
-        const day = date.slice(2, 4);
-        const year = date.slice(4);
-        return month + "/" + day + "/" + year;
-    };
-
-    const renderDate = (date) => {
-        const year = date.slice(0, 4);
-        const month = date.slice(5, 7);
-        const day = date.slice(8);
-        return year + "-" + month + "-" + day;
-    };
-
-    const scrapeDate = (date) => {
-        const year = date.slice(0, 4);
-        const month = date.slice(5, 7);
-        const day = date.slice(8);
-        return month + day + year;
-    };
-
-    const scrapeTime = (time) => {
-        const hour = time.slice(0, 2);
-        const minute = time.slice(3);
-        return hour + minute;
-    };
-
-    const scrapeFile = (file) => {
-        const relLink = file.slice(12);
-        return relLink;
-    };
-
-    //const [loading, setLoading] = useState(true);
+    /*
+    // Date and time data and processing functions...
+    */
+    const currDate = getDate()
+    const currTime = getTime();
 
     /*
-    useEffect(() => {
-        setLoading(true)
-        fetchDriverCredentials(location.state["POWERUNIT"])
-    }, []);
-    */
+    // Site state & location processing functions...  
+    */ 
+    const location = useLocation();
 
-    const [driverCredentials, setDriverCredentials] = useState({
+    //
+    // const 'driverCredentials' to be passed to next page...
+    const driverCredentials = {
         USERNAME: location.state.driver["USERNAME"],
-        PASSWORD: location.state.driver["PASSWORD"],
+        //PASSWORD: location.state.driver["PASSWORD"],
         POWERUNIT: location.state.driver["POWERUNIT"],
-    });
+    }
 
     const currUser = driverCredentials.USERNAME;
 
+    //
+    // const 'updateData' to be passed to next page... 
+    const updateData = {
+        MFSTDATE: location.state.delivery["MFSTDATE"],
+        POWERUNIT: location.state.delivery["POWERUNIT"],
+    };
+
+    //
+    // catch null address2 value from db...
     let address2 = location.state.delivery["CONSADD2"];
-    if (address2 === null){
+    if (address2 === "" || address2 === null){
         address2 = "N/A"
     }
 
+    //
+    // maintain state values to update delivery entry...
     const [delivery, setDelivery] = useState({
         MFSTKEY: location.state.delivery["MFSTKEY"],
         STATUS: location.state.delivery["STATUS"],
@@ -125,16 +81,8 @@ const DeliveryForm = () => {
         DLVDIMGFILESIGN: ""
     });
 
-    async function fetchDriverCredentials(powerunit) {
-        await fetch(API_URL + "api/Registration/GetDriver?POWERUNIT=" + powerunit)
-            .then(response => response.json())
-            .then(data => {
-                alert(data)
-                setDriverCredentials(data)
-                //setLoading(false)
-            })
-    }
-
+    //
+    // state data for rendering and tracking user changes...
     const [formData, setFormData] = useState({
         deliveryDate: currDate,
         deliveryTime: currTime,
@@ -145,20 +93,8 @@ const DeliveryForm = () => {
         deliverySignaturePath: "/dummySignature.jpg",
     });
 
-    const [updateData, setUpdateData] = useState({
-        MFSTDATE: location.state.delivery["MFSTDATE"],
-        DLVDDATE: scrapeDate(currDate),
-        DLVTIME: scrapeTime(currTime),
-        DLVDPCS: "",
-        DLVDSIGN: "",
-        DLVDNOTE: "",
-        DLVDIMGFILELOCN: "",
-        DLVDIMGFILESIGN: ""
-    });
-
-    let uploadImageStatus = "Upload";
-    let uploadSignatureStatus = "Upload";
-
+    //
+    // handle delivery form changes...
     const handleChange = (e) => {
         let val = e.target.value;
         switch (e.target.id) {
@@ -221,7 +157,7 @@ const DeliveryForm = () => {
                     ...delivery,
                     DLVDIMGFILELOCN: scrapeFile(val)
                 });
-                uploadImageStatus = "Submitted";
+                //uploadImageStatus = "Submitted";
                 break;
             case 'dlvdimagefilesign':
                 setFormData({
@@ -232,28 +168,39 @@ const DeliveryForm = () => {
                     ...delivery,
                     DLVDIMGFILESIGN: scrapeFile(val)
                 });
-                uploadSignatureStatus = "Submitted";
+                //uploadSignatureStatus = "Submitted";
                 break;
             default:
                 break;
         }
     };
 
+    /*
+    // API Calls and Functionality ...
+    */
+    const navigate = useNavigate();
+
+    //
+    // handle deleting existing delivery record once changed...
     async function handleDelete(mfstkey) {
-        //alert("deleting delivery")
         const response = await fetch(API_URL + "api/DriverChecklist/DeleteManifest?MFSTKEY=" + mfstkey, {
             method: "DELETE",
             headers,
         })
-        console.log(response);
+        //console.log(response);
         return response;
     }
 
+    //
+    // immediately recreates updated delivery to be added back...
     async function handleCreate() {
-        //alert("creating delivery")
+        let add2 = "NULL";
+        if(delivery.CONSADD2){
+            add2 = delivery.CONSADD2
+        }
         const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + '&STATUS=1&LASTUPDATE=' + delivery.LASTUPDATE + '&MFSTNUMBER=' + delivery.MFSTNUMBER + '&POWERUNIT=' + delivery.POWERUNIT + '&STOP=' + delivery.STOP +
             '&MFSTDATE=' + delivery.MFSTDATE + '&PRONUMBER=' + delivery.PRONUMBER + '&PRODATE=' + delivery.PRODATE + '&SHIPNAME=' + delivery.SHIPNAME + '&CONSNAME=' + delivery.CONSNAME +
-            '&CONSADD1=' + delivery.CONSADD1 + '&CONSADD2=' + delivery.CONSADD2 + '&CONSCITY=' + delivery.CONSCITY + '&CONSSTATE=' + delivery.CONSSTATE + '&CONSZIP=' + delivery.CONSZIP +
+            '&CONSADD1=' + delivery.CONSADD1 + '&CONSADD2=' + add2 + '&CONSCITY=' + delivery.CONSCITY + '&CONSSTATE=' + delivery.CONSSTATE + '&CONSZIP=' + delivery.CONSZIP +
             '&TTLPCS=' + delivery.TTLPCS + '&TTLYDS=' + delivery.TTLYDS + '&TTLWGT=' + delivery.TTLWGT + '&DLVDDATE=' + delivery.DLVDDATE + '&DLVDTIME=' + delivery.DLVDTIME + '&DLVDPCS=' + delivery.DLVDPCS +
             '&DLVDSIGN=' + delivery.DLVDSIGN + '&DLVDNOTE=' + delivery.DLVDNOTE + '&DLVDIMGFILELOCN=' + delivery.DLVDIMGFILELOCN + '&DLVDIMGFILESIGN=' + delivery.DLVDIMGFILESIGN
 
@@ -261,35 +208,13 @@ const DeliveryForm = () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json; charset=UTF-8' },
         })
-        console.log(response);
+        //console.log(response);
         return response;
     }
 
-    async function updateDelivery(mfstkey) {
-        const requestOptions = {
-            method: 'PUT',
-            headers: headers,
-            /*
-            body: JSON.stringify({
-                DLVDDATE: scrapeDate(formData.deliveryDate),
-                DLVTIME: scrapeTime(formData.deliveryTime),
-                DLVDPCS: formData.deliveredPieces,
-                DLVDNOTE: formData.deliveryNotes,
-                DLVDIMGFILELOCN: scrapeFile(formData.deliveryImagePath),
-                DLVDIMGFILESIGN: scrapeFile(formData.deliverySignaturePath)
-            })
-            */
-        };
-        fetch(API_URL + "api/DriverChecklist/UpdateDelivery?MFSTKEY=" + mfstkey + "&DLDVDDATE=" + delivery.DLVDDATE + "&DLVTIME=" + delivery.DLVTIME + "&DLVDPCS=" + delivery.DLVDPCS + "&DLVDNOTE=" + delivery.DLVDNOTE + "&DLVDIMGFILELOCN" + delivery.DLVDIMGFILELOCN + "&DLVDIMGFILESIGN=" + delivery.DLVDIMGFILESIGN, requestOptions)
-    }
-
-
-    const navigate = useNavigate();
-
+    //
+    // helper function to update delivery and return to previous page...
     async function handleSubmit() {
-        //alert(JSON.stringify(delivery));
-        //console.log(JSON.stringify(delivery));
-        //updateDelivery(delivery.MFSTKEY);
         await handleDelete(delivery.MFSTKEY);
         await handleCreate();
 
@@ -302,6 +227,8 @@ const DeliveryForm = () => {
         navigate(`/driverlog`, { state: deliveryData });
     }
 
+    //
+    // return to previous page after doing nothing...
     const handleReturn = () => {
         // package delivery/driver information
         const deliveryData = {
@@ -340,7 +267,7 @@ const DeliveryForm = () => {
                     </div>
                     <div id="pis_Div">
                         <div>
-                            <label>Driver Name:</label>
+                            <label>Consignee Name:</label>
                             <input type="text" id="dlvdsign" value={formData.deliveredSign} className="input_form" min="0" max="999" onChange={handleChange} />
                         </div>
                         <div>
@@ -350,7 +277,7 @@ const DeliveryForm = () => {
                     </div>
                     <div id="img_Div">
                         <div>
-                            <label>Driver Signature:</label>
+                            <label>Consignee Signature:</label>
                             <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_form" onChange={handleChange} />
                             {/*<label className="fileUpload">
                                 <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_form" onChange={handleChange} />

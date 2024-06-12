@@ -37,3 +37,4 @@ C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\bin\Release\n
 C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\bin\Release\net7.0\linux-x64\Newtonsoft.Json.dll
 C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\bin\Release\net7.0\linux-x64\Newtonsoft.Json.Bson.dll
 C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\bin\Release\net7.0\linux-x64\System.Data.SqlClient.dll
+C:\Users\camer\Desktop\Apps\DeliveryManager\DeliveryManager.Server\obj\Release\net7.0\linux-x64\DeliveryManager.Server.sourcelink.json
