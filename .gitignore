@@ -9,7 +9,6 @@ lerna-debug.log*
 
 .vs/
 node_modules
-DriverList.jsx
 dist
 dist-ssr
 *.local
@@ -28,5 +27,8 @@ dist-ssr
 General_Notes.md
 image.png
 .vscode
-DeliveryManager.Server\obj
-deliverymanager.client\src\Components\DriverList.jsx
+DeliveryManager.Server/obj
+deliverymanager.client/src/Components/DriverList.jsx
+deliverymanager.client/obj
+DeliveryManager.Server/bin
+DeliveryManager.Server/obj
