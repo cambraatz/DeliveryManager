@@ -1,10 +1,26 @@
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 
+// new modification to CORS package...
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
 var builder = WebApplication.CreateBuilder(args);
+
+// new modification to CORS package...
+builder.Services.AddCors(options => {
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+        policy => {
+            policy.WithOrigins("http://www.tcsservices.com:40730", 
+                                "www.tcsservices.com:40730", 
+                                "tcsservices.com/40730")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+        });
+});
 
 // Add services to the container.
 builder.Services.AddControllers();
+//builder.Services.AddAuthentication();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -14,14 +30,26 @@ builder.Services.AddSwaggerGen();
 
 // Adding Serializers, this is a new attempt...
 // JSON Serializer
-builder.Services.AddControllers().AddNewtonsoftJson(options=>
-options.SerializerSettings.ReferenceLoopHandling=Newtonsoft.Json.ReferenceLoopHandling.Ignore).AddNewtonsoftJson(
-    options=>options.SerializerSettings.ContractResolver=new DefaultContractResolver());
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore).AddNewtonsoftJson(
+    options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
 
 var app = builder.Build();
 
 // Enable CORS (not suggested during production)
-app.UseCors(c => c.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
+//app.UseCors(c => c.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
+app.UseRouting();
+app.UseCors(MyAllowSpecificOrigins);
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+//app.UseAuthentication();
+
+// new modification to CORS package...
+//app.UseCors(MyAllowSpecificOrigins);
 
 // End of updated attempts...
 
@@ -46,3 +74,4 @@ app.MapControllers();
 app.MapFallbackToFile("/index.html");
 
 app.Run();
+

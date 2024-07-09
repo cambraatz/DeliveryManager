@@ -27,3 +27,6 @@ dist-ssr
 
 General_Notes.md
 image.png
+.vscode
+DeliveryManager.Server\obj
+deliverymanager.client\src\Components\DriverList.jsx
