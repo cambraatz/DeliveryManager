@@ -24,7 +24,7 @@ dist-ssr
 *.sln
 *.sw?
 
-General_Notes.md
+#General_Notes.md
 image.png
 .vscode
 DeliveryManager.Server/obj
@@ -32,3 +32,5 @@ deliverymanager.client/src/Components/DriverList.jsx
 deliverymanager.client/obj
 DeliveryManager.Server/bin
 DeliveryManager.Server/obj
+#server_files
+Deployment_Resources/server_files
