@@ -12,7 +12,10 @@ builder.Services.AddCors(options => {
         policy => {
             policy.WithOrigins("http://www.tcsservices.com:40730", 
                                 "www.tcsservices.com:40730", 
-                                "tcsservices.com/40730")
+                                "tcsservices.com/40730",
+                                "http://www.deliverymanager.tcsservices.com:40730",
+                                "www.deliverymanager.tcsservices.com:40730",
+                                "deliverymanager.tcsservices.com:40730")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
         });
@@ -35,6 +38,8 @@ options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoop
     options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
 
 var app = builder.Build();
+
+//builder.WebHost.UseUrls("http://*:80");
 
 // Enable CORS (not suggested during production)
 //app.UseCors(c => c.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());

@@ -12,7 +12,8 @@ const DriverPortal = () => {
     // Header information for API call reference...
     */
     //const API_URL = "http://localhost:5113/";
-    const API_URL = "http://www.tcsservices.com:40730/"
+    //const API_URL = "http://www.tcsservices.com:40730/"
+    const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
 
     const headers = {
         'Content-Type': 'application/json; charset=UTF-8',

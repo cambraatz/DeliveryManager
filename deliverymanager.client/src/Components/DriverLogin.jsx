@@ -13,7 +13,8 @@ const DriverLogin = () => {
     // Header information for API call reference ...
     */
     //const API_URL = "http://localhost:5113/";
-    const API_URL = "http://www.tcsservices.com:40730/"
+    //const API_URL = "http://www.tcsservices.com:40730/"
+    const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
 
     const headers = {
         'Content-Type': 'application/json',
@@ -131,6 +132,7 @@ const DriverLogin = () => {
             setStatus("Verifying Delivery Information.");
             getPowerUnit(username, password);
             openPopup("popupLoginWindow");
+            alert("Dev Reminder: Use 02/16/2024 for Delivery Date")
 
             // reset styling to default...
             document.getElementById("USERNAME").style.border = "";
