@@ -15,7 +15,8 @@ builder.Services.AddCors(options => {
                                 "tcsservices.com/40730",
                                 "http://www.deliverymanager.tcsservices.com:40730",
                                 "www.deliverymanager.tcsservices.com:40730",
-                                "deliverymanager.tcsservices.com:40730")
+                                "deliverymanager.tcsservices.com:40730",
+                                "https://localhost:5173")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod();
         });

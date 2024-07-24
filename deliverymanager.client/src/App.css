@@ -375,7 +375,7 @@ td, th {
 
 #datetime_Div {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     padding: 1em 10% 1em 10%;
     justify-content: space-between;
 }
@@ -388,7 +388,7 @@ td, th {
 
     #datetime_Div label {
         display: block;
-        margin-bottom: 0.1em;
+        /*margin-bottom: 0.1em;*/
     }
 
     #datetime_Div input {
@@ -412,7 +412,7 @@ td, th {
 #img_Div {
     display: flex;
     align-items: center;
-    padding: 0 10% 1em 10%;
+    padding: 0 10% 0 10%;
     justify-content: space-between;
     flex-wrap: wrap;
 }
@@ -425,7 +425,7 @@ td, th {
     }
 
 #dlvdpcs {
-    width: 6em;
+    /*width: 6em;*/
 }
 
 #notes_Div {
@@ -439,12 +439,50 @@ td, th {
         width: 100%;
     }
 
+#print_div {
+    padding: 0 10% 1em 10%;
+}
+
 .invalid_input {
     border: solid 1.5px red;
     border-radius: 3px; 
+    background-color: #ffdddd;
 }
 
-@media only screen and (max-width:800px) {
+label {
+    margin-bottom: 5px;
+}
+
+.image_confirmation {
+    font-weight: bold;
+    font-size: 0.7em;
+    margin-block-start: 5px;
+    margin-block-end: 0;
+}
+
+input {
+    height: 24px;
+    width: 100%;
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 3px;
+}
+
+.input_image {
+    background-color: #e0eaf3;
+    border: none;
+    border-radius: 0;
+}
+
+.cont_left {
+    width: 54%;
+}
+
+.cont_right {
+    width: 34%;
+}
+
+@media only screen and (max-width:900px) {
     h1 {
         font-size: 1.5em;
     }
@@ -472,11 +510,7 @@ td, th {
     }
 
     label {
-        font-size: 0.7em;
-    }
-
-    input {
-        height: 24px;
+        font-size: 0.75em;
     }
 
     thead {
@@ -525,7 +559,7 @@ td, th {
     }
 }
 
-@media only screen and (min-width:800px) {
+@media only screen and (min-width:900px) {
     #MDPU_Row {
         display: flex;
         justify-content: space-between;
@@ -545,7 +579,7 @@ td, th {
 
         
     .input_form {
-        width: 95%;
+        /*width: 95%;*/
     }
 
     .Table_Separator {
@@ -593,5 +627,9 @@ td, th {
 
     .popupLogin label {
         font-size: smaller;
+    }
+
+    label {
+        font-size: 0.8em;
     }
 }

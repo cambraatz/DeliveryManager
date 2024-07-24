@@ -16,10 +16,6 @@ const DriverLogin = () => {
     //const API_URL = "http://www.tcsservices.com:40730/"
     const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
 
-    const headers = {
-        'Content-Type': 'application/json',
-    };
-
     /*
     // Date processing functions ...
     */
@@ -69,6 +65,18 @@ const DriverLogin = () => {
             default:
                 break;
         }
+        //if(document.getElementById(e.target.id).style.backgroundColor != ""){
+        if(document.getElementById(e.target.id).className == "invalid_input"){
+            // reset styling to default...
+            /*
+            document.getElementById(e.target.id).style.border = "1px solid black";
+            document.getElementById(e.target.id).style.borderRadius = "3px";
+            document.getElementById(e.target.id).style.borderStyle = "solid";
+            document.getElementById(e.target.id).style.backgroundColor = "white";
+            */
+            document.getElementById("USERNAME").className = "";
+            document.getElementById("PASSWORD").className = "";
+        }
     };
 
     // handle delivery query form changes...
@@ -98,6 +106,11 @@ const DriverLogin = () => {
             default:
                 break;
         }
+        if(document.getElementById(e.target.id).style.backgroundColor != "white"){
+            // reset styling to default...
+            document.getElementById("dlvdate").className = "input_form"
+            document.getElementById("powerunit").className = "input_form"
+        }
     };
     
     /*
@@ -112,14 +125,12 @@ const DriverLogin = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [message])
 
-    //
     // handleClick on initial Login button...
     const handleSubmit = (e) => {
         e.preventDefault();
         validateCredentials(driverCredentials.USERNAME,driverCredentials.PASSWORD);
     };
 
-    //
     // validate credentials, prompt for correction in fail or open popup in success...
     async function validateCredentials(username, password){
         const response = await fetch(API_URL + "api/Registration/Login?USERNAME=" + username + "&PASSWORD=" + password, {
@@ -135,19 +146,31 @@ const DriverLogin = () => {
             alert("Dev Reminder: Use 02/16/2024 for Delivery Date")
 
             // reset styling to default...
+            /*
             document.getElementById("USERNAME").style.border = "";
             document.getElementById("USERNAME").style.borderRadius = "";
+            document.getElementById("USERNAME").style.backgroundColor = "";
             document.getElementById("PASSWORD").style.border = "";
             document.getElementById("PASSWORD").style.borderRadius = "";
+            document.getElementById("PASSWORD").style.backgroundColor = "";
+            */
+            document.getElementById("USERNAME").className = "";
+            document.getElementById("PASSWORD").className = "";
         }
         else {
-            setStatus("Login Credentials Not Found, Try Again.");
+            setStatus("Login Credentials Not Found.");
 
             // trigger red borders for errors...
+            /*
             document.getElementById("USERNAME").style.border = "1.5px solid red";
             document.getElementById("USERNAME").style.borderRadius = "3px";
+            document.getElementById("USERNAME").style.backgroundColor = "#ffdddd";
             document.getElementById("PASSWORD").style.border = "1.5px solid red";
             document.getElementById("PASSWORD").style.borderRadius = "3px";
+            document.getElementById("PASSWORD").style.backgroundColor = "#ffdddd";
+            */
+            document.getElementById("USERNAME").className = "invalid_input";
+            document.getElementById("PASSWORD").className = "invalid_input";
         }
     }
 
@@ -171,6 +194,7 @@ const DriverLogin = () => {
         });
     }
 
+    /*
     //
     // delete identified driver to make room for new recorded driver...
     async function handleDelete(powerunit){
@@ -194,6 +218,20 @@ const DriverLogin = () => {
         //console.log(response);
         return response;
     }
+    */
+
+    //
+    // update the existing driver's records with new information...
+    async function handleEdit(username,password,powerunit){
+        const driverString = '?USERNAME='+username+'&PASSWORD='+password+'&POWERUNIT='+powerunit
+
+        const response = await fetch(API_URL + "api/Registration/UpdateDriver" + driverString, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        })
+
+        return response;
+    }
 
     //
     // validate given delivery exists in database
@@ -215,6 +253,7 @@ const DriverLogin = () => {
         return data;
     }
 
+    /*
     //
     // onClick response to validate date and power unit data prior to pulling manifest...
     async function handleUpdate() {
@@ -229,6 +268,20 @@ const DriverLogin = () => {
         
         // create new driver credentials in db...
         await handleCreate(driverCredentials.USERNAME,driverCredentials.PASSWORD,updateData.POWERUNIT);
+
+        // validate current delivery information prior to redirect...
+        await validateDeliveries(updateData.MFSTDATE,updateData.POWERUNIT);
+    }
+    */
+
+    async function handleUpdate() {
+        // update driver credentials state...
+        setDriverCredentials({
+            ...driverCredentials,
+            POWERUNIT: updateData.POWERUNIT
+        });
+
+        await handleEdit(driverCredentials.USERNAME,driverCredentials.PASSWORD,updateData.POWERUNIT);
 
         // validate current delivery information prior to redirect...
         await validateDeliveries(updateData.MFSTDATE,updateData.POWERUNIT);
@@ -274,7 +327,7 @@ const DriverLogin = () => {
     return(
         <div id="webpage">
             <Header 
-                title="Shipment Checkoff"
+                title="Driver Login"
                 alt="Enter your login credentials"
                 status="Off"
                 currUser="Sign In"
@@ -294,7 +347,7 @@ const DriverLogin = () => {
                         <label htmlFor="PASSWORD">Password:</label>
                         <input type="password" id="PASSWORD" onChange={handleLoginChange} required/>
                     </div>
-                    <h3>{status}</h3>
+                    <h4>{status}</h4>
                     <h4><a href="mailto:cameronbraatz@gmail.com">Not an existing user?</a></h4>
                     <button type="submit">Login</button>
                 </form>
