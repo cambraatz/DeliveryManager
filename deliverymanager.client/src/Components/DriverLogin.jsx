@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import Header from './Header';
 import Popup from './Popup';
-import { scrapeDate, renderDate, getDate } from '../Scripts/helperFunctions';
+import { scrapeDate, renderDate, getDate, API_URL } from '../Scripts/helperFunctions';
 
 /* 
 // DriverLogin serves as the home page for the driver application...
@@ -14,7 +14,7 @@ const DriverLogin = () => {
     */
     //const API_URL = "http://localhost:5113/";
     //const API_URL = "http://www.tcsservices.com:40730/"
-    const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
+    //const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
 
     /*
     // Date processing functions ...

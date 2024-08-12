@@ -9,7 +9,7 @@ const Header = (props) => {
             return(
                 <>
                     <div id="MDPU_Row">
-                        <h3>Manifest Date: <span className="weak">{translateDate(props.MFSTDATE)}</span></h3>
+                        <h3>Manifest Date: <span className="weak">{props.MFSTDATE ? translateDate(props.MFSTDATE) : "00/00/0000"}</span></h3>
                         <h3>Power Unit: <span className="weak">{props.POWERUNIT}</span></h3>
                     </div>
                     <h4 className="prompt">{props.alt}</h4>                    
@@ -20,7 +20,7 @@ const Header = (props) => {
             return(
                 <>
                     <div id="MDPU_Row">
-                        <h3>Manifest Date: <span className="weak">{translateDate(props.MFSTDATE)}</span></h3>
+                        <h3>Manifest Date: <span className="weak">{props.MFSTDATE ? translateDate(props.MFSTDATE) : "00/00/0000"}</span></h3>
                         <h3>Power Unit: <span className="weak">{props.POWERUNIT}</span></h3>
                     </div>
                     <h4 className="prompt">{props.alt}</h4>    
@@ -51,7 +51,7 @@ const Header = (props) => {
 
     return(
         <header id="Header">
-            <h4 className="TCS_title">Transportation<br/>Computer<br/>Services, LLC</h4>
+            <h4 className="TCS_title">Transportation<br/>Computer<br/>Support, LLC</h4>
             <h1 className="TCS_title">Driver Manifest</h1>
             <h2>{props.title}</h2>
             <hr></hr>

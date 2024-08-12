@@ -12,11 +12,25 @@ export const renderDate = (date) => {
     return year + "-" + month + "-" + day;
 };
 
+export const renderTime = (time) => {
+    const hour = time.slice(0,2);
+    const minute = time.slice(2);
+    const new_time = hour + ":" + minute;
+    return new_time
+};
+/*
 export const translateDate = (date) => {
     const month = date.slice(0,2);
     const day = date.slice(2,4);
     const year = date.slice(4);
     return month + "/" + day + "/" + year;
+};
+*/
+export const translateDate = (date) => {
+    const month = date.slice(0,2);
+    const day = date.slice(2,4);
+    const year = date.slice(4);
+    return year + "-" + month + "-" + day
 };
 
 export const getDate = () => {
@@ -57,3 +71,6 @@ export const scrapeFile = (file) => {
     const relLink = file.slice(12);
     return relLink;
 };
+
+export const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
+//export const API_URL = "http://localhost:5113/";

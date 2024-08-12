@@ -10,10 +10,12 @@ namespace DeliveryManager.Server.Controllers
     public class DriverChecklistController : ControllerBase
     {
         private IConfiguration _configuration;
+        private readonly string connString;
 
         public DriverChecklistController(IConfiguration configuration)
         {
             _configuration = configuration;
+            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
         [HttpGet]
         [Route("GetDriverLog")]
@@ -22,7 +24,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT order by STOP";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -47,7 +50,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=0 order by STOP";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -79,7 +83,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=1 order by STOP";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -120,7 +125,8 @@ namespace DeliveryManager.Server.Controllers
                 "@CONSZIP,@TTLPCS,@TTLYDS,@TTLWGT,@DLVDDATE,@DLVDTIME,@DLVDPCS,@DLVDSIGN,@DLVDNOTE,@DLVDIMGFILELOCN,@DLVDIMGFILESIGN)";
 
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -171,7 +177,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "delete from dbo.DMFSTDAT where MFSTKEY=@MFSTKEY";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -205,7 +212,8 @@ namespace DeliveryManager.Server.Controllers
                 "DLVDNOTE = @DLVDNOTE,DLVDIMGFILELOCN = @DLVDIMGFILELOCN,DLVDIMGFILESIGN = @DLVDIMGFILESIGN where MFSTKEY=@MFSTKEY";
 
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {

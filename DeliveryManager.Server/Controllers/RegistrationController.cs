@@ -12,11 +12,14 @@ namespace DeliveryManager.Server.Controllers
     public class RegistrationController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly string connString;
 
         public RegistrationController(IConfiguration configuration)
         {
             _configuration = configuration;
+            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
+
 
         [HttpPost]
         [Route("Login")]
@@ -25,7 +28,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "select * from dbo.USERS where USERNAME=@USERNAME and PASSWORD=@PASSWORD";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -60,7 +64,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "select POWERUNIT from dbo.USERS where USERNAME=@USERNAME";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -85,7 +90,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "update dbo.USERS set POWERUNIT=@POWERUNIT where USERNAME=@USERNAME and PASSWORD=@PASSWORD";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -113,7 +119,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "delete from dbo.USERS where POWERUNIT=@POWERUNIT";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -138,7 +145,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "insert into dbo.USERS(USERNAME,PASSWORD,POWERUNIT) values(@USERNAME,@PASSWORD,@POWERUNIT)";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
@@ -166,7 +174,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "update dbo.USERS set USERNAME = @USERNAME, PASSWORD = @PASSWORD, POWERUNIT = @POWERUNIT where USERNAME = @USERNAME";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             { 
@@ -193,7 +202,8 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "select * from dbo.DMFSTDAT where MFSTDATE=@MFSTDATE and POWERUNIT=@POWERUNIT";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {

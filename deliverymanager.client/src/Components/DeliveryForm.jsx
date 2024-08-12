@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
-import { scrapeDate, renderDate, scrapeTime, scrapeFile, getDate, getTime } from '../Scripts/helperFunctions';
+import { scrapeDate, renderDate, renderTime, scrapeTime, scrapeFile, getDate, getTime, translateDate, API_URL } from '../Scripts/helperFunctions';
 
 const DeliveryForm = () => {
     /*
@@ -10,7 +10,7 @@ const DeliveryForm = () => {
     */
     //const API_URL = "http://localhost:5113/";
     //const API_URL = "http://www.tcsservices.com:40730/"
-    const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
+    //const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
 
     /*
     // Date and time data and processing functions...
@@ -22,20 +22,32 @@ const DeliveryForm = () => {
     // Site state & location processing functions...  
     */ 
     const location = useLocation();
+    const navigate = useNavigate();
+
+    let img_loc = location.state ? location.state.delivery["DLVDIMGFILELOCN"] : null;
+    let img_sign = location.state ? location.state.delivery["DLVDIMGFILESIGN"] : null;
 
     useEffect(() => {
-        if (location.state.delivery["DLVDIMGFILELOCN"] === null || location.state.delivery["DLVDIMGFILESIGN"] === null){
-            document.getElementById('img_file_sign').style.display = "none";
+        console.log("This was triggered with useEffect()...")
+        if(!location.state){
+            navigate("/")
+        }
+
+        if(img_loc === null || img_loc === "") {
             document.getElementById('img_file_locn').style.display = "none";
         }
+        if(img_sign === null || img_sign === "") {
+            document.getElementById('img_file_sign').style.display = "none";
+        }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
 
     //
     // const 'driverCredentials' to be passed to next page...
     const driverCredentials = {
-        USERNAME: location.state.driver["USERNAME"],
-        //PASSWORD: location.state.driver["PASSWORD"],
-        POWERUNIT: location.state.driver["POWERUNIT"],
+        USERNAME: location.state ? location.state.driver["USERNAME"] : null,
+        POWERUNIT: location.state ? location.state.driver["POWERUNIT"] : null,
     }
 
     const currUser = driverCredentials.USERNAME;
@@ -43,88 +55,105 @@ const DeliveryForm = () => {
     //
     // const 'updateData' to be passed to next page... 
     const updateData = {
-        MFSTDATE: location.state.delivery["MFSTDATE"],
-        POWERUNIT: location.state.delivery["POWERUNIT"],
+        MFSTDATE: location.state ? location.state.delivery["MFSTDATE"] : null,
+        POWERUNIT: location.state ? location.state.delivery["POWERUNIT"] : null,
     };
 
     //
     // catch null address2 value from db...
-    let address2 = location.state.delivery["CONSADD2"];
+    let address2 = location.state ? location.state.delivery["CONSADD2"] : null;
     if (address2 === "" || address2 === null){
         address2 = "N/A"
     }
 
     //
     // logic to catch existing deliveries...
-    let pieces = location.state.delivery["DLVDPCS"];
+    let pieces = location.state ? location.state.delivery["DLVDPCS"] : null;
     if (pieces === "" || pieces === null){
-        pieces = location.state.delivery["TTLPCS"]
+        pieces = location.state ? location.state.delivery["TTLPCS"] : "";
     }
 
     //
     // prompt file upload message on delivered...
-    let img_file_locn = location.state.delivery["DLVDIMGFILELOCN"]
-    let img_file_sign = location.state.delivery["DLVDIMGFILESIGN"]
-    if (img_file_locn === null){
-        img_file_locn = ""
-        
+    if(img_loc === null) {
+        img_loc = ""
     }
-    else if (img_file_sign === null){
-        img_file_sign = ""
+    if(img_sign === null) {
+        img_sign = ""
     }
 
     //
     // catch null delivery notes...
-    let delivery_notes = location.state.delivery["DLVDNOTE"]
+    let delivery_notes = location.state ? location.state.delivery["DLVDNOTE"] : null;
     if (delivery_notes === null){
         delivery_notes = ""
     }
 
     //
     // catch null printed signature...
-    let print_sign = location.state.delivery["DLVDSIGN"]
+    let print_sign = location.state ? location.state.delivery["DLVDSIGN"] : null;
     if (print_sign === null){
         print_sign = ""
     }
 
     //
+    // handle both existing deliveries and new ones...
+    let delivery_time = location.state ? location.state.delivery["DLVDTIME"] : null;
+    if (delivery_time === null){
+        delivery_time = currTime
+    }
+    else{
+        delivery_time = renderTime(delivery_time)
+    }
+
+    //
+    // handle both existing deliveries and new ones...
+    let delivery_date = location.state ? location.state.delivery["DLVDDATE"] : null;
+    if (delivery_date === null){
+        delivery_date = currDate
+    }
+    else{
+        delivery_date = translateDate(delivery_date)
+    }
+
+    //
     // maintain state values to update delivery entry...
     const [delivery, setDelivery] = useState({
-        MFSTKEY: location.state.delivery["MFSTKEY"],
-        STATUS: location.state.delivery["STATUS"],
-        LASTUPDATE: location.state.delivery["LASTUPDATE"],
-        MFSTNUMBER: location.state.delivery["MFSTNUMBER"],
-        POWERUNIT: location.state.delivery["POWERUNIT"],
-        STOP: location.state.delivery["STOP"],
-        MFSTDATE: location.state.delivery["MFSTDATE"],
-        PRONUMBER: location.state.delivery["PRONUMBER"],
-        PRODATE: location.state.delivery["PRODATE"],
-        SHIPNAME: location.state.delivery["SHIPNAME"],
-        CONSNAME: location.state.delivery["CONSNAME"],
-        CONSADD1: location.state.delivery["CONSADD1"],
+        MFSTKEY: location.state ? location.state.delivery["MFSTKEY"] : null,
+        STATUS: location.state ? location.state.delivery["STATUS"] : null,
+        LASTUPDATE: location.state ? location.state.delivery["LASTUPDATE"] : null,
+        MFSTNUMBER: location.state ? location.state.delivery["MFSTNUMBER"] : null,
+        POWERUNIT: location.state ? location.state.delivery["POWERUNIT"] : null,
+        STOP: location.state ? location.state.delivery["STOP"] : null,
+        MFSTDATE: location.state ? location.state.delivery["MFSTDATE"] : null,
+        PRONUMBER: location.state ? location.state.delivery["PRONUMBER"] : null,
+        PRODATE: location.state ? location.state.delivery["PRODATE"] : null,
+        SHIPNAME: location.state ? location.state.delivery["SHIPNAME"] : null,
+        CONSNAME: location.state ? location.state.delivery["CONSNAME"] : null,
+        CONSADD1: location.state ? location.state.delivery["CONSADD1"] : null,
         CONSADD2: address2,
-        CONSCITY: location.state.delivery["CONSCITY"],
-        CONSSTATE: location.state.delivery["CONSSTATE"],
-        CONSZIP: location.state.delivery["CONSZIP"],
-        TTLPCS: location.state.delivery["TTLPCS"],
-        TTLYDS: location.state.delivery["TTLYDS"],
-        TTLWGT: location.state.delivery["TTLWGT"],
+        CONSCITY: location.state ? location.state.delivery["CONSCITY"] : null,
+        CONSSTATE: location.state ? location.state.delivery["CONSSTATE"] : null,
+        CONSZIP: location.state ? location.state.delivery["CONSZIP"] : null,
+        TTLPCS: location.state ? location.state.delivery["TTLPCS"] : null,
+        TTLYDS: location.state ? location.state.delivery["TTLYDS"] : null,
+        TTLWGT: location.state ? location.state.delivery["TTLWGT"] : null,
         DLVDDATE: scrapeDate(currDate),
         DLVDTIME: scrapeTime(currTime),
         DLVDPCS: pieces,
 
         DLVDSIGN: print_sign,
         DLVDNOTE: delivery_notes,
-        DLVDIMGFILELOCN: img_file_locn,
-        DLVDIMGFILESIGN: img_file_sign
+        DLVDIMGFILELOCN: img_loc,
+        DLVDIMGFILESIGN: img_sign
     });
 
     //
     // state data for rendering and tracking user changes...
     const [formData, setFormData] = useState({
-        deliveryDate: currDate,
-        deliveryTime: currTime,
-        deliveredPieces: delivery.TTLPCS,
+        deliveryDate: delivery_date,
+        deliveryTime: delivery_time,
+        deliveredPieces: pieces,
 
         deliveryConsignee: delivery.CONSNAME,
         deliveryNotes: delivery.DLVDNOTE,   
@@ -234,16 +263,55 @@ const DeliveryForm = () => {
     /*
     // API Calls and Functionality ...
     */
-    const navigate = useNavigate();
 
     //
     // handle updating existing delivery records when changed...
     async function handleUpdate() {
-        const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + '&STATUS=1&LASTUPDATE=' + delivery.LASTUPDATE + '&MFSTNUMBER=' + delivery.MFSTNUMBER + '&POWERUNIT=' + delivery.POWERUNIT + '&STOP=' + delivery.STOP +
-            '&MFSTDATE=' + delivery.MFSTDATE + '&PRONUMBER=' + delivery.PRONUMBER + '&PRODATE=' + delivery.PRODATE + '&SHIPNAME=' + delivery.SHIPNAME + '&CONSNAME=' + delivery.CONSNAME +
-            '&CONSADD1=' + delivery.CONSADD1 + '&CONSADD2=' + delivery.CONSADD2 + '&CONSCITY=' + delivery.CONSCITY + '&CONSSTATE=' + delivery.CONSSTATE + '&CONSZIP=' + delivery.CONSZIP +
-            '&TTLPCS=' + delivery.TTLPCS + '&TTLYDS=' + delivery.TTLYDS + '&TTLWGT=' + delivery.TTLWGT + '&DLVDDATE=' + delivery.DLVDDATE + '&DLVDTIME=' + delivery.DLVDTIME + '&DLVDPCS=' + delivery.DLVDPCS +
-            '&DLVDSIGN=' + delivery.DLVDSIGN + '&DLVDNOTE=' + delivery.DLVDNOTE + '&DLVDIMGFILELOCN=' + delivery.DLVDIMGFILELOCN + '&DLVDIMGFILESIGN=' + delivery.DLVDIMGFILESIGN
+        let sign = delivery.DLVDSIGN
+        if(sign === ""){
+            sign = "n/a"
+        }
+
+        let note = delivery.DLVDNOTE
+        if(note === ""){
+            note = "n/a"
+        }
+
+        let img = delivery.DLVDIMGFILELOCN
+        if(img === ""){
+            img = "n/a"
+        }
+
+        let sign_img = delivery.DLVDIMGFILESIGN
+        if(sign_img === ""){
+            sign_img = "n/a"
+        }
+
+        const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + 
+                            '&STATUS=1&LASTUPDATE=' + delivery.LASTUPDATE + 
+                            '&MFSTNUMBER=' + delivery.MFSTNUMBER + 
+                            '&POWERUNIT=' + delivery.POWERUNIT + 
+                            '&STOP=' + delivery.STOP +
+                            '&MFSTDATE=' + delivery.MFSTDATE + 
+                            '&PRONUMBER=' + delivery.PRONUMBER + 
+                            '&PRODATE=' + delivery.PRODATE + 
+                            '&SHIPNAME=' + delivery.SHIPNAME.replace("&","%26") + 
+                            '&CONSNAME=' + delivery.CONSNAME.replace("&","%26") +
+                            '&CONSADD1=' + delivery.CONSADD1.replace("&","%26")  + 
+                            '&CONSADD2=' + delivery.CONSADD2.replace("&","%26")  + 
+                            '&CONSCITY=' + delivery.CONSCITY + 
+                            '&CONSSTATE=' + delivery.CONSSTATE + 
+                            '&CONSZIP=' + delivery.CONSZIP +
+                            '&TTLPCS=' + delivery.TTLPCS + 
+                            '&TTLYDS=' + delivery.TTLYDS + 
+                            '&TTLWGT=' + delivery.TTLWGT + 
+                            '&DLVDDATE=' + delivery.DLVDDATE + 
+                            '&DLVDTIME=' + delivery.DLVDTIME + 
+                            '&DLVDPCS=' + delivery.DLVDPCS +
+                            '&DLVDSIGN=' + sign.replace("&","%26")  + 
+                            '&DLVDNOTE=' + note.replace("&","%26")  + 
+                            '&DLVDIMGFILELOCN=' + img + 
+                            '&DLVDIMGFILESIGN=' + sign_img
 
         const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest" + deliveryString, {
             method: 'PUT',
@@ -351,31 +419,31 @@ const DeliveryForm = () => {
                     </div>
                     <div id="notes_Div">
                         <label>Delivery Notes: </label>
-                        <input type="text" id="dlvdnote" value={formData.deliveryNotes} className="input_form" onChange={handleChange} maxLength="30" required/>
+                        <input type="text" id="dlvdnote" value={formData.deliveryNotes} className="input_form" onChange={handleChange} maxLength="30"/>
                     </div>
                     <div id="img_Div">
                         <div>
-                            <label>Delivery Image:</label>
-                            <input type="file" accept="image/*" id="dlvdimage" className="input_image" onChange={handleChange} required/>
-                            <p id="img_file_locn" className="image_confirmation">Image ({formData.deliveryImagePath}) On File...</p>
-                            {/*<label className="fileUpload">
-                                <input type="file" accept="image/*" id="dlvdimage" className="input_form" onChange={handleChange} />
-                                {uploadImageStatus}
-                            </label>*/}
-                        </div>
-                        <div>
-                            <label>Consignee Signature:</label>
-                            <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_image" onChange={handleChange} required/>
+                            <label>Consignee Signature Image:</label>
+                            <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_image" onChange={handleChange}/>
                             <p id="img_file_sign" className="image_confirmation">Image ({formData.deliverySignaturePath}) On File...</p>
                             {/*<label className="fileUpload">
                                 <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_form" onChange={handleChange} />
                                 {uploadSignatureStatus}
                             </label>*/}
                         </div>
+                        <div>
+                            <label>Delivery Location Image:</label>
+                            <input type="file" accept="image/*" id="dlvdimage" className="input_image" onChange={handleChange}/>
+                            <p id="img_file_locn" className="image_confirmation">Image ({formData.deliveryImagePath}) On File...</p>
+                            {/*<label className="fileUpload">
+                                <input type="file" accept="image/*" id="dlvdimage" className="input_form" onChange={handleChange} />
+                                {uploadImageStatus}
+                            </label>*/}
+                        </div>
                     </div>
                     <div id="print_div">
                         <div className="cont_left">
-                            <label>Printed Name (Consignee):</label>
+                            <label>Consignee Signature Printed:</label>
                             <input type="text" id="dlvdsign" value={formData.deliverySign} className="input_form" min="0" max="999" onChange={handleChange} required/>
                         </div>
                     </div>

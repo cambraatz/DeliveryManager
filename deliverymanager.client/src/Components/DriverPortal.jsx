@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
+import { API_URL } from '../Scripts/helperFunctions';
 
 /*
 // DriverPortal pulls matching deliveries and renders them as an interactive table...
@@ -13,7 +14,7 @@ const DriverPortal = () => {
     */
     //const API_URL = "http://localhost:5113/";
     //const API_URL = "http://www.tcsservices.com:40730/"
-    const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
+    //const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
 
     const headers = {
         'Content-Type': 'application/json; charset=UTF-8',
@@ -23,18 +24,18 @@ const DriverPortal = () => {
     // Site state & location processing functions... 
     */
     const location = useLocation();
+    const navigate = useNavigate();
 
     // state 'driverCredentials' to be passed to next page...
     const [driverCredentials, setDriverCredentials] = useState({
-        USERNAME: location.state.driver["USERNAME"],
-        //PASSWORD: location.state.driver["PASSWORD"],
-        POWERUNIT: location.state.driver["POWERUNIT"],
+        USERNAME: location.state ? location.state.driver["USERNAME"] : null,
+        POWERUNIT: location.state ? location.state.driver["POWERUNIT"] : null,
     });
 
     // const 'updateData' to be passed to next page...
     const updateData = {
-        MFSTDATE: location.state.delivery["MFSTDATE"],
-        POWERUNIT: location.state.delivery["POWERUNIT"],
+        MFSTDATE: location.state ? location.state.delivery["MFSTDATE"]: null,
+        POWERUNIT: location.state ? location.state.delivery["POWERUNIT"] : null,
     };
 
     // set current username for rendering...
@@ -49,6 +50,9 @@ const DriverPortal = () => {
 
     // set credentials and query delivery information once on page load...
     useEffect(() => {
+        if(!location.state){
+            navigate('/')
+        }
         setDriverCredentials({
             ...driverCredentials,
             POWERUNIT: updateData["POWERUNIT"]
@@ -56,13 +60,14 @@ const DriverPortal = () => {
 
         getDeliveries(updateData["POWERUNIT"],updateData["MFSTDATE"]);
         setLoading(false);
+        
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     
     /*
     // API Calls and Functionality ...
     */
-    const navigate = useNavigate();
+    
     
     // query all deliveries matching the provided powerunit and date...
     async function getDeliveries(powerunit,mfstdate){
