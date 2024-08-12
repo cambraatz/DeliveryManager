@@ -28,7 +28,7 @@ const DeliveryForm = () => {
     let img_sign = location.state ? location.state.delivery["DLVDIMGFILESIGN"] : null;
 
     useEffect(() => {
-        console.log("This was triggered with useEffect()...")
+        //console.log("This was triggered with useEffect()...")
         if(!location.state){
             navigate("/")
         }
