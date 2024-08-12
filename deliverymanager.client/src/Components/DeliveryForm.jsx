@@ -28,7 +28,6 @@ const DeliveryForm = () => {
     let img_sign = location.state ? location.state.delivery["DLVDIMGFILESIGN"] : null;
 
     useEffect(() => {
-        console.log("This was triggered with useEffect()...")
         if(!location.state){
             navigate("/")
         }
@@ -160,12 +159,6 @@ const DeliveryForm = () => {
         deliveryImagePath: delivery.DLVDIMGFILELOCN,
         deliverySignaturePath: delivery.DLVDIMGFILESIGN,
         deliverySign: delivery.DLVDSIGN   
-        /*
-        deliveredSign: "",
-        deliveryNotes: "",
-        deliveryImagePath: "/dummyImage.jpg",
-        deliverySignaturePath: "/dummySignature.jpg",
-        */
     });
 
     //
@@ -240,9 +233,14 @@ const DeliveryForm = () => {
                 });
                 setDelivery({
                     ...delivery,
+                    DLVDIMGFILELOCN: val
+                });
+                /*
+                setDelivery({
+                    ...delivery,
                     DLVDIMGFILELOCN: scrapeFile(val)
                 });
-                //uploadImageStatus = "Submitted";
+                */
                 break;
             case 'dlvdimagefilesign':
                 setFormData({
@@ -251,9 +249,14 @@ const DeliveryForm = () => {
                 });
                 setDelivery({
                     ...delivery,
+                    DLVDIMGFILESIGN: val
+                });
+                /*
+                setDelivery({
+                    ...delivery,
                     DLVDIMGFILESIGN: scrapeFile(val)
                 });
-                //uploadSignatureStatus = "Submitted";
+                */
                 break;
             default:
                 break;
