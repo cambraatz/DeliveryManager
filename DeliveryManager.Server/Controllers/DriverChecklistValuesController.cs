@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DeliveryManager.Server.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Data.SqlClient;
@@ -15,7 +16,7 @@ namespace DeliveryManager.Server.Controllers
         public DriverChecklistController(IConfiguration configuration)
         {
             _configuration = configuration;
-            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            connString = _configuration.GetConnectionString("DriverChecklistTestCon");
         }
         [HttpGet]
         [Route("GetDriverLog")]
@@ -199,6 +200,111 @@ namespace DeliveryManager.Server.Controllers
         [HttpPut]
         [Route("UpdateManifest")]
 
+        public async Task<JsonResult> UpdateManifest([FromForm] DeliveryForm data)
+        {
+            /*
+            // save image locally...
+            string location_path = null;
+            string sign_path = null;
+
+            string folderPath = Path.Combine("wwwroot", "uploads");
+
+            // define path where the image is to be saved...
+            if (data.DLVDIMGFILELOCN != null)
+            {
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                // generate a unique file name...
+                string loc_name = Guid.NewGuid().ToString() + Path.GetExtension(path: data.DLVDIMGFILELOCN.FileName);
+                location_path = Path.Combine(folderPath, loc_name);
+
+                // save the file to the server...
+                using (var fileStream = new FileStream(location_path, FileMode.Create))
+                {
+                    await data.DLVDIMGFILELOCN.CopyToAsync(fileStream);
+                }
+            }
+
+            // define path where the image is to be saved...
+            if (data.DLVDIMGFILESIGN != null)
+            {
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                // generate a unique file name...
+                string sign_name = Guid.NewGuid().ToString() + Path.GetExtension(path: data.DLVDIMGFILESIGN.FileName);
+                sign_path = Path.Combine(folderPath, sign_name);
+
+                // save the file to the server...
+                using (var fileStream = new FileStream(location_path, FileMode.Create))
+                {
+                    await data.DLVDIMGFILESIGN.CopyToAsync(fileStream);
+                }
+            }
+            */
+
+            string query = "update dbo.DMFSTDAT set MFSTKEY = @MFSTKEY,STATUS = @STATUS,LASTUPDATE = @LASTUPDATE,MFSTNUMBER = @MFSTNUMBER," +
+                "POWERUNIT = @POWERUNIT,STOP = @STOP,MFSTDATE = @MFSTDATE,PRONUMBER = @PRONUMBER,PRODATE = @PRODATE,SHIPNAME = @SHIPNAME," +
+                "CONSNAME = @CONSNAME,CONSADD1 = @CONSADD1,CONSADD2 = @CONSADD2,CONSCITY = @CONSCITY,CONSSTATE = @CONSSTATE,CONSZIP = @CONSZIP," +
+                "TTLPCS = @TTLPCS,TTLYDS = @TTLYDS,TTLWGT = @TTLWGT,DLVDDATE = @DLVDDATE,DLVDTIME = @DLVDTIME,DLVDPCS = @DLVDPCS,DLVDSIGN = @DLVDSIGN," +
+                "DLVDNOTE = @DLVDNOTE,DLVDIMGFILELOCN = @DLVDIMGFILELOCN,DLVDIMGFILESIGN = @DLVDIMGFILESIGN where MFSTKEY=@MFSTKEY";
+
+            DataTable table = new DataTable();
+            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
+            string sqlDatasource = connString;
+            SqlDataReader myReader;
+            using (SqlConnection myCon = new SqlConnection(sqlDatasource))
+            {
+                myCon.Open();
+                using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                {
+                    myCommand.Parameters.AddWithValue("@MFSTKEY", data.MFSTKEY);
+                    myCommand.Parameters.AddWithValue("@STATUS", data.STATUS);
+                    myCommand.Parameters.AddWithValue("@LASTUPDATE", data.LASTUPDATE);
+                    myCommand.Parameters.AddWithValue("@MFSTNUMBER", data.MFSTNUMBER);
+                    myCommand.Parameters.AddWithValue("@POWERUNIT", data.POWERUNIT);
+                    myCommand.Parameters.AddWithValue("@STOP", data.STOP);
+                    myCommand.Parameters.AddWithValue("@MFSTDATE", data.MFSTDATE);
+                    myCommand.Parameters.AddWithValue("@PRONUMBER", data.PRONUMBER);
+                    myCommand.Parameters.AddWithValue("@PRODATE", data.PRODATE);
+                    myCommand.Parameters.AddWithValue("@SHIPNAME", data.SHIPNAME);
+                    myCommand.Parameters.AddWithValue("@CONSNAME", data.CONSNAME);
+                    myCommand.Parameters.AddWithValue("@CONSADD1", data.CONSADD1);
+                    myCommand.Parameters.AddWithValue("@CONSADD2", data.CONSADD2);
+                    myCommand.Parameters.AddWithValue("@CONSCITY", data.CONSCITY);
+                    myCommand.Parameters.AddWithValue("@CONSSTATE", data.CONSSTATE);
+                    myCommand.Parameters.AddWithValue("@CONSZIP", data.CONSZIP);
+                    myCommand.Parameters.AddWithValue("@TTLPCS", data.TTLPCS);
+                    myCommand.Parameters.AddWithValue("@TTLYDS", data.TTLYDS);
+                    myCommand.Parameters.AddWithValue("@TTLWGT", data.TTLWGT);
+                    myCommand.Parameters.AddWithValue("@DLVDDATE", data.DLVDDATE);
+                    myCommand.Parameters.AddWithValue("@DLVDTIME", data.DLVDTIME);
+                    myCommand.Parameters.AddWithValue("@DLVDPCS", data.DLVDPCS);
+                    myCommand.Parameters.AddWithValue("@DLVDSIGN", data.DLVDSIGN);
+                    myCommand.Parameters.AddWithValue("@DLVDNOTE", data.DLVDNOTE);
+                    myCommand.Parameters.AddWithValue("@DLVDIMGFILELOCN", data.DLVDIMGFILELOCN);
+                    myCommand.Parameters.AddWithValue("@DLVDIMGFILESIGN", data.DLVDIMGFILESIGN);
+                    //myCommand.Parameters.AddWithValue("@DLVDIMGFILELOCN", location_path ?? (object)DBNull.Value);
+                    //myCommand.Parameters.AddWithValue("@DLVDIMGFILESIGN", sign_path ?? (object)DBNull.Value);
+
+                    myReader = myCommand.ExecuteReader();
+                    table.Load(myReader);
+                    myReader.Close();
+                    myCon.Close();
+                }
+            }
+
+            return new JsonResult("Updated Successfully");
+        }
+        /*
+         [HttpPut]
+        [Route("UpdateManifest")]
+
         public async Task<JsonResult> UpdateManifest(string MFSTKEY, string STATUS, string LASTUPDATE, string MFSTNUMBER,
             string POWERUNIT, int STOP, string MFSTDATE, string PRONUMBER, string PRODATE,
             string SHIPNAME, string CONSNAME, string CONSADD1, string CONSADD2, string CONSCITY,
@@ -301,6 +407,7 @@ namespace DeliveryManager.Server.Controllers
 
             return new JsonResult("Updated Successfully");
         }
+         */
 
         /*
         [HttpPut]

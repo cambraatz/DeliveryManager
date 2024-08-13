@@ -29,7 +29,7 @@ const DeliveryForm = () => {
 
     useEffect(() => {
         if(!location.state){
-            navigate("/")
+           navigate("/")
         }
 
         if(img_loc === null || img_loc === "") {
@@ -231,32 +231,34 @@ const DeliveryForm = () => {
                     ...formData,
                     deliveryImagePath: val
                 });
+                /*
                 setDelivery({
                     ...delivery,
                     DLVDIMGFILELOCN: val
                 });
-                /*
+                */
                 setDelivery({
                     ...delivery,
                     DLVDIMGFILELOCN: scrapeFile(val)
                 });
-                */
+                
                 break;
             case 'dlvdimagefilesign':
                 setFormData({
                     ...formData,
                     deliverySignaturePath: val
                 });
+                /*
                 setDelivery({
                     ...delivery,
                     DLVDIMGFILESIGN: val
                 });
-                /*
+                */
                 setDelivery({
                     ...delivery,
                     DLVDIMGFILESIGN: scrapeFile(val)
                 });
-                */
+                
                 break;
             default:
                 break;
@@ -289,7 +291,7 @@ const DeliveryForm = () => {
         if(sign_img === ""){
             sign_img = "n/a"
         }
-
+        /*
         const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + 
                             '&STATUS=1&LASTUPDATE=' + delivery.LASTUPDATE + 
                             '&MFSTNUMBER=' + delivery.MFSTNUMBER + 
@@ -320,6 +322,18 @@ const DeliveryForm = () => {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json; charset=UTF-8' },
         })
+        */
+        let formData = new FormData();
+        for (const [key,value] of Object.entries(delivery)){
+            formData.append(key,value)
+        }
+        alert(formData)
+
+        const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest", {
+            body: formData,
+            method: "PUT",
+        })
+
         return response;
     }
 
@@ -362,15 +376,20 @@ const DeliveryForm = () => {
     async function handleSubmit() {
         //await handleDelete(delivery.MFSTKEY);
         //await handleCreate();
-        await handleUpdate();
+        let form = document.getElementById("form_data")
+        alert(form[0])
+        let response = await handleUpdate();
 
+        
         // package delivery/driver information
         const deliveryData = {
             delivery: updateData,
             driver: driverCredentials
         };
-        //console.log("returning with deliveryData:", deliveryData)
-        navigate(`/driverlog`, { state: deliveryData });
+        alert(response)
+        if(response == "Updated Successfully"){
+            navigate(`/driverlog`, { state: deliveryData });
+        }
     }
 
     //
@@ -399,7 +418,7 @@ const DeliveryForm = () => {
                 MFSTKEY={delivery.MFSTKEY}
             />
             <div id="Delivery_Input_Div">
-                <form>
+                <form id="form_data" onSubmit={handleSubmit}>
                     <div id="datetime_Div">
                         <div className="cont_left">
                             <label>Date:</label>
@@ -450,8 +469,8 @@ const DeliveryForm = () => {
                             <input type="text" id="dlvdsign" value={formData.deliverySign} className="input_form" min="0" max="999" onChange={handleChange} required/>
                         </div>
                     </div>
-                    
-                    <button onClick={handleSubmit} type="button">Update Delivery</button>
+                    <button type="submit">Update Delivery</button>
+                    {/*<button onClick={handleSubmit} type="button">Update Delivery</button>*/}
                 </form>
                 <button onClick={handleReturn} type="button">Back To Deliveries</button>
             </div>
