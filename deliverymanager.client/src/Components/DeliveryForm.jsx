@@ -338,10 +338,21 @@ const DeliveryForm = () => {
 
     //
     // helper function to update delivery and return to previous page...
-    async function handleSubmit() {
+    async function handleSubmit(e) {
         //await handleDelete(delivery.MFSTKEY);
         //await handleCreate();
-        await handleUpdate();
+        //alert(e.target.id)
+        if(e.target.id === "undeliver"){
+            alert("Undo Delivery Feature in Progress, returning to deliveries.")
+            // package delivery/driver information
+            const deliveryData = {
+                delivery: updateData,
+                driver: driverCredentials
+            };
+            //console.log("returning with deliveryData:", deliveryData)
+            navigate(`/driverlog`, { state: deliveryData });
+        }
+        await handleUpdate(e);
 
         // package delivery/driver information
         const deliveryData = {
@@ -430,8 +441,8 @@ const DeliveryForm = () => {
                         </div>
                     </div>
                     <div id="button_div">
-                        <button onClick={handleSubmit} type="button">Update Delivery</button>
-                        <button id="undeliver" onClick={handleSubmit} type="button">Un-Deliver This Shipment</button>
+                        <button id="update" onClick={handleSubmit} type="button">Update Delivery</button>
+                        <button id="undeliver" onClick={handleSubmit} type="button">Undo Delivery</button>
                     </div>
                 </form>
                 <button onClick={handleReturn} type="button">Back To Deliveries</button>

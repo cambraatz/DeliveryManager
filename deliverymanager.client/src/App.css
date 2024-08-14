@@ -625,7 +625,7 @@ input:disabled {
         margin: 0 20%;
         display: flex;
         justify-content: space-between;
-        padding: 0 5%;
+        padding: 0.5em 5%;
     }
     
     #Delivery_Input_Div {
