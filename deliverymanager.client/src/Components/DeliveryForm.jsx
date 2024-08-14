@@ -6,13 +6,6 @@ import { scrapeDate, renderDate, renderTime, scrapeTime, scrapeFile, getDate, ge
 
 const DeliveryForm = () => {
     /*
-    // Header information for API call reference...
-    */
-    //const API_URL = "http://localhost:5113/";
-    //const API_URL = "http://www.tcsservices.com:40730/"
-    //const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
-
-    /*
     // Date and time data and processing functions...
     */
     const currDate = getDate()
@@ -38,6 +31,11 @@ const DeliveryForm = () => {
         }
         if(img_sign === null || img_sign === "") {
             document.getElementById('img_file_sign').style.display = "none";
+        }
+        if(location.state.delivery["STATUS"] != 1) {
+            document.getElementById('undeliver').style.display = "none";
+            document.getElementById('button_div').style.justifyContent = "center";
+            document.getElementById('button_div').style.padding = 0;
         }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,12 +158,6 @@ const DeliveryForm = () => {
         deliveryImagePath: delivery.DLVDIMGFILELOCN,
         deliverySignaturePath: delivery.DLVDIMGFILESIGN,
         deliverySign: delivery.DLVDSIGN   
-        /*
-        deliveredSign: "",
-        deliveryNotes: "",
-        deliveryImagePath: "/dummyImage.jpg",
-        deliverySignaturePath: "/dummySignature.jpg",
-        */
     });
 
     //
@@ -191,16 +183,6 @@ const DeliveryForm = () => {
                 setDelivery({
                     ...delivery,
                     DLVTIME: scrapeTime(val)
-                });
-                break;
-            case 'dlvcons':
-                setFormData({
-                    ...formData,
-                    deliveryConsignee: val
-                });
-                setDelivery({
-                    ...delivery,
-                    CONSNAME: val
                 });
                 break;
             case 'dlvdpcs':
@@ -410,7 +392,7 @@ const DeliveryForm = () => {
                     <div id="pis_Div">
                         <div className="cont_left">
                             <label>Consignee Name:</label>
-                            <input type="text" id="dlvcons" value={formData.deliveryConsignee} className="input_form" min="0" max="999" onChange={handleChange} required/>
+                            <input type="text" id="dlvcons" value={formData.deliveryConsignee} className="input_form" disabled/>
                         </div>
                         <div className="cont_right">
                             <label>Pieces Delivered:</label>
@@ -418,12 +400,12 @@ const DeliveryForm = () => {
                         </div>
                     </div>
                     <div id="notes_Div">
-                        <label>Delivery Notes: </label>
+                        <label>Delivery Note: </label>
                         <input type="text" id="dlvdnote" value={formData.deliveryNotes} className="input_form" onChange={handleChange} maxLength="30"/>
                     </div>
                     <div id="img_Div">
                         <div>
-                            <label>Consignee Signature Image:</label>
+                            <label>Consignee Signature: <i>Image</i> </label>
                             <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_image" onChange={handleChange}/>
                             <p id="img_file_sign" className="image_confirmation">Image ({formData.deliverySignaturePath}) On File...</p>
                             {/*<label className="fileUpload">
@@ -432,7 +414,7 @@ const DeliveryForm = () => {
                             </label>*/}
                         </div>
                         <div>
-                            <label>Delivery Location Image:</label>
+                            <label>Delivery Location: <i> Image</i></label>
                             <input type="file" accept="image/*" id="dlvdimage" className="input_image" onChange={handleChange}/>
                             <p id="img_file_locn" className="image_confirmation">Image ({formData.deliveryImagePath}) On File...</p>
                             {/*<label className="fileUpload">
@@ -443,12 +425,14 @@ const DeliveryForm = () => {
                     </div>
                     <div id="print_div">
                         <div className="cont_left">
-                            <label>Consignee Signature Printed:</label>
+                            <label>Consignee Signature: <i>Print</i></label>
                             <input type="text" id="dlvdsign" value={formData.deliverySign} className="input_form" min="0" max="999" onChange={handleChange} required/>
                         </div>
                     </div>
-                    
-                    <button onClick={handleSubmit} type="button">Update Delivery</button>
+                    <div id="button_div">
+                        <button onClick={handleSubmit} type="button">Update Delivery</button>
+                        <button id="undeliver" onClick={handleSubmit} type="button">Un-Deliver This Shipment</button>
+                    </div>
                 </form>
                 <button onClick={handleReturn} type="button">Back To Deliveries</button>
             </div>
