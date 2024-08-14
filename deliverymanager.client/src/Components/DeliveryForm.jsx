@@ -34,8 +34,8 @@ const DeliveryForm = () => {
         }
         if(location.state.delivery["STATUS"] != 1) {
             document.getElementById('undeliver').style.display = "none";
-            document.getElementById('button_div').style.justifyContent = "center";
-            document.getElementById('button_div').style.padding = 0;
+            document.getElementById('button_div').style.justifyContent = "space-around";
+            document.getElementById('button_div').style.padding = "0 10%";
         }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -248,6 +248,62 @@ const DeliveryForm = () => {
 
     //
     // handle updating existing delivery records when changed...
+    async function clearDelivery() {
+        let sign = delivery.DLVDSIGN
+        if(sign === ""){
+            sign = "n/a"
+        }
+
+        let note = delivery.DLVDNOTE
+        if(note === ""){
+            note = "n/a"
+        }
+
+        let img = delivery.DLVDIMGFILELOCN
+        if(img === ""){
+            img = "n/a"
+        }
+
+        let sign_img = delivery.DLVDIMGFILESIGN
+        if(sign_img === ""){
+            sign_img = "n/a"
+        }
+
+        const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + 
+                            '&STATUS=0&LASTUPDATE=' + delivery.LASTUPDATE + 
+                            '&MFSTNUMBER=' + delivery.MFSTNUMBER + 
+                            '&POWERUNIT=' + delivery.POWERUNIT + 
+                            '&STOP=' + delivery.STOP +
+                            '&MFSTDATE=' + delivery.MFSTDATE + 
+                            '&PRONUMBER=' + delivery.PRONUMBER + 
+                            '&PRODATE=' + delivery.PRODATE + 
+                            '&SHIPNAME=' + delivery.SHIPNAME.replace("&","%26") + 
+                            '&CONSNAME=' + delivery.CONSNAME.replace("&","%26") +
+                            '&CONSADD1=' + delivery.CONSADD1.replace("&","%26")  + 
+                            '&CONSADD2=' + delivery.CONSADD2.replace("&","%26")  + 
+                            '&CONSCITY=' + delivery.CONSCITY + 
+                            '&CONSSTATE=' + delivery.CONSSTATE + 
+                            '&CONSZIP=' + delivery.CONSZIP +
+                            '&TTLPCS=' + delivery.TTLPCS + 
+                            '&TTLYDS=' + delivery.TTLYDS + 
+                            '&TTLWGT=' + delivery.TTLWGT + 
+                            '&DLVDDATE=' + null + 
+                            '&DLVDTIME=' + null + 
+                            '&DLVDPCS=' + null +
+                            '&DLVDSIGN=' + null + 
+                            '&DLVDNOTE=' + null + 
+                            '&DLVDIMGFILELOCN=' + null + 
+                            '&DLVDIMGFILESIGN=' + null
+
+        const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest" + deliveryString, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+        })
+        return response;
+    }
+
+    //
+    // handle updating existing delivery records when changed...
     async function handleUpdate() {
         let sign = delivery.DLVDSIGN
         if(sign === ""){
@@ -344,15 +400,11 @@ const DeliveryForm = () => {
         //alert(e.target.id)
         if(e.target.id === "undeliver"){
             alert("Undo Delivery Feature in Progress, returning to deliveries.")
-            // package delivery/driver information
-            const deliveryData = {
-                delivery: updateData,
-                driver: driverCredentials
-            };
-            //console.log("returning with deliveryData:", deliveryData)
-            navigate(`/driverlog`, { state: deliveryData });
+            //await clearDelivery();
         }
-        await handleUpdate(e);
+        else{
+            await handleUpdate();
+        }
 
         // package delivery/driver information
         const deliveryData = {
@@ -440,12 +492,12 @@ const DeliveryForm = () => {
                             <input type="text" id="dlvdsign" value={formData.deliverySign} className="input_form" min="0" max="999" onChange={handleChange} required/>
                         </div>
                     </div>
-                    <div id="button_div">
+                </form>
+                <div id="button_div">
                         <button id="update" onClick={handleSubmit} type="button">Update Delivery</button>
                         <button id="undeliver" onClick={handleSubmit} type="button">Undo Delivery</button>
+                        <button onClick={handleReturn} type="button">Back To Deliveries</button>
                     </div>
-                </form>
-                <button onClick={handleReturn} type="button">Back To Deliveries</button>
             </div>
         </div>
     )

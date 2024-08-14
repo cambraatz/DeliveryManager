@@ -333,7 +333,7 @@ td, th {
 
     #Delivery_Input_Div button {
         margin: 0 0 1.5em 0;
-        width: 40%;
+        width: 27%;
         height: 3em;
     }
 
@@ -374,7 +374,7 @@ td, th {
     display: flex;
     justify-content: space-between;
     margin: 0 2%;
-    padding: 4px 0;
+    padding: 0.5em 0;
     border-top: solid 1px black;
     border-left: solid 1px black;
     border-right: solid 1px black;
@@ -485,7 +485,7 @@ label {
 }
 
 input {
-    height: 24px;
+    height: 2em;
     width: 100%;
     /*background-color: white;*/
     border: 1px solid black;

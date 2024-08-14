@@ -15,8 +15,8 @@ namespace DeliveryManager.Server.Controllers
         public DriverChecklistController(IConfiguration configuration)
         {
             _configuration = configuration;
-            //connString = _configuration.GetConnectionString("DriverChecklistTestCon");
-            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            connString = _configuration.GetConnectionString("DriverChecklistTestCon");
+            //connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
         [HttpGet]
         [Route("GetDriverLog")]
@@ -206,6 +206,7 @@ namespace DeliveryManager.Server.Controllers
             string CONSSTATE, string CONSZIP, int TTLPCS, int TTLYDS, int TTLWGT, string DLVDDATE,
             string DLVDTIME, int DLVDPCS, string DLVDSIGN, string DLVDNOTE, string DLVDIMGFILELOCN, string DLVDIMGFILESIGN)
         {
+
             string query = "update dbo.DMFSTDAT set MFSTKEY = @MFSTKEY,STATUS = @STATUS,LASTUPDATE = @LASTUPDATE,MFSTNUMBER = @MFSTNUMBER," +
                 "POWERUNIT = @POWERUNIT,STOP = @STOP,MFSTDATE = @MFSTDATE,PRONUMBER = @PRONUMBER,PRODATE = @PRODATE,SHIPNAME = @SHIPNAME," +
                 "CONSNAME = @CONSNAME,CONSADD1 = @CONSADD1,CONSADD2 = @CONSADD2,CONSCITY = @CONSCITY,CONSSTATE = @CONSSTATE,CONSZIP = @CONSZIP," +
