@@ -18,6 +18,7 @@ namespace DeliveryManager.Server.Controllers
         {
             _configuration = configuration;
             connString = _configuration.GetConnectionString("DriverChecklistTestCon");
+            //connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
 
 

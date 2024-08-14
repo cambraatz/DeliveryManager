@@ -6,13 +6,6 @@ import { scrapeDate, renderDate, renderTime, scrapeTime, scrapeFile, getDate, ge
 
 const DeliveryForm = () => {
     /*
-    // Header information for API call reference...
-    */
-    //const API_URL = "http://localhost:5113/";
-    //const API_URL = "http://www.tcsservices.com:40730/"
-    //const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
-
-    /*
     // Date and time data and processing functions...
     */
     const currDate = getDate()
@@ -28,6 +21,7 @@ const DeliveryForm = () => {
     let img_sign = location.state ? location.state.delivery["DLVDIMGFILESIGN"] : null;
 
     useEffect(() => {
+        //console.log("This was triggered with useEffect()...")
         if(!location.state){
            navigate("/")
         }
@@ -37,6 +31,11 @@ const DeliveryForm = () => {
         }
         if(img_sign === null || img_sign === "") {
             document.getElementById('img_file_sign').style.display = "none";
+        }
+        if(location.state.delivery["STATUS"] != 1) {
+            document.getElementById('undeliver').style.display = "none";
+            document.getElementById('button_div').style.justifyContent = "space-around";
+            document.getElementById('button_div').style.padding = "0 10%";
         }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -186,16 +185,6 @@ const DeliveryForm = () => {
                     DLVTIME: scrapeTime(val)
                 });
                 break;
-            case 'dlvcons':
-                setFormData({
-                    ...formData,
-                    deliveryConsignee: val
-                });
-                setDelivery({
-                    ...delivery,
-                    CONSNAME: val
-                });
-                break;
             case 'dlvdpcs':
                 setFormData({
                     ...formData,
@@ -268,6 +257,62 @@ const DeliveryForm = () => {
     /*
     // API Calls and Functionality ...
     */
+
+    //
+    // handle updating existing delivery records when changed...
+    async function clearDelivery() {
+        let sign = delivery.DLVDSIGN
+        if(sign === ""){
+            sign = "n/a"
+        }
+
+        let note = delivery.DLVDNOTE
+        if(note === ""){
+            note = "n/a"
+        }
+
+        let img = delivery.DLVDIMGFILELOCN
+        if(img === ""){
+            img = "n/a"
+        }
+
+        let sign_img = delivery.DLVDIMGFILESIGN
+        if(sign_img === ""){
+            sign_img = "n/a"
+        }
+
+        const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + 
+                            '&STATUS=0&LASTUPDATE=' + delivery.LASTUPDATE + 
+                            '&MFSTNUMBER=' + delivery.MFSTNUMBER + 
+                            '&POWERUNIT=' + delivery.POWERUNIT + 
+                            '&STOP=' + delivery.STOP +
+                            '&MFSTDATE=' + delivery.MFSTDATE + 
+                            '&PRONUMBER=' + delivery.PRONUMBER + 
+                            '&PRODATE=' + delivery.PRODATE + 
+                            '&SHIPNAME=' + delivery.SHIPNAME.replace("&","%26") + 
+                            '&CONSNAME=' + delivery.CONSNAME.replace("&","%26") +
+                            '&CONSADD1=' + delivery.CONSADD1.replace("&","%26")  + 
+                            '&CONSADD2=' + delivery.CONSADD2.replace("&","%26")  + 
+                            '&CONSCITY=' + delivery.CONSCITY + 
+                            '&CONSSTATE=' + delivery.CONSSTATE + 
+                            '&CONSZIP=' + delivery.CONSZIP +
+                            '&TTLPCS=' + delivery.TTLPCS + 
+                            '&TTLYDS=' + delivery.TTLYDS + 
+                            '&TTLWGT=' + delivery.TTLWGT + 
+                            '&DLVDDATE=' + null + 
+                            '&DLVDTIME=' + null + 
+                            '&DLVDPCS=' + null +
+                            '&DLVDSIGN=' + null + 
+                            '&DLVDNOTE=' + null + 
+                            '&DLVDIMGFILELOCN=' + null + 
+                            '&DLVDIMGFILESIGN=' + null
+
+        const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest" + deliveryString, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+        })
+        return response;
+    }
 
     //
     // handle updating existing delivery records when changed...
@@ -373,14 +418,22 @@ const DeliveryForm = () => {
 
     //
     // helper function to update delivery and return to previous page...
-    async function handleSubmit() {
+    async function handleSubmit(e) {
         //await handleDelete(delivery.MFSTKEY);
         //await handleCreate();
+        //alert(e.target.id)
+        let response = "default response"
         let form = document.getElementById("form_data")
         alert(form[0])
-        let response = await handleUpdate();
 
-        
+        if(e.target.id === "undeliver"){
+            alert("Undo Delivery Feature in Progress, returning to deliveries.")
+            //await clearDelivery();
+        }
+        else{
+            response = await handleUpdate();
+        }
+
         // package delivery/driver information
         const deliveryData = {
             delivery: updateData,
@@ -432,7 +485,7 @@ const DeliveryForm = () => {
                     <div id="pis_Div">
                         <div className="cont_left">
                             <label>Consignee Name:</label>
-                            <input type="text" id="dlvcons" value={formData.deliveryConsignee} className="input_form" min="0" max="999" onChange={handleChange} required/>
+                            <input type="text" id="dlvcons" value={formData.deliveryConsignee} className="input_form" disabled/>
                         </div>
                         <div className="cont_right">
                             <label>Pieces Delivered:</label>
@@ -440,12 +493,12 @@ const DeliveryForm = () => {
                         </div>
                     </div>
                     <div id="notes_Div">
-                        <label>Delivery Notes: </label>
+                        <label>Delivery Note: </label>
                         <input type="text" id="dlvdnote" value={formData.deliveryNotes} className="input_form" onChange={handleChange} maxLength="30"/>
                     </div>
                     <div id="img_Div">
                         <div>
-                            <label>Consignee Signature Image:</label>
+                            <label>Consignee Signature: <i>Image</i> </label>
                             <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_image" onChange={handleChange}/>
                             <p id="img_file_sign" className="image_confirmation">Image ({formData.deliverySignaturePath}) On File...</p>
                             {/*<label className="fileUpload">
@@ -454,7 +507,7 @@ const DeliveryForm = () => {
                             </label>*/}
                         </div>
                         <div>
-                            <label>Delivery Location Image:</label>
+                            <label>Delivery Location: <i> Image</i></label>
                             <input type="file" accept="image/*" id="dlvdimage" className="input_image" onChange={handleChange}/>
                             <p id="img_file_locn" className="image_confirmation">Image ({formData.deliveryImagePath}) On File...</p>
                             {/*<label className="fileUpload">
@@ -465,14 +518,16 @@ const DeliveryForm = () => {
                     </div>
                     <div id="print_div">
                         <div className="cont_left">
-                            <label>Consignee Signature Printed:</label>
+                            <label>Consignee Signature: <i>Print</i></label>
                             <input type="text" id="dlvdsign" value={formData.deliverySign} className="input_form" min="0" max="999" onChange={handleChange} required/>
                         </div>
                     </div>
-                    <button type="submit">Update Delivery</button>
-                    {/*<button onClick={handleSubmit} type="button">Update Delivery</button>*/}
                 </form>
-                <button onClick={handleReturn} type="button">Back To Deliveries</button>
+                <div id="button_div">
+                        <button id="update" onClick={handleSubmit} type="button">Update Delivery</button>
+                        <button id="undeliver" onClick={handleSubmit} type="button">Undo Delivery</button>
+                        <button onClick={handleReturn} type="button">Back To Deliveries</button>
+                    </div>
             </div>
         </div>
     )

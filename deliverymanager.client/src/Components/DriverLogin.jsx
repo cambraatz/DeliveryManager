@@ -143,7 +143,7 @@ const DriverLogin = () => {
             setStatus("Verifying Delivery Information.");
             getPowerUnit(username, password);
             openPopup("popupLoginWindow");
-            alert("Dev Reminder: Use 02/16/2024 for Delivery Date")
+            //alert("Dev Reminder: Use 02/16/2024 for Delivery Date")
 
             // reset styling to default...
             /*
