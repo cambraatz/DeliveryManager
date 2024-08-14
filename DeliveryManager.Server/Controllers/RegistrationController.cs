@@ -17,8 +17,8 @@ namespace DeliveryManager.Server.Controllers
         public RegistrationController(IConfiguration configuration)
         {
             _configuration = configuration;
-            connString = _configuration.GetConnectionString("DriverChecklistTestCon");
-            //connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //connString = _configuration.GetConnectionString("DriverChecklistTestCon");
+            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
 
 
