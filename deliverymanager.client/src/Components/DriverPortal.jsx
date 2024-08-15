@@ -71,6 +71,28 @@ const DriverPortal = () => {
     
     // query all deliveries matching the provided powerunit and date...
     async function getDeliveries(powerunit,mfstdate){
+        /*
+        const user_data = {
+            MFSTDATE: mfstdate,
+            POWERUNIT: powerunit,
+        }
+
+        let formData = new FormData();
+        for (const [key,value] of Object.entries(user_data)){
+            formData.append(key,value)
+        }
+
+        const responseD = await fetch(API_URL + "api/DriverChecklist/GetDelivered", {
+            body: formData,
+            method: "GET"
+        });
+
+        const responseU = await fetch(API_URL + "api/DriverChecklist/GetUndelivered", {
+            body: formData,
+            method: "GET"
+        });
+        */
+        
         // execute queries separate for ease of isolating...
         const responseD = await fetch(API_URL + "api/DriverChecklist/GetDelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
             method: 'GET',
@@ -80,6 +102,7 @@ const DriverPortal = () => {
             method: 'GET',
             headers,
         });
+        
 
         // pull json formatting to allow setting to state...
         const deliveredData = await responseD.json();

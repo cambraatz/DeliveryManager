@@ -29,10 +29,10 @@ namespace DeliveryManager.Server.Models
         public int? DLVDPCS { get; set; }
         public string? DLVDSIGN { get; set; }
         public string? DLVDNOTE { get; set; }
-        //public IFormFile? DLVDIMGFILELOCN { get; set; }
-        //public IFormFile? DLVDIMGFILESIGN { get; set; }
-        public string? DLVDIMGFILELOCN { get; set; }
-        public string? DLVDIMGFILESIGN { get; set; }
+        public IFormFile? DLVDIMGFILELOCN { get; set; }
+        public IFormFile? DLVDIMGFILESIGN { get; set; }
+        //public string? DLVDIMGFILELOCN { get; set; }
+        //public string? DLVDIMGFILESIGN { get; set; }
 
     }
 }

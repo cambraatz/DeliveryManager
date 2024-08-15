@@ -10,13 +10,6 @@ import { scrapeDate, renderDate, getDate, API_URL } from '../Scripts/helperFunct
 */
 const DriverLogin = () => {
     /*
-    // Header information for API call reference ...
-    */
-    //const API_URL = "http://localhost:5113/";
-    //const API_URL = "http://www.tcsservices.com:40730/"
-    //const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
-
-    /*
     // Date processing functions ...
     */
     const currDate = getDate();
@@ -65,15 +58,9 @@ const DriverLogin = () => {
             default:
                 break;
         }
-        //if(document.getElementById(e.target.id).style.backgroundColor != ""){
+
         if(document.getElementById(e.target.id).className == "invalid_input"){
             // reset styling to default...
-            /*
-            document.getElementById(e.target.id).style.border = "1px solid black";
-            document.getElementById(e.target.id).style.borderRadius = "3px";
-            document.getElementById(e.target.id).style.borderStyle = "solid";
-            document.getElementById(e.target.id).style.backgroundColor = "white";
-            */
             document.getElementById("USERNAME").className = "";
             document.getElementById("PASSWORD").className = "";
         }
@@ -133,10 +120,22 @@ const DriverLogin = () => {
 
     // validate credentials, prompt for correction in fail or open popup in success...
     async function validateCredentials(username, password){
-        const response = await fetch(API_URL + "api/Registration/Login?USERNAME=" + username + "&PASSWORD=" + password, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        const user_data = {
+            USERNAME: username,
+            PASSWORD: password,
+            POWERUNIT: null
+        }
+
+        let formData = new FormData();
+        for (const [key,value] of Object.entries(user_data)){
+            formData.append(key,value)
+        }
+
+        const response = await fetch(API_URL + "api/Registration/Login", {
+            body: formData,
+            method: "POST",
         })
+
         const data = await response.json();
 
         if (data === "Valid Login.") {
@@ -146,14 +145,6 @@ const DriverLogin = () => {
             //alert("Dev Reminder: Use 02/16/2024 for Delivery Date")
 
             // reset styling to default...
-            /*
-            document.getElementById("USERNAME").style.border = "";
-            document.getElementById("USERNAME").style.borderRadius = "";
-            document.getElementById("USERNAME").style.backgroundColor = "";
-            document.getElementById("PASSWORD").style.border = "";
-            document.getElementById("PASSWORD").style.borderRadius = "";
-            document.getElementById("PASSWORD").style.backgroundColor = "";
-            */
             document.getElementById("USERNAME").className = "";
             document.getElementById("PASSWORD").className = "";
         }
@@ -161,14 +152,6 @@ const DriverLogin = () => {
             setStatus("Login Credentials Not Found.");
 
             // trigger red borders for errors...
-            /*
-            document.getElementById("USERNAME").style.border = "1.5px solid red";
-            document.getElementById("USERNAME").style.borderRadius = "3px";
-            document.getElementById("USERNAME").style.backgroundColor = "#ffdddd";
-            document.getElementById("PASSWORD").style.border = "1.5px solid red";
-            document.getElementById("PASSWORD").style.borderRadius = "3px";
-            document.getElementById("PASSWORD").style.backgroundColor = "#ffdddd";
-            */
             document.getElementById("USERNAME").className = "invalid_input";
             document.getElementById("PASSWORD").className = "invalid_input";
         }
@@ -181,6 +164,7 @@ const DriverLogin = () => {
             method: 'GET',
             headers: {'Content-Type': 'application/json; charset=UTF-8'},
         })
+
         const data = await response.json(); 
 
         // update state variables with latest powerunit...
@@ -223,6 +207,24 @@ const DriverLogin = () => {
     //
     // update the existing driver's records with new information...
     async function handleEdit(username,password,powerunit){
+        const user_data = {
+            USERNAME: username,
+            PASSWORD: password,
+            POWERUNIT: powerunit,
+        }
+
+        let formData = new FormData();
+        for (const [key,value] of Object.entries(user_data)){
+            formData.append(key,value)
+        }
+
+        const response = await fetch(API_URL + "api/Registration/UpdateDriver", {
+            body: formData,
+            method: "PUT",
+        })
+
+        return response;
+        /*
         const driverString = '?USERNAME='+username+'&PASSWORD='+password+'&POWERUNIT='+powerunit
 
         const response = await fetch(API_URL + "api/Registration/UpdateDriver" + driverString, {
@@ -231,18 +233,37 @@ const DriverLogin = () => {
         })
 
         return response;
+        */
     }
 
     //
     // validate given delivery exists in database
     async function validateDeliveries(mfstdate,powerunit){
+        const user_data = {
+            MFSTDATE: mfstdate,
+            POWERUNIT: powerunit,
+        }
+
+        let formData = new FormData();
+        for (const [key,value] of Object.entries(user_data)){
+            formData.append(key,value)
+        }
+
+        const response = await fetch(API_URL + "api/Registration/VerifyPowerunit", {
+            body: formData,
+            method: "POST",
+        })
+
+        const data = await response.json();
+        
+        /*
         const driverString = '?MFSTDATE='+mfstdate+'&POWERUNIT='+powerunit
         const response = await fetch(API_URL + "api/Registration/VerifyPowerunit" + driverString, {
             method: 'POST',
             headers: {'Content-Type': 'application/json; charset=UTF-8'},
         })
         const data = await response.json();
-
+        */
         // set message state according to validity of delivery information...
         if(data === "Valid"){
             setMessage("Delivery Information Found");
@@ -253,27 +274,8 @@ const DriverLogin = () => {
         return data;
     }
 
-    /*
     //
     // onClick response to validate date and power unit data prior to pulling manifest...
-    async function handleUpdate() {
-        // delete existing driver credentials from db...
-        await handleDelete(driverCredentials.POWERUNIT);
-
-        // update driver credentials state...
-        setDriverCredentials({
-            ...driverCredentials,
-            POWERUNIT: updateData.POWERUNIT
-        });
-        
-        // create new driver credentials in db...
-        await handleCreate(driverCredentials.USERNAME,driverCredentials.PASSWORD,updateData.POWERUNIT);
-
-        // validate current delivery information prior to redirect...
-        await validateDeliveries(updateData.MFSTDATE,updateData.POWERUNIT);
-    }
-    */
-
     async function handleUpdate() {
         // update driver credentials state...
         setDriverCredentials({

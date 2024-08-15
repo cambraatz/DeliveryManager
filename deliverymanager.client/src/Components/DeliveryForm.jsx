@@ -131,6 +131,7 @@ const DeliveryForm = () => {
     //
     // handle delivery form changes...
     const handleChange = (e) => {
+        console.log(e.target)
         let val = e.target.value;
         switch (e.target.id) {
             case 'dlvdate':
@@ -188,33 +189,34 @@ const DeliveryForm = () => {
                     ...formData,
                     deliveryImagePath: val
                 });
-                /*
+                
                 setDelivery({
                     ...delivery,
-                    DLVDIMGFILELOCN: val
+                    DLVDIMGFILELOCN: e.target.files[0]
                 });
-                */
+                /*
                 setDelivery({
                     ...delivery,
                     DLVDIMGFILELOCN: scrapeFile(val)
                 });
-                
+                */
                 break;
             case 'dlvdimagefilesign':
                 setFormData({
                     ...formData,
                     deliverySignaturePath: val
                 });
-                /*
+                
                 setDelivery({
                     ...delivery,
-                    DLVDIMGFILESIGN: val
+                    DLVDIMGFILESIGN: e.target.files[0]
                 });
-                */
+                /*
                 setDelivery({
                     ...delivery,
                     DLVDIMGFILESIGN: scrapeFile(val)
                 });
+                */
                 
                 break;
             default:
@@ -460,7 +462,7 @@ const DeliveryForm = () => {
                     <div id="img_Div">
                         <div>
                             <label>Consignee Signature: <i>Image</i> </label>
-                            <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_image" onChange={handleChange}/>
+                            <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_image" name="sign_image" onChange={handleChange}/>
                             <p id="img_file_sign" className="image_confirmation">Image ({formData.deliverySignaturePath}) On File...</p>
                             {/*<label className="fileUpload">
                                 <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_form" onChange={handleChange} />
