@@ -72,5 +72,5 @@ export const scrapeFile = (file) => {
     return relLink;
 };
 
-//export const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
-export const API_URL = "http://localhost:5113/";
+export const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
+//export const API_URL = "http://localhost:5113/";

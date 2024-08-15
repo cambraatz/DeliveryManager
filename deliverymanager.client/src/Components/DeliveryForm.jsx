@@ -265,7 +265,7 @@ const DeliveryForm = () => {
         let formData = new FormData();
         for (const [key,value] of Object.entries(reset_delivery)){
             formData.append(key,value)
-            console.log("key: ", key, "value: ", value, "val_type: ",typeof value)
+            //console.log("key: ", key, "value: ", value, "val_type: ",typeof value)
         }
 
         const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest", {
@@ -334,7 +334,7 @@ const DeliveryForm = () => {
         let deliveryData = new FormData();
         for (const [key,value] of Object.entries(delivery)){
             deliveryData.append(key,value)
-            console.log("key: ", key, "value: ", value, "val_type: ",typeof value)
+            //console.log("key: ", key, "value: ", value, "val_type: ",typeof value)
         }
 
         const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest", {
@@ -399,7 +399,7 @@ const DeliveryForm = () => {
             delivery: updateData,
             driver: driverCredentials
         };
-        console.log(response)
+        //console.log(response)
         if(response && response.ok == true){
             navigate(`/driverlog`, { state: deliveryData });
         }
