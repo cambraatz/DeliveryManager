@@ -97,7 +97,7 @@ const DriverPortal = () => {
     const handleClick = (event) => {
         const string = event.target.parentNode.innerText;
         const eventID = event.target.parentNode.id;
-        const proNum = string.match(/[\t]([0-9]{8})/)[1];
+        const proNum = string.match(/[\t]([A-Za-z0-9]{8})/)[1];
 
         var i = 0;
         if (eventID === "delivered"){

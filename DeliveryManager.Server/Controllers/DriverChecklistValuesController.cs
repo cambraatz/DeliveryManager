@@ -15,7 +15,7 @@ namespace DeliveryManager.Server.Controllers
         public DriverChecklistController(IConfiguration configuration)
         {
             _configuration = configuration;
-            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            connString = _configuration.GetConnectionString("DriverChecklistTestCon");
         }
         [HttpGet]
         [Route("GetDriverLog")]
