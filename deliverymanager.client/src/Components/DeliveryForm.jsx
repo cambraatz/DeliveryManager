@@ -58,43 +58,6 @@ const DeliveryForm = () => {
     };
 
     //
-    // catch null address2 value from db...
-    let address2 = location.state ? location.state.delivery["CONSADD2"] : null;
-    if (address2 === "" || address2 === null){
-        address2 = "N/A"
-    }
-
-    //
-    // logic to catch existing deliveries...
-    let pieces = location.state ? location.state.delivery["DLVDPCS"] : null;
-    if (pieces === "" || pieces === null){
-        pieces = location.state ? location.state.delivery["TTLPCS"] : "";
-    }
-
-    //
-    // prompt file upload message on delivered...
-    if(img_loc === null) {
-        img_loc = ""
-    }
-    if(img_sign === null) {
-        img_sign = ""
-    }
-
-    //
-    // catch null delivery notes...
-    let delivery_notes = location.state ? location.state.delivery["DLVDNOTE"] : null;
-    if (delivery_notes === null){
-        delivery_notes = ""
-    }
-
-    //
-    // catch null printed signature...
-    let print_sign = location.state ? location.state.delivery["DLVDSIGN"] : null;
-    if (print_sign === null){
-        print_sign = ""
-    }
-
-    //
     // handle both existing deliveries and new ones...
     let delivery_time = location.state ? location.state.delivery["DLVDTIME"] : null;
     if (delivery_time === null){
@@ -114,11 +77,16 @@ const DeliveryForm = () => {
         delivery_date = translateDate(delivery_date)
     }
 
+    let delivery_pieces = location.state ? location.state.delivery["DLVDPCS"] : null;
+    if (location.state && delivery_pieces === null){
+        delivery_pieces = location.state.delivery["TTLPCS"]
+    }
+
     //
     // maintain state values to update delivery entry...
     const [delivery, setDelivery] = useState({
         MFSTKEY: location.state ? location.state.delivery["MFSTKEY"] : null,
-        STATUS: location.state ? location.state.delivery["STATUS"] : null,
+        STATUS: "1",
         LASTUPDATE: location.state ? location.state.delivery["LASTUPDATE"] : null,
         MFSTNUMBER: location.state ? location.state.delivery["MFSTNUMBER"] : null,
         POWERUNIT: location.state ? location.state.delivery["POWERUNIT"] : null,
@@ -129,21 +97,21 @@ const DeliveryForm = () => {
         SHIPNAME: location.state ? location.state.delivery["SHIPNAME"] : null,
         CONSNAME: location.state ? location.state.delivery["CONSNAME"] : null,
         CONSADD1: location.state ? location.state.delivery["CONSADD1"] : null,
-        CONSADD2: address2,
+        CONSADD2: location.state ? location.state.delivery["CONSADD2"] : null,
         CONSCITY: location.state ? location.state.delivery["CONSCITY"] : null,
         CONSSTATE: location.state ? location.state.delivery["CONSSTATE"] : null,
         CONSZIP: location.state ? location.state.delivery["CONSZIP"] : null,
         TTLPCS: location.state ? location.state.delivery["TTLPCS"] : null,
         TTLYDS: location.state ? location.state.delivery["TTLYDS"] : null,
         TTLWGT: location.state ? location.state.delivery["TTLWGT"] : null,
-        DLVDDATE: scrapeDate(currDate),
-        DLVDTIME: scrapeTime(currTime),
-        DLVDPCS: pieces,
+        DLVDDATE: location.state ? location.state.delivery["DLVDDATE"] : scrapeDate(currDate),
+        DLVDTIME: location.state ? location.state.delivery["DLVDTIME"] : scrapeTime(currTime),
+        DLVDPCS: delivery_pieces,
 
-        DLVDSIGN: print_sign,
-        DLVDNOTE: delivery_notes,
-        DLVDIMGFILELOCN: img_loc,
-        DLVDIMGFILESIGN: img_sign
+        DLVDSIGN: location.state ? location.state.delivery["DLVDSIGN"] : null,
+        DLVDNOTE: location.state ? location.state.delivery["DLVDNOTE"] : null,
+        DLVDIMGFILELOCN: location.state ? location.state.delivery["DLVDIMGFILELOCN"] : null,
+        DLVDIMGFILESIGN: location.state ? location.state.delivery["DLVDIMGFILESIGN"] : null
     });
 
     //
@@ -151,10 +119,10 @@ const DeliveryForm = () => {
     const [formData, setFormData] = useState({
         deliveryDate: delivery_date,
         deliveryTime: delivery_time,
-        deliveredPieces: pieces,
+        deliveredPieces: delivery.DLVDPCS == null ? delivery.TTLPCS : delivery.DLVDPCS,
 
         deliveryConsignee: delivery.CONSNAME,
-        deliveryNotes: delivery.DLVDNOTE,   
+        deliveryNotes: delivery.DLVDNOTE == null || delivery.DLVDNOTE == "null" ? "" : delivery.DLVDNOTE,   
         deliveryImagePath: delivery.DLVDIMGFILELOCN,
         deliverySignaturePath: delivery.DLVDIMGFILESIGN,
         deliverySign: delivery.DLVDSIGN   
@@ -182,7 +150,7 @@ const DeliveryForm = () => {
                 });
                 setDelivery({
                     ...delivery,
-                    DLVTIME: scrapeTime(val)
+                    DLVDTIME: scrapeTime(val)
                 });
                 break;
             case 'dlvdpcs':
@@ -261,62 +229,57 @@ const DeliveryForm = () => {
     //
     // handle updating existing delivery records when changed...
     async function clearDelivery() {
-        let sign = delivery.DLVDSIGN
-        if(sign === ""){
-            sign = "n/a"
+        const reset_delivery = {
+            /*
+            MFSTKEY: delivery.MFSTKEY,
+            STATUS: "0",
+            LASTUPDATE: delivery.LASTUPDATE,
+            MFSTNUMBER: delivery.MFSTNUMBER,
+            POWERUNIT: delivery.POWERUNIT,
+            STOP: delivery.STOP,
+            MFSTDATE: delivery.MFSTDATE,
+            PRONUMBER: delivery.PRONUMBER,
+            PRODATE: delivery.PRODATE,
+            SHIPNAME: location.state.delivery["SHIPNAME"],
+            CONSNAME: location.state.delivery["CONSNAME"],
+            CONSADD1: location.state.delivery["CONSADD1"],
+            CONSADD2: location.state.delivery["CONSADD2"],
+            CONSCITY: location.state.delivery["CONSCITY"],
+            CONSSTATE: location.state.delivery["CONSSTATE"],
+            CONSZIP: location.state.delivery["CONSZIP"],
+            TTLPCS: location.state.delivery["TTLPCS"],
+            TTLYDS: location.state.delivery["TTLYDS"],
+            TTLWGT: location.state.delivery["TTLWGT"],
+            */
+            ...delivery,
+            STATUS: "0",
+            DLVDDATE: null,
+            DLVDTIME: null,
+            DLVDPCS: -1,
+            DLVDSIGN: null,
+            DLVDNOTE: null,
+            DLVDIMGFILELOCN: null,
+            DLVDIMGFILESIGN: null
+        };
+
+        let formData = new FormData();
+        for (const [key,value] of Object.entries(reset_delivery)){
+            formData.append(key,value)
+            console.log("key: ", key, "value: ", value, "val_type: ",typeof value)
         }
 
-        let note = delivery.DLVDNOTE
-        if(note === ""){
-            note = "n/a"
-        }
-
-        let img = delivery.DLVDIMGFILELOCN
-        if(img === ""){
-            img = "n/a"
-        }
-
-        let sign_img = delivery.DLVDIMGFILESIGN
-        if(sign_img === ""){
-            sign_img = "n/a"
-        }
-
-        const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + 
-                            '&STATUS=0&LASTUPDATE=' + delivery.LASTUPDATE + 
-                            '&MFSTNUMBER=' + delivery.MFSTNUMBER + 
-                            '&POWERUNIT=' + delivery.POWERUNIT + 
-                            '&STOP=' + delivery.STOP +
-                            '&MFSTDATE=' + delivery.MFSTDATE + 
-                            '&PRONUMBER=' + delivery.PRONUMBER + 
-                            '&PRODATE=' + delivery.PRODATE + 
-                            '&SHIPNAME=' + delivery.SHIPNAME.replace("&","%26") + 
-                            '&CONSNAME=' + delivery.CONSNAME.replace("&","%26") +
-                            '&CONSADD1=' + delivery.CONSADD1.replace("&","%26")  + 
-                            '&CONSADD2=' + delivery.CONSADD2.replace("&","%26")  + 
-                            '&CONSCITY=' + delivery.CONSCITY + 
-                            '&CONSSTATE=' + delivery.CONSSTATE + 
-                            '&CONSZIP=' + delivery.CONSZIP +
-                            '&TTLPCS=' + delivery.TTLPCS + 
-                            '&TTLYDS=' + delivery.TTLYDS + 
-                            '&TTLWGT=' + delivery.TTLWGT + 
-                            '&DLVDDATE=' + null + 
-                            '&DLVDTIME=' + null + 
-                            '&DLVDPCS=' + null +
-                            '&DLVDSIGN=' + null + 
-                            '&DLVDNOTE=' + null + 
-                            '&DLVDIMGFILELOCN=' + null + 
-                            '&DLVDIMGFILESIGN=' + null
-
-        const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest" + deliveryString, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+        const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest", {
+            body: formData,
+            method: "PUT",
         })
+
         return response;
     }
 
     //
     // handle updating existing delivery records when changed...
     async function handleUpdate() {
+        /*
         let sign = delivery.DLVDSIGN
         if(sign === ""){
             sign = "n/a"
@@ -336,7 +299,7 @@ const DeliveryForm = () => {
         if(sign_img === ""){
             sign_img = "n/a"
         }
-        /*
+        
         const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + 
                             '&STATUS=1&LASTUPDATE=' + delivery.LASTUPDATE + 
                             '&MFSTNUMBER=' + delivery.MFSTNUMBER + 
@@ -368,14 +331,14 @@ const DeliveryForm = () => {
             headers: { 'Content-Type': 'application/json; charset=UTF-8' },
         })
         */
-        let formData = new FormData();
+        let deliveryData = new FormData();
         for (const [key,value] of Object.entries(delivery)){
-            formData.append(key,value)
+            deliveryData.append(key,value)
+            console.log("key: ", key, "value: ", value, "val_type: ",typeof value)
         }
-        alert(formData)
 
         const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest", {
-            body: formData,
+            body: deliveryData,
             method: "PUT",
         })
 
@@ -422,13 +385,10 @@ const DeliveryForm = () => {
         //await handleDelete(delivery.MFSTKEY);
         //await handleCreate();
         //alert(e.target.id)
-        let response = "default response"
-        let form = document.getElementById("form_data")
-        alert(form[0])
+        let response = null
 
         if(e.target.id === "undeliver"){
-            alert("Undo Delivery Feature in Progress, returning to deliveries.")
-            //await clearDelivery();
+            response = await clearDelivery();
         }
         else{
             response = await handleUpdate();
@@ -439,10 +399,11 @@ const DeliveryForm = () => {
             delivery: updateData,
             driver: driverCredentials
         };
-        alert(response)
-        if(response == "Updated Successfully"){
+        console.log(response)
+        if(response && response.ok == true){
             navigate(`/driverlog`, { state: deliveryData });
         }
+        
     }
 
     //

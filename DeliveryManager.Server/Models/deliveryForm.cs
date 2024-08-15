@@ -26,7 +26,7 @@ namespace DeliveryManager.Server.Models
         public int? TTLWGT { get; set; }
         public string? DLVDDATE { get; set; }
         public string? DLVDTIME { get; set; }
-        public string? DLVDPCS { get; set; }
+        public int? DLVDPCS { get; set; }
         public string? DLVDSIGN { get; set; }
         public string? DLVDNOTE { get; set; }
         //public IFormFile? DLVDIMGFILELOCN { get; set; }

@@ -259,7 +259,7 @@ namespace DeliveryManager.Server.Controllers
             //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
             string sqlDatasource = connString;
             SqlDataReader myReader;
-            using (SqlConnection myCon = new SqlConnection(sqlDatasource))
+            await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
                 myCon.Open();
                 using (SqlCommand myCommand = new SqlCommand(query, myCon))
@@ -276,22 +276,20 @@ namespace DeliveryManager.Server.Controllers
                     myCommand.Parameters.AddWithValue("@SHIPNAME", data.SHIPNAME);
                     myCommand.Parameters.AddWithValue("@CONSNAME", data.CONSNAME);
                     myCommand.Parameters.AddWithValue("@CONSADD1", data.CONSADD1);
-                    myCommand.Parameters.AddWithValue("@CONSADD2", data.CONSADD2);
+                    myCommand.Parameters.AddWithValue("@CONSADD2", data.CONSADD2 == null || data.CONSADD2 =="null" ? DBNull.Value : data.CONSADD2);
                     myCommand.Parameters.AddWithValue("@CONSCITY", data.CONSCITY);
                     myCommand.Parameters.AddWithValue("@CONSSTATE", data.CONSSTATE);
                     myCommand.Parameters.AddWithValue("@CONSZIP", data.CONSZIP);
                     myCommand.Parameters.AddWithValue("@TTLPCS", data.TTLPCS);
                     myCommand.Parameters.AddWithValue("@TTLYDS", data.TTLYDS);
                     myCommand.Parameters.AddWithValue("@TTLWGT", data.TTLWGT);
-                    myCommand.Parameters.AddWithValue("@DLVDDATE", data.DLVDDATE);
-                    myCommand.Parameters.AddWithValue("@DLVDTIME", data.DLVDTIME);
-                    myCommand.Parameters.AddWithValue("@DLVDPCS", data.DLVDPCS);
-                    myCommand.Parameters.AddWithValue("@DLVDSIGN", data.DLVDSIGN);
-                    myCommand.Parameters.AddWithValue("@DLVDNOTE", data.DLVDNOTE);
-                    myCommand.Parameters.AddWithValue("@DLVDIMGFILELOCN", data.DLVDIMGFILELOCN);
-                    myCommand.Parameters.AddWithValue("@DLVDIMGFILESIGN", data.DLVDIMGFILESIGN);
-                    //myCommand.Parameters.AddWithValue("@DLVDIMGFILELOCN", location_path ?? (object)DBNull.Value);
-                    //myCommand.Parameters.AddWithValue("@DLVDIMGFILESIGN", sign_path ?? (object)DBNull.Value);
+                    myCommand.Parameters.AddWithValue("@DLVDDATE", data.DLVDDATE == null || data.DLVDDATE == "null" ? DBNull.Value : data.DLVDDATE);
+                    myCommand.Parameters.AddWithValue("@DLVDTIME", data.DLVDTIME == null || data.DLVDTIME == "null" ? DBNull.Value : data.DLVDTIME);
+                    myCommand.Parameters.AddWithValue("@DLVDPCS", data.DLVDPCS == null || data.DLVDPCS == -1 ? DBNull.Value : data.DLVDPCS);
+                    myCommand.Parameters.AddWithValue("@DLVDSIGN", data.DLVDSIGN == null || data.DLVDSIGN == "null" ? DBNull.Value : data.DLVDSIGN);
+                    myCommand.Parameters.AddWithValue("@DLVDNOTE", data.DLVDNOTE == null || data.DLVDNOTE == "null" ? DBNull.Value : data.DLVDNOTE);
+                    myCommand.Parameters.AddWithValue("@DLVDIMGFILELOCN", data.DLVDIMGFILELOCN == null || data.DLVDIMGFILELOCN == "null" ? DBNull.Value : data.DLVDIMGFILELOCN);
+                    myCommand.Parameters.AddWithValue("@DLVDIMGFILESIGN", data.DLVDIMGFILESIGN == null || data.DLVDIMGFILESIGN == "null" ? DBNull.Value : data.DLVDIMGFILESIGN);
 
                     myReader = myCommand.ExecuteReader();
                     table.Load(myReader);
@@ -302,6 +300,7 @@ namespace DeliveryManager.Server.Controllers
 
             return new JsonResult("Updated Successfully");
         }
+
         /*
          [HttpPut]
         [Route("UpdateManifest")]
