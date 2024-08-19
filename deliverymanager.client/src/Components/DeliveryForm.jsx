@@ -8,7 +8,7 @@ const DeliveryForm = () => {
     /*
     // Date and time data and processing functions...
     */
-    const currDate = getDate()
+    const currDate = getDate();
     const currTime = getTime();
 
     /*
@@ -131,7 +131,7 @@ const DeliveryForm = () => {
     //
     // handle delivery form changes...
     const handleChange = (e) => {
-        console.log(e.target)
+        //console.log(e.target)
         let val = e.target.value;
         switch (e.target.id) {
             case 'dlvdate':
@@ -231,6 +231,8 @@ const DeliveryForm = () => {
     //
     // handle updating existing delivery records when changed...
     async function clearDelivery() {
+        //const updateTS = currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00";
+
         const reset_delivery = {
             /*
             MFSTKEY: delivery.MFSTKEY,
@@ -254,6 +256,7 @@ const DeliveryForm = () => {
             TTLWGT: location.state.delivery["TTLWGT"],
             */
             ...delivery,
+            LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00",
             STATUS: "0",
             DLVDDATE: null,
             DLVDTIME: null,
@@ -338,6 +341,9 @@ const DeliveryForm = () => {
             deliveryData.append(key,value)
             //console.log("key: ", key, "value: ", value, "val_type: ",typeof value)
         }
+
+        // set last update key-value pair to current date-time...
+        deliveryData.set("LASTUPDATE", currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00")
 
         const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest", {
             body: deliveryData,

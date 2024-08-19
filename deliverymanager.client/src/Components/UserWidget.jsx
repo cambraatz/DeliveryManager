@@ -23,6 +23,7 @@ const UserWidget = (props) => {
         navigate('/');
     }
 
+    /*
     const handleClick = () => {
         document.getElementById("popupLogoutWindow").style.visibility = "visible";
         document.getElementById("popupLogoutWindow").style.opacity = 1;
@@ -34,6 +35,7 @@ const UserWidget = (props) => {
         document.getElementById("popupLogoutWindow").style.opacity = 0;
         document.getElementById("popupLogoutWindow").style.pointerEvents = "none";
     };
+    */
     
     return(
         <div>
@@ -43,9 +45,10 @@ const UserWidget = (props) => {
                     <p>{user}</p>
                 </div>
                 <div id="Logout">
-                    <button onClick={handleClick}>Log Out</button>
+                    <button onClick={handleLogout}>Log Out</button>
                 </div>
             </div>
+            {/*
             <div id="popupLogoutWindow" className="overlay">
                 <div className="popupLogout">
                     <div id="popupExit" className="content">
@@ -61,6 +64,7 @@ const UserWidget = (props) => {
                     </div>
                 </div>
             </div>
+            */}
         </div>
     );
 };

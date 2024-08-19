@@ -320,7 +320,8 @@ tbody tr:nth-child(odd) {
 }
 
 td, th {
-    padding: 5px 5px;
+    /*padding: 5px 5px;*/
+    padding: 2%;
 }
 
 #Delivery_Input_Div {
@@ -563,9 +564,14 @@ input:disabled {
     .col1 {
         width: 8%;
     }
-
     .col2 {
-        width: 18%;
+        width: 20%;
+    }
+    .col3 {
+        width: 30%;
+    }
+    .col4 {
+        width: 30%;
     }
 
     .desktop_table {
@@ -710,5 +716,27 @@ input:disabled {
 
     #Delivery_Login_Div button {
         width: 30%;
+    }
+
+    .col1 {
+        width: 8%;
+    }
+    .col2 {
+        width: 12%;
+    }
+    .col3 {
+        width: 15%;
+    }
+    .col4 {
+        width: 20%;
+    }
+    .col5 {
+        width: 20%;
+    }
+    .col6 {
+        width: 10%;
+    }
+    .col7 {
+        width: 15%;
     }
 }

@@ -68,8 +68,16 @@ const DriverPortal = () => {
     // API Calls and Functionality ...
     */
     
-    
+    /* 
+    *-----------------------------------------------------------------------------------*
     // query all deliveries matching the provided powerunit and date...
+    *-----------------------------------------------------------------------------------*
+    *
+    * 
+    * 
+    *-----------------------------------------------------------------------------------*
+    */
+
     async function getDeliveries(powerunit,mfstdate){
         /*
         const user_data = {
@@ -92,16 +100,22 @@ const DriverPortal = () => {
             method: "GET"
         });
         */
+        let responseD = null;
+        let responseU = null;
+        try {
+            // execute queries separate for ease of isolating...
+            responseD = await fetch(API_URL + "api/DriverChecklist/GetDelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json; charset=UTF-8'},
+            });
+            responseU = await fetch(API_URL + "api/DriverChecklist/GetUndelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
+                method: 'GET',
+                headers,
+            });
+        } catch (error) {
+            console.log(error)
+        }
         
-        // execute queries separate for ease of isolating...
-        const responseD = await fetch(API_URL + "api/DriverChecklist/GetDelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
-            method: 'GET',
-            headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        });
-        const responseU = await fetch(API_URL + "api/DriverChecklist/GetUndelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
-            method: 'GET',
-            headers,
-        });
         
 
         // pull json formatting to allow setting to state...
@@ -116,10 +130,23 @@ const DriverPortal = () => {
         
     }
 
+  
+    /* 
+    *-----------------------------------------------------------------------------------*
     // handleClick to identify row clicked and proceed to edit corresponding delivery...
+    *-----------------------------------------------------------------------------------*
+    *
+    * handles the click event, parsing the table and row before scraping the pronumber
+    * from the row's content string. Iterates the deliveries for the corresponding 
+    * delivery and navigates to that delivery's update form, carrying with it the
+    * packaged delivery/driver information in state...
+    * 
+    *-----------------------------------------------------------------------------------*
+    */
+
     const handleClick = (event) => {
-        const string = event.target.parentNode.innerText;
         const eventID = event.target.parentNode.id;
+        const string = event.target.parentNode.innerText;
         const proNum = string.match(/[\t]([A-Za-z0-9]{8})/)[1];
 
         var i = 0;
@@ -153,7 +180,19 @@ const DriverPortal = () => {
         }
     }
     
-    // helper to generate dynamic HTML table for returned deliveries, handles lag and empty results...
+    
+    /* 
+    *-----------------------------------------------------------------------------------*
+    // helper to generate dynamic HTML table for returned deliveries...
+    *-----------------------------------------------------------------------------------*
+    *
+    * iteratively renders the delivery tables returned via API to HTML 
+    * format. parses the delivery data separating each delivery and 
+    * rendering only the important information. conditionally render
+    * more/less data columns depending on the size of the display...
+    * 
+    *-----------------------------------------------------------------------------------*
+    */
     const renderDeliveries = (status) => {        
         if(loading) {
             return (<tr><td align="center" colSpan="7">Loading Deliveries...</td></tr>)
@@ -163,34 +202,43 @@ const DriverPortal = () => {
         }
         else {
             if(status === "delivered"){
-                return (
-                    delivered.map((delivery,i) => (
-                        <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body" id="delivered">
-                            <td className="col1">{delivery["STOP"]}</td>
-                            <td className="col2">{delivery["PRONUMBER"]}</td>
-                            <td className="col3">{delivery["CONSNAME"]}</td>
-                            <td className="col4">{delivery["CONSADD1"]}</td>
-                            <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
-                            <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
-                            <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
-                        </tr>
-                    ))
-                )
+                try{
+                    return (
+                        delivered.map((delivery,i) => (
+                            <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body" id="delivered">
+                                <td className="col1">{delivery["STOP"]}</td>
+                                <td className="col2">{delivery["PRONUMBER"]}</td>
+                                <td className="col3">{delivery["CONSNAME"]}</td>
+                                <td className="col4">{delivery["CONSADD1"]}</td>
+                                <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
+                                <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
+                                <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
+                            </tr>
+                        ))
+                    );
+                }catch{
+                    return(<tr><td align="center" colSpan="7">NO DELIVERED DELIVERIES FOUND</td></tr>);
+                }
+                
             }
             else if(status === "undelivered"){
-                return (
-                    undelivered.map((delivery,i) => (
-                        <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body" id="undelivered">
-                            <td className="col1">{delivery["STOP"]}</td>
-                            <td className="col2">{delivery["PRONUMBER"]}</td>
-                            <td className="col3">{delivery["CONSNAME"]}</td>
-                            <td className="col4">{delivery["CONSADD1"]}</td>
-                            <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
-                            <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
-                            <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
-                        </tr>
-                    ))
-                )
+                try{
+                    return (
+                            undelivered.map((delivery,i) => (
+                                <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body" id="undelivered">
+                                    <td className="col1">{delivery["STOP"]}</td>
+                                    <td className="col2">{delivery["PRONUMBER"]}</td>
+                                    <td className="col3">{delivery["CONSNAME"]}</td>
+                                    <td className="col4">{delivery["CONSADD1"]}</td>
+                                    <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
+                                    <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
+                                    <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
+                                </tr>
+                            ))
+                    )
+                }catch{
+                    return(<tr><td align="center" colSpan="7">NO UNDELIVERED DELIVERIES FOUND</td></tr>);
+            }
             }
         }
     }
