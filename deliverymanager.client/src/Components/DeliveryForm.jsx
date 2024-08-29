@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
-import { scrapeDate, renderDate, renderTime, scrapeTime, scrapeFile, getDate, getTime, translateDate, API_URL } from '../Scripts/helperFunctions';
+import { scrapeDate, renderDate, renderTime, scrapeTime, getDate, getTime, translateDate, API_URL /*, scrapeFile*/ } from '../Scripts/helperFunctions';
 
 const DeliveryForm = () => {
     /*
@@ -20,6 +20,12 @@ const DeliveryForm = () => {
     let img_loc = location.state ? location.state.delivery["DLVDIMGFILELOCN"] : null;
     let img_sign = location.state ? location.state.delivery["DLVDIMGFILESIGN"] : null;
 
+    
+    const [images,setImages] = useState({
+        Signature: null,
+        Location: null,
+    });
+
     useEffect(() => {
         //console.log("This was triggered with useEffect()...")
         if(!location.state){
@@ -27,11 +33,23 @@ const DeliveryForm = () => {
         }
 
         if(img_loc === null || img_loc === "") {
-            document.getElementById('img_file_locn').style.display = "none";
+            document.getElementById('img_Div_Loc').style.display = "none";
+            //document.getElementById('img_file_locn').style.display = "none";
+        } else if(img_loc !== null) {
+            const location_img = retrieveImage(img_loc);
+            setImages({...images, Location: location_img})
+            console.log(location_img);
         }
+
         if(img_sign === null || img_sign === "") {
-            document.getElementById('img_file_sign').style.display = "none";
+            document.getElementById('img_Div_Sign').style.display = "none"; 
+            //document.getElementById('img_file_sign').style.display = "none";
+        } else if(img_sign !== null) {
+            const signature_img = retrieveImage(img_sign);
+            setImages({...images, Signature: signature_img})
+            console.log(signature_img);
         }
+
         if(location.state.delivery["STATUS"] != 1) {
             document.getElementById('undeliver').style.display = "none";
             document.getElementById('button_div').style.justifyContent = "space-around";
@@ -40,6 +58,12 @@ const DeliveryForm = () => {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
+
+    async function retrieveImage(image) {
+        console.log(`This will return ${image}...`)
+        const testImage = await fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE="+image)
+        return testImage
+    }
 
     //
     // const 'driverCredentials' to be passed to next page...
@@ -426,6 +450,57 @@ const DeliveryForm = () => {
         navigate(`/driverlog`, { state: deliveryData });
     };
 
+    //
+    //
+    function renderImage(URL,id) {
+        const valid = renderTest(URL);
+        console.log("status: ", valid)
+        
+        if(valid){
+            //const response = fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE=" + URL)
+            console.log("if valid test has passed...")
+            return (
+                <div id={id}>
+                    <img className="thumbnail" src={API_URL + "api/DriverChecklist/GetImage?IMAGE=" + URL} alt="Error loading image, please upload new image..."></img>
+                    <label className="thumbnail_label"><smaller>Replace Image?</smaller></label>
+                </div>
+            )            
+        }
+        else {
+            console.log("if valid test has failed...")
+            return (
+                <div id={id}>
+                    <p>Image load failed...</p>
+                </div>
+            )
+        }
+        
+    }
+
+    async function renderTest(URL) {
+        console.log(URL)
+        if(!URL) {
+            console.log("No image to load...")
+            return false;
+        }
+
+        try {
+            const response = await fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE=" + URL)
+            console.log("Response: ", response)
+
+            if(!response.ok){
+                throw new Error(`Response status: ${response.status}`)
+            }
+            return true;
+        }
+        catch (error) {
+            console.error(error.message);
+            return false;
+        }
+        
+
+    }
+
     return (
         <div id="webpage">
             <Header
@@ -468,18 +543,24 @@ const DeliveryForm = () => {
                     <div id="img_Div">
                         <div>
                             <label>Consignee Signature: <i>Image</i> </label>
+
+                            { renderImage(img_sign,"img_Div_Sign") }
+
                             <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_image" name="sign_image" onChange={handleChange}/>
-                            <p id="img_file_sign" className="image_confirmation">Image ({formData.deliverySignaturePath}) On File...</p>
-                            {/*<label className="fileUpload">
+                            {/*<p id="img_file_sign" className="image_confirmation">Image ({formData.deliverySignaturePath}) On File...</p>
+                            <label className="fileUpload">
                                 <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_form" onChange={handleChange} />
                                 {uploadSignatureStatus}
                             </label>*/}
                         </div>
                         <div>
                             <label>Delivery Location: <i> Image</i></label>
+
+                            { renderImage(img_loc,"img_Div_Loc") }
+
                             <input type="file" accept="image/*" id="dlvdimage" className="input_image" onChange={handleChange}/>
-                            <p id="img_file_locn" className="image_confirmation">Image ({formData.deliveryImagePath}) On File...</p>
-                            {/*<label className="fileUpload">
+                            {/*<p id="img_file_locn" className="image_confirmation">Image ({formData.deliveryImagePath}) On File...</p>
+                            <label className="fileUpload">
                                 <input type="file" accept="image/*" id="dlvdimage" className="input_form" onChange={handleChange} />
                                 {uploadImageStatus}
                             </label>*/}

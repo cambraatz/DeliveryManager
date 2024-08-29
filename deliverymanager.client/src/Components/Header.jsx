@@ -50,14 +50,20 @@ const Header = (props) => {
     
 
     return(
+        <>
         <header id="Header">
+            <div id="buffer"></div>
             <h4 className="TCS_title">Transportation<br/>Computer<br/>Support, LLC</h4>
-            <h1 className="TCS_title">Driver Manifest</h1>
-            <h2>{props.title}</h2>
-            <hr></hr>
-            <UserWidget driver={props.currUser} status={props.status}/>
-            {deliveryCondition()}
+            <div className="sticky_header">
+                <h1 className="TCS_title">Driver Manifest</h1>
+                <h2>{props.title}</h2>
+
+                <UserWidget driver={props.currUser} status={props.status}/>
+
+            </div>
         </header>
+        {deliveryCondition()}
+        </>
     )
 };
 

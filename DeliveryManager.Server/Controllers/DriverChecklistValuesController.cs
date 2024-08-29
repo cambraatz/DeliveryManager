@@ -12,12 +12,14 @@ namespace DeliveryManager.Server.Controllers
     {
         private IConfiguration _configuration;
         private readonly string connString;
+        private readonly IWebHostEnvironment _env;
 
-        public DriverChecklistController(IConfiguration configuration)
+        public DriverChecklistController(IConfiguration configuration, IWebHostEnvironment env)
         {
             _configuration = configuration;
-            //connString = _configuration.GetConnectionString("DriverChecklistTestCon");
-            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            _env = env;
+            connString = _configuration.GetConnectionString("DriverChecklistTestCon");
+            //connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
 
         [HttpGet]
@@ -327,6 +329,28 @@ namespace DeliveryManager.Server.Controllers
             }
 
             return new JsonResult("Deleted Successfully");
+        }
+
+        [HttpGet]
+        [Route("GetImage")]
+
+        public IActionResult GetImage(string IMAGE)
+        {
+            //var fileName = "Default.jpg";
+            var folderPath = Path.Combine(_env.WebRootPath,"uploads");
+            var filePath = Path.Combine(folderPath, IMAGE);
+
+            System.Diagnostics.Debug.WriteLine($"File path to {filePath}");
+
+            if (System.IO.File.Exists(filePath))
+            {
+                var image = System.IO.File.OpenRead(filePath);
+                return File(image, "image/jpeg");
+            }
+            else
+            {
+                return NotFound("Image not found");
+            }
         }
     }
 }

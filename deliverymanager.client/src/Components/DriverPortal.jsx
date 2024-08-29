@@ -145,25 +145,12 @@ const DriverPortal = () => {
     */
 
     const handleClick = (event) => {
-        const eventID = event.target.parentNode.id;
+        const parentClass = event.target.parentNode.className;
         const string = event.target.parentNode.innerText;
         const proNum = string.match(/[\t]([A-Za-z0-9]{8})/)[1];
 
         var i = 0;
-        if (eventID === "delivered"){
-            while (i < delivered.length) {
-                if (delivered[i]["PRONUMBER"] === proNum) {
-                    const deliveryData = {
-                        delivery: delivered[i],
-                        driver: driverCredentials
-                    };
-                    navigate(`delivery/${delivered[i].PRONUMBER}`, {state: deliveryData})
-                    break
-                }
-                i = i + 1;
-            }
-        }
-        else{
+        if (parentClass.includes("undelivered")){
             while (i < undelivered.length) {
                 if (undelivered[i]["PRONUMBER"] === proNum) {
                     const deliveryData = {
@@ -176,6 +163,19 @@ const DriverPortal = () => {
                 else {
                     i = i + 1;
                 }
+            }
+        }
+        else{
+            while (i < delivered.length) {
+                if (delivered[i]["PRONUMBER"] === proNum) {
+                    const deliveryData = {
+                        delivery: delivered[i],
+                        driver: driverCredentials
+                    };
+                    navigate(`delivery/${delivered[i].PRONUMBER}`, {state: deliveryData})
+                    break
+                }
+                i = i + 1;
             }
         }
     }
@@ -205,7 +205,7 @@ const DriverPortal = () => {
                 try{
                     return (
                         delivered.map((delivery,i) => (
-                            <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body" id="delivered">
+                            <tr key={i} value={delivery["MFSTKEY"]} id={delivery["MFSTKEY"]} className="Table_Body delivered">
                                 <td className="col1">{delivery["STOP"]}</td>
                                 <td className="col2">{delivery["PRONUMBER"]}</td>
                                 <td className="col3">{delivery["CONSNAME"]}</td>
@@ -225,7 +225,7 @@ const DriverPortal = () => {
                 try{
                     return (
                             undelivered.map((delivery,i) => (
-                                <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body" id="undelivered">
+                                <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body undelivered" id="undelivered">
                                     <td className="col1">{delivery["STOP"]}</td>
                                     <td className="col2">{delivery["PRONUMBER"]}</td>
                                     <td className="col3">{delivery["CONSNAME"]}</td>
@@ -257,44 +257,54 @@ const DriverPortal = () => {
                 MFSTDATE={updateData.MFSTDATE} 
                 POWERUNIT={driverCredentials.POWERUNIT}
             />
-            <h3 className="Table_Separator">Undelivered</h3>
-            {/*<table className="Delivery_Table" onClick={event => handleClick_Undelivered(event)}>*/}
-            <table className="Delivery_Table" onClick={handleClick}>
-                <thead>
-                    <tr>
-                        <th className="col1">Stop</th>
-                        <th className="col2">Pro No</th>
-                        <th className="col3">Consignee</th>
-                        <th className="col4">Address<span className="desktop_table"> 1</span></th>
-                        <th className="col5 desktop_table">Address 2</th>
-                        <th className="col6 desktop_table">City</th>
-                        <th className="col7 desktop_table">Shipper</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {/*renderUndelivered()*/}
-                    {renderDeliveries("undelivered")}
-                </tbody>
-            </table>
-            <h3 className="Table_Separator"><span>Delivered</span></h3>
-            {/*<table className="Delivery_Table" onClick={event => handleClick_Delivered(event)}>*/}
-            <table className="Delivery_Table" onClick={handleClick}>
-                <thead>
-                    <tr className="delivered_items">
-                        <th className="col1">Stop</th>
-                        <th className="col2">Pro No</th>
-                        <th className="col3">Consignee</th>
-                        <th className="col4">Address<span className="desktop_table"> 1</span></th>
-                        <th className="col5 desktop_table">Address 2</th>
-                        <th className="col6 desktop_table">City</th>
-                        <th className="col7 desktop_table">Shipper</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {/*renderDelivered()*/}
-                    {renderDeliveries("delivered")}
-                </tbody>
-            </table>
+            <div className="table_div">
+                {/*<h3 className="separator_top">Undelivered</h3>
+                <table className="Delivery_Table" onClick={event => handleClick_Undelivered(event)}>*/}
+                <table className="Delivery_Table" onClick={handleClick}>
+                    <thead>
+                        <tr className="title_row">
+                            <th className="title" colSpan="7">Undelivered</th>
+                        </tr>
+                        <tr>
+                            <th className="col1">Stop</th>
+                            <th className="col2">Pro No</th>
+                            <th className="col3">Consignee</th>
+                            <th className="col4">Address<span className="desktop_table"> 1</span></th>
+                            <th className="col5 desktop_table">Address 2</th>
+                            <th className="col6 desktop_table">City</th>
+                            <th className="col7 desktop_table">Shipper</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {/*renderUndelivered()*/}
+                        {renderDeliveries("undelivered")}
+                    </tbody>
+                </table>
+            </div>
+            <div className="table_div">
+                {/*<h3 className="separator_bottom"><span>Delivered</span></h3>
+                <table className="Delivery_Table" onClick={event => handleClick_Delivered(event)}>*/}
+                <table className="Delivery_Table" onClick={handleClick}>
+                    <thead>
+                        <tr className="title_row">
+                            <th className="title" colSpan="7">Delivered</th>
+                        </tr>
+                        <tr className="delivered_items">
+                            <th className="col1">Stop</th>
+                            <th className="col2">Pro No</th>
+                            <th className="col3">Consignee</th>
+                            <th className="col4">Address<span className="desktop_table"> 1</span></th>
+                            <th className="col5 desktop_table">Address 2</th>
+                            <th className="col6 desktop_table">City</th>
+                            <th className="col7 desktop_table">Shipper</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {/*renderDelivered()*/}
+                        {renderDeliveries("delivered")}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
