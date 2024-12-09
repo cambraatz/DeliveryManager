@@ -24,6 +24,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# application images
+DeliveryManager.Server/wwwroot/uploads
+
 #General_Notes.md
 image.png
 .vscode

@@ -1,3 +1,118 @@
+export const getToken = () => {
+    return sessionStorage.getItem('accessToken');
+}
+
+export const cacheToken = (access,refresh) => {
+    sessionStorage.setItem('accessToken', access);
+    sessionStorage.setItem('refreshToken', refresh);
+}
+
+export const logout = () => {
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+}
+
+export const isTokenExpiring = (token) => {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const expiration = payload.exp * 1000;
+    const currentTime = Date.now();
+    const threshold = 2 * 60 * 1000;
+    //const threshold = 30 * 1000;
+
+    return expiration - currentTime < threshold;
+}
+
+export const isTokenValid = (token) => {
+    if (!token) { return false; }
+
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    if (!payload) { return false; }
+
+    try {
+        const currentTime = Date.now();
+        const expiration = payload.exp * 1000;
+
+        console.log(`Current Time: ${currentTime}`);
+        console.log(`Expiration: ${expiration}`);
+
+        return (payload.exp * 1000) > currentTime;
+    } catch (e) {
+        console.error("Failed to decode token payload", e);
+        return false;
+    }
+}
+
+export async function refreshToken(username) {
+    const refreshToken = sessionStorage.getItem("refreshToken");
+
+    if (!refreshToken) {
+        console.error("No refresh token available. Please log in again.");
+        return null;
+    }
+
+    const body_data = {
+        Username: username,
+        RefreshToken: refreshToken
+    }
+
+    const response = await fetch(API_URL + "api/Registration/RefreshToken",
+        {
+            body: JSON.stringify(body_data),
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            //body: JSON.stringify({ refreshToken, username })
+        }
+    )
+
+    if (response.ok) {
+        const data = await response.json();
+
+        console.log(`refresh accessToken: ${data.AccessToken}`);
+        sessionStorage.setItem('accessToken', data.AccessToken);
+        sessionStorage.setItem('refreshToken', data.RefreshToken);
+
+        return {access: data.AccessToken, refresh: data.RefreshToken};
+    } else {
+        console.error("Failed to refresh token");
+        return null;
+    }
+}
+
+export const cacheCompany = (company) => {
+    localStorage.setItem('company', company);
+}
+
+export const isCompanyValid = () => {
+    const company = localStorage.getItem('company')
+    if(company) {
+        return company;
+    }
+
+    return null;
+}
+
+export async function getCompany() {
+    //console.log(`getting company...`)
+    const response = await fetch(API_URL + "api/Registration/GetCompany?COMPANYKEY=c01", {
+        method: "GET",
+    })
+
+    // data = {COMPANYKEY: "", COMPANYNAME: ""}...
+    const data = await response.json();
+
+    if (data.success) {
+        //console.log("new company: ", data["COMPANYNAME"]);
+        //setCompany(data.COMPANYNAME);
+        cacheCompany(data.COMPANYNAME);
+        return data.COMPANYNAME;
+    }
+    else {
+        //console.log(data);
+        //setCompany("{Your Company Here}");
+        return null;
+    }
+}
+
 export const scrapeDate = (date) => {
     const year = date.slice(0,4);
     const month = date.slice(5,7);
@@ -72,5 +187,6 @@ export const scrapeFile = (file) => {
     return relLink;
 };
 
+//export const API_URL = "http://www.tcsservices.com:40730/"
 //export const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
 export const API_URL = "http://localhost:5113/";
