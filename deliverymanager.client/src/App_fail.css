@@ -1,0 +1,301 @@
+﻿:root {
+    --primary-color: #5A89BB;
+    --action-color: #e0eaf3;
+}
+
+body {
+    margin: 0;
+    background-color: white;
+}
+
+.App {
+    color: #353535;
+    background-color: white;
+    text-align: center;
+    font-family: 'Verdana', Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.weak {
+    font-weight: lighter;
+    margin: 0;
+}
+
+h2, h3, h4 {
+    margin: 1em 0;
+}
+
+h3, h4 {
+    margin: 0.75em 0;
+}
+
+hr {
+    margin: 0;
+}
+
+header h1, header h2, header h3, header h4, header h5 {
+    margin: 1% 4%;
+    display: flex;
+    align-items: start;
+}
+
+thead {
+    font-size: 0.85em;
+}
+
+.SPM_Col h4, .SPM_Col h5 {
+    margin: 0 20px;
+    display: flex;
+    align-items: start;
+}
+
+#AccountTab {
+    display: flex;
+    align-items: center;
+    padding: 1% 4%;
+    justify-content: space-between;
+    border-top: 1px solid #353535;
+    border-bottom: 1px solid #353535;
+    box-shadow: 0px 3px 4px #00000020;
+}
+
+#MDPU_Row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4%;
+}
+
+#popupLogoutInner {
+    display: flex;
+    flex-direction: column;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    transition: opacity 500ms;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.overlay:target {
+    visibility: visible;
+    opacity: 1;
+}
+
+.popupSignature {
+    margin: 12.5% 25% 0;
+    padding: 5px 20px;
+    background: #fff;
+    border-radius: 5px;
+    width: auto;
+    position: relative;
+    transition: all 1s ease-in-out;
+}
+
+.popupSignature .close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    transition: all 200ms;
+    font-size: 30px;
+    font-weight: bold;
+    text-decoration: none;
+    color: #333;
+}
+
+.popupLogout {
+    margin: 70px auto;
+    padding: 5px 20px;
+    background: #fff;
+    border-radius: 5px;
+    width: 300px;
+    position: relative;
+    transition: all 5s ease-in-out;
+}
+
+.popupLogout .close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    transition: all 200ms;
+    font-size: 30px;
+    font-weight: bold;
+    text-decoration: none;
+    color: #333;
+}
+
+.popupLogout .close:hover {
+    color: #06D85F;
+}
+
+.popupLogout h1, .popupLogout p {
+    margin: 0;
+}
+
+.popupLogin {
+    margin: 25% auto;
+    padding: 5px 20px;
+    background: #fff;
+    border-radius: 5px;
+    width: 25%;
+    position: relative;
+    transition: all 1s ease-in-out;
+}
+
+.popupLogin .close:hover {
+    color: #06D85F;
+}
+
+#popupLoginInner {
+    text-align: center;
+    margin-top: 0.5em;
+}
+
+#widgetHeader {
+    display: block;
+    text-align: center;
+    margin: 10% 20% 0 20%;
+    border-top: solid 1px black;
+    border-left: solid 1px black;
+    border-right: solid 1px black;
+    border-radius: 5px 5px 0 0;
+    background-color: #5A89BB;
+    color: white;
+}
+
+label {
+    margin-bottom: 5px;
+}
+
+input {
+    height: 2em;
+    width: 100%;
+    border: 1px solid black;
+    border-radius: 3px;
+}
+
+.separator_top {
+    margin: 0 1%;
+    padding: 10px 0;
+    border-top: solid 1px black;
+    border-bottom: solid 1px black;
+    border-left: solid 1px black;
+    border-right: solid 1px black;
+    border-radius: 5px 5px 0 0;
+    background-color: #5A89BB;
+    color: white;
+    position: fixed;
+    width: 94%;
+}
+
+.thumbnail {
+    width: 100%;
+    height: auto;
+    max-height: 8em;
+    border: 1px solid black;
+    border-radius: 5px;
+    background-color: white;
+}
+
+.sticky_header div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* Mobile-first styles */
+@media only screen and (max-width: 630px) {
+    #collapseToggle {
+        width: 15%;
+        left: 42.5%;
+    }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    h2, h3, h4 {
+        font-size: 0.75em;
+    }
+
+    thead {
+        font-size: 0.75em;
+        border-bottom: 1px solid black;
+    }
+
+    .desktop_table {
+        display: none;
+    }
+
+    .popupLogout {
+        width: 50%;
+    }
+
+    .popupLogin {
+        margin: 50% auto;
+        width: 50%;
+    }
+
+    #Delivery_Input_Div {
+        margin: 0 2% 2%;
+    }
+
+    #sigDiv button {
+        width: 30%;
+    }
+}
+
+/* Tablet and Desktop styles */
+@media only screen and (min-width: 630px) {
+    h2 {
+        font-size: 1.25em;
+    }
+
+    #sticky_MDPU {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 5%;
+    }
+
+    #SPM_Row {
+        margin: 0 2%;
+    }
+
+    .popupSignature {
+        margin: 5% 10% 0;
+    }
+
+    .popupLogin {
+        margin: 20% auto;
+        width: 25%;
+    }
+}
+
+@media only screen and (min-width: 1200px) {
+    .popupSignature {
+        margin: 15% 3% 0;
+    }
+
+    .popupLogin {
+        margin: 18% auto;
+        width: 25%;
+    }
+
+    .thumbnail:hover {
+        opacity: 50%;
+        background-color: rgb(51, 51, 51);
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+}
+
+@media only screen and (min-width: 1600px) {
+    .popupLogin {
+        margin: 20% auto;
+        width: 25%;
+    }
+}

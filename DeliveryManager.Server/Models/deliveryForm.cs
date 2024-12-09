@@ -31,8 +31,9 @@ namespace DeliveryManager.Server.Models
         public string? DLVDNOTE { get; set; }
         public IFormFile? DLVDIMGFILELOCN { get; set; }
         public IFormFile? DLVDIMGFILESIGN { get; set; }
-        //public string? DLVDIMGFILELOCN { get; set; }
-        //public string? DLVDIMGFILESIGN { get; set; }
+
+        public string? signature_string { get; set; }
+        public string? location_string { get; set; }
 
     }
 }

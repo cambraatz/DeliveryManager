@@ -3,8 +3,8 @@ import './App.css';
 import DriverPortal from './Components/DriverPortal'
 import DeliveryForm from './Components/DeliveryForm'
 import DriverLogin from './Components/DriverLogin'
+import AdminPortal from './Components/AdminPortal'
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-
 
 function App() {
   return (
@@ -14,6 +14,7 @@ function App() {
           <Route path="/" element={<DriverLogin />} />
           <Route path='/driverlog' element={<DriverPortal />} />
           <Route path='driverlog/delivery/:mfstkey' element={<DeliveryForm />} />
+          <Route path='/admin' element={<AdminPortal />} />
         </Routes>
       </BrowserRouter>
     </div>

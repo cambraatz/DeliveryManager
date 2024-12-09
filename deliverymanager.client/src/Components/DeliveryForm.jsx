@@ -1,8 +1,178 @@
-import { useState, useEffect } from 'react';
+//////////////////////////////////////////////////////////////////////////////////////
+/* 
+DeliveryForm() - User Manipulation of Delivery Records
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+BASIC STRUCTURE:
+DeliveryForm() {
+    gather current date/time
+    initialize react location and navigation
+    initialize empty image state for signature and location capture
+
+    if location.state is valid:
+        gather delivery location image from state
+        gather signature image from state
+
+    useEffect() {
+        catch indirect visits to current page, redirect to login
+        for both 'img_loc' or 'img_sign':
+            if null or "": <-- : *** see if this is always null now that backend is handling null values correctly***
+                hide image thumbnail
+                render image capture button
+            if not null:
+                retrieveImage(img_loc || img_sign) 
+                setImages(...images, retrievedImage) - set image thumbnail for render
+
+        if delivery "STATUS" is undelivered:
+            hide "clear delivery" button
+            adjust formatting accordingly
+    },[]) <-- triggers once on initial render only...
+
+    [image/response] : retrieveImage(image) {
+        retrieve image on file
+        return image
+    }
+
+    initialize "driverCredentials" object from location state (null if not): USERNAME and POWERUNIT
+
+    gather current username from driverCredentials <-- *** can this just directly reference driverCredentials? ***
+
+    initialize "updateData" object from location state (null if not): MFSTDATE and POWERUNIT <-- *** be sure the redundancy is necessary ***
+    
+    initialize "delivery_time" from location state (null if not) 
+    if null:
+        set to current time
+    else:
+        set to delivery time on file, formatted for render
+
+    initialize "delivery_date" from location state (null if not)
+    if null:
+        set to current date
+    else:
+        set to delivery date on file, formatted for render
+
+    initialize "delivery_pieces" from location state (null if not)
+    if null: <-- *** does this really need to check location.state again? ***
+        set to expected TTLPCS on file
+    
+    initialize "delivery" object to be used for updating delivery on database (field for each DB field)
+
+    initialize "formData" object to be used for rendering delivery information on screen/form field
+
+    [void] : handleChange(event) {
+        gather e.target value - ie: the updated value in form
+        switch (e.target.id): 
+            if "dlvddate":
+                setFormData(..., renderDate(val))
+                setDelivery(..., scrapeTime(val))   
+
+            if "dlvtime", "dlvdpcs", "dlvdsign", or "dlvdnote":
+                setFormData(..., val)
+                setDelivery(..., val) 
+
+            if "dlvdimage":
+                setFormData(..., new image) <-- *** this too ***
+                setDelivery(..., new image file) <-- *** should these be wrapped in the following if statement, handle invalid file? ***
+                if (file is a valid image file):
+                    create Object URL from file
+                    setDeliveryLocation() state to the generated url
+                hide image capture button and previous image thumbnail <-- *** this too ***
+                *//* previous opacity transition commented out *//*
+
+            if "dlvdimagefilesign":
+                setFormData(..., new signature blob)
+                setDelivery(..., new signature file)
+                *//* previous opacity transition commented out *//*
+    }
+
+    *//* [image/file] : resizePhoto() { inactive function to resize photos on the frontend } *//*
+
+    [string] : clearDelivery() {
+        package snapshot of "delivery", overwriting any dynamic fields back to default values (except LASTUPDATE)
+        map delivery object into new FormData() object
+        update the delivery entry in the database
+        return the response string
+    }
+
+    [string] : handleUpdate() {
+        map current state of "delivery" object into new FormData() object
+        if "DLVDIMGFILELOCN" field is a filename string (in lieu of an image file):
+            *//* note: this condition occurs when a previous image is already on file and is not overwritten *//*
+            add new tag-along field, "location_string" to pass filename to backend to query later
+            set "DLVDIMGFILELOCN" to null
+
+        if "DLVDIMGFILESIGN" field is a filename string (in lieu of an image file):
+            repeat the conditional logic above for "DLVDIMGFILESIGN" and "signature_string"
+
+        if user left "deliveryNotes" or "deliverySign" blank (ie: empty quotes): 
+            replace them with true null values in lieu of blank quotes
+
+        set the "LASTUPDATE" field to the current date/time
+        request "PUT" to update delivery on the database
+
+        return response string
+    }
+
+    [void] : handleSubmit(event) {
+        initialize response for overwriting
+        if (e.target.id === "undeliver"):
+            clearDelivery() to default delivery values (except LASTUPDATE)
+        else:
+            handleUpdate()  to update delivery fields in database
+
+        if (response is valid):
+            navigate() back to /driverlog (ie: delivery manifest)
+    }
+
+    [void] : handleReturn() {
+        package "deliveryData" object to repopulate delivery manifest upon return
+        navigate() back to /driverlog (ie: delivery manifest) making no changes
+    }
+
+    initialize "signStatus" state to "No signature chosen"
+    initialize "locStatus" state to "No image chosen"
+
+    initialize "userSignature" and "deliveryLocation" stats to null
+
+    [void] : handleSignature() {}
+
+    [void] : signatureToggle() {}
+
+    [void] : handlePopupClose() {}
+
+    ...
+
+    [void] : collapseHeader() {}
+}
+
+*/////////////////////////////////////////////////////////////////////////////////////
+
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
-import { scrapeDate, renderDate, renderTime, scrapeTime, getDate, getTime, translateDate, API_URL /*, scrapeFile*/ } from '../Scripts/helperFunctions';
+import Footer from './Footer';
+import ImageRenderer from './ImageRenderer';
+import SignatureField from './SignatureField';
+//import Popup from './Popup';
+import FileUploadLogo from '../assets/add_file.svg';
+import ImageUploadLogo from '../assets/add_image.svg';
+import SignUploadLogo from '../assets/add_sign.svg';
+
+import { scrapeDate, 
+    renderDate, 
+    renderTime, 
+    scrapeTime, 
+    getDate, 
+    getTime, 
+    translateDate, 
+    API_URL, 
+    getToken, 
+    isTokenValid,
+    logout /*, scrapeFile*/ } from '../Scripts/helperFunctions';
 
 const DeliveryForm = () => {
     /*
@@ -17,37 +187,48 @@ const DeliveryForm = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    let img_loc = location.state ? location.state.delivery["DLVDIMGFILELOCN"] : null;
-    let img_sign = location.state ? location.state.delivery["DLVDIMGFILESIGN"] : null;
-
-    
     const [images,setImages] = useState({
         Signature: null,
         Location: null,
     });
 
+    let img_loc = location.state ? location.state.delivery["DLVDIMGFILELOCN"] : null;
+    let img_sign = location.state ? location.state.delivery["DLVDIMGFILESIGN"] : null;
+
+    //document.getElementById("Header").style.top = "-20%";
+
     useEffect(() => {
+        const token = getToken();
+        if(!isTokenValid(token)){
+            logout();
+            navigate('/');
+        }
+
         //console.log("This was triggered with useEffect()...")
         if(!location.state){
            navigate("/")
         }
 
+        //console.log(`useEffect(): img_loc=${img_loc}, img_sign=${img_sign}`)
+
         if(img_loc === null || img_loc === "") {
             document.getElementById('img_Div_Loc').style.display = "none";
+            document.getElementById('locCapture').style.display = "flex";
             //document.getElementById('img_file_locn').style.display = "none";
         } else if(img_loc !== null) {
             const location_img = retrieveImage(img_loc);
             setImages({...images, Location: location_img})
-            console.log(location_img);
+            //console.log(`set ${location_img} to image state...`);
         }
 
         if(img_sign === null || img_sign === "") {
-            document.getElementById('img_Div_Sign').style.display = "none"; 
+            document.getElementById('img_Div_Sign').style.display = "none";
+            document.getElementById('sigCapture').style.display = "flex";
             //document.getElementById('img_file_sign').style.display = "none";
         } else if(img_sign !== null) {
             const signature_img = retrieveImage(img_sign);
             setImages({...images, Signature: signature_img})
-            console.log(signature_img);
+            //console.log(`set ${signature_img} to image state...`);
         }
 
         if(location.state.delivery["STATUS"] != 1) {
@@ -59,8 +240,9 @@ const DeliveryForm = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
 
+    
     async function retrieveImage(image) {
-        console.log(`This will return ${image}...`)
+        //console.log(`This will return ${image}...`)
         const testImage = await fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE="+image)
         return testImage
     }
@@ -131,7 +313,6 @@ const DeliveryForm = () => {
         DLVDDATE: location.state ? location.state.delivery["DLVDDATE"] : scrapeDate(currDate),
         DLVDTIME: location.state ? location.state.delivery["DLVDTIME"] : scrapeTime(currTime),
         DLVDPCS: delivery_pieces,
-
         DLVDSIGN: location.state ? location.state.delivery["DLVDSIGN"] : null,
         DLVDNOTE: location.state ? location.state.delivery["DLVDNOTE"] : null,
         DLVDIMGFILELOCN: location.state ? location.state.delivery["DLVDIMGFILELOCN"] : null,
@@ -146,10 +327,10 @@ const DeliveryForm = () => {
         deliveredPieces: delivery.DLVDPCS == null ? delivery.TTLPCS : delivery.DLVDPCS,
 
         deliveryConsignee: delivery.CONSNAME,
-        deliveryNotes: delivery.DLVDNOTE == null || delivery.DLVDNOTE == "null" ? "" : delivery.DLVDNOTE,   
+        deliveryNotes: delivery.DLVDNOTE == null ? "" : delivery.DLVDNOTE,   
         deliveryImagePath: delivery.DLVDIMGFILELOCN,
         deliverySignaturePath: delivery.DLVDIMGFILESIGN,
-        deliverySign: delivery.DLVDSIGN   
+        deliverySign: delivery.DLVDSIGN == null ? "" : delivery.DLVDSIGN 
     });
 
     //
@@ -208,40 +389,49 @@ const DeliveryForm = () => {
                     DLVDNOTE: val
                 });
                 break;
+
             case 'dlvdimage':
                 setFormData({
                     ...formData,
                     deliveryImagePath: val
                 });
-                
                 setDelivery({
                     ...delivery,
                     DLVDIMGFILELOCN: e.target.files[0]
                 });
+
+                if (e.target.files[0] && e.target.files[0].type.startsWith('image/')) {
+                    //resizePhoto(e.target.files[0],300,300, (resizedImageData) => {
+                    //    setDeliveryLocation(resizedImageData);
+                    //});
+                    const url = URL.createObjectURL(e.target.files[0]);
+                    setDeliveryLocation(url);
+                }
+                document.getElementById("img_Div_Loc").style.display = "none";
+                document.getElementById("locCapture").style.display = "none";
                 /*
-                setDelivery({
-                    ...delivery,
-                    DLVDIMGFILELOCN: scrapeFile(val)
-                });
-                */
+                try {
+                    document.getElementById("img_Div_Loc").getElementsByTagName("img")[0].style.opacity = 0.5;
+                } catch {
+                    break;
+                }*/
                 break;
+
             case 'dlvdimagefilesign':
                 setFormData({
                     ...formData,
                     deliverySignaturePath: val
                 });
-                
                 setDelivery({
                     ...delivery,
                     DLVDIMGFILESIGN: e.target.files[0]
                 });
                 /*
-                setDelivery({
-                    ...delivery,
-                    DLVDIMGFILESIGN: scrapeFile(val)
-                });
-                */
-                
+                try { 
+                    document.getElementById("img_Div_Sign").getElementsByTagName("img")[0].style.opacity = 0.5; 
+                } catch {
+                    break;
+                }*/
                 break;
             default:
                 break;
@@ -253,32 +443,37 @@ const DeliveryForm = () => {
     */
 
     //
+    // resize photo prior to uploading...
+    /*
+    const resizePhoto = (imageFile, newWidth, newHeight, callback) => {
+        console.log(imageFile);
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+
+                ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+                const resizedImageData = canvas.toDataURL('image/jpeg', 0.8);
+
+                callback(resizedImageData);
+            };
+        };
+        reader.readAsDataURL(imageFile);
+    }*/
+
+    //
     // handle updating existing delivery records when changed...
     async function clearDelivery() {
-        //const updateTS = currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00";
-
         const reset_delivery = {
-            /*
-            MFSTKEY: delivery.MFSTKEY,
-            STATUS: "0",
-            LASTUPDATE: delivery.LASTUPDATE,
-            MFSTNUMBER: delivery.MFSTNUMBER,
-            POWERUNIT: delivery.POWERUNIT,
-            STOP: delivery.STOP,
-            MFSTDATE: delivery.MFSTDATE,
-            PRONUMBER: delivery.PRONUMBER,
-            PRODATE: delivery.PRODATE,
-            SHIPNAME: location.state.delivery["SHIPNAME"],
-            CONSNAME: location.state.delivery["CONSNAME"],
-            CONSADD1: location.state.delivery["CONSADD1"],
-            CONSADD2: location.state.delivery["CONSADD2"],
-            CONSCITY: location.state.delivery["CONSCITY"],
-            CONSSTATE: location.state.delivery["CONSSTATE"],
-            CONSZIP: location.state.delivery["CONSZIP"],
-            TTLPCS: location.state.delivery["TTLPCS"],
-            TTLYDS: location.state.delivery["TTLYDS"],
-            TTLWGT: location.state.delivery["TTLWGT"],
-            */
             ...delivery,
             LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00",
             STATUS: "0",
@@ -294,7 +489,6 @@ const DeliveryForm = () => {
         let formData = new FormData();
         for (const [key,value] of Object.entries(reset_delivery)){
             formData.append(key,value)
-            //console.log("key: ", key, "value: ", value, "val_type: ",typeof value)
         }
 
         const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest", {
@@ -308,62 +502,31 @@ const DeliveryForm = () => {
     //
     // handle updating existing delivery records when changed...
     async function handleUpdate() {
-        /*
-        let sign = delivery.DLVDSIGN
-        if(sign === ""){
-            sign = "n/a"
-        }
-
-        let note = delivery.DLVDNOTE
-        if(note === ""){
-            note = "n/a"
-        }
-
-        let img = delivery.DLVDIMGFILELOCN
-        if(img === ""){
-            img = "n/a"
-        }
-
-        let sign_img = delivery.DLVDIMGFILESIGN
-        if(sign_img === ""){
-            sign_img = "n/a"
-        }
-        
-        const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + 
-                            '&STATUS=1&LASTUPDATE=' + delivery.LASTUPDATE + 
-                            '&MFSTNUMBER=' + delivery.MFSTNUMBER + 
-                            '&POWERUNIT=' + delivery.POWERUNIT + 
-                            '&STOP=' + delivery.STOP +
-                            '&MFSTDATE=' + delivery.MFSTDATE + 
-                            '&PRONUMBER=' + delivery.PRONUMBER + 
-                            '&PRODATE=' + delivery.PRODATE + 
-                            '&SHIPNAME=' + delivery.SHIPNAME.replace("&","%26") + 
-                            '&CONSNAME=' + delivery.CONSNAME.replace("&","%26") +
-                            '&CONSADD1=' + delivery.CONSADD1.replace("&","%26")  + 
-                            '&CONSADD2=' + delivery.CONSADD2.replace("&","%26")  + 
-                            '&CONSCITY=' + delivery.CONSCITY + 
-                            '&CONSSTATE=' + delivery.CONSSTATE + 
-                            '&CONSZIP=' + delivery.CONSZIP +
-                            '&TTLPCS=' + delivery.TTLPCS + 
-                            '&TTLYDS=' + delivery.TTLYDS + 
-                            '&TTLWGT=' + delivery.TTLWGT + 
-                            '&DLVDDATE=' + delivery.DLVDDATE + 
-                            '&DLVDTIME=' + delivery.DLVDTIME + 
-                            '&DLVDPCS=' + delivery.DLVDPCS +
-                            '&DLVDSIGN=' + sign.replace("&","%26")  + 
-                            '&DLVDNOTE=' + note.replace("&","%26")  + 
-                            '&DLVDIMGFILELOCN=' + img + 
-                            '&DLVDIMGFILESIGN=' + sign_img
-
-        const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest" + deliveryString, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-        })
-        */
         let deliveryData = new FormData();
         for (const [key,value] of Object.entries(delivery)){
             deliveryData.append(key,value)
-            //console.log("key: ", key, "value: ", value, "val_type: ",typeof value)
+        }
+
+        // add function to resize image here...
+        //resizePhoto(delivery.DLVDIMGFILELOCN);
+
+        //console.log(`VALUE OF IMAGE STATES AT TIME OF UPDATE: images.Location:${images.Location}, images.Signature: ${images.Signature}`)
+        if (typeof delivery.DLVDIMGFILELOCN === "string") {
+            deliveryData.append("location_string",delivery.DLVDIMGFILELOCN)
+            deliveryData.set("DLVDIMGFILELOCN", null)
+        }
+
+        if (typeof delivery.DLVDIMGFILESIGN === "string") {
+            deliveryData.append("signature_string",delivery.DLVDIMGFILESIGN)
+            deliveryData.set("DLVDIMGFILESIGN", null)
+        }
+
+        if (delivery.deliveryNotes === "") {
+            deliveryData.set("DLVDNOTE", null)
+        }
+
+        if (delivery.deliverySign === "") {
+            deliveryData.set("DLVDSIGN", null)
         }
 
         // set last update key-value pair to current date-time...
@@ -377,46 +540,9 @@ const DeliveryForm = () => {
         return response;
     }
 
-    /*
-    //
-    // handle deleting existing delivery record once changed...
-    async function handleDelete(mfstkey) {
-        const response = await fetch(API_URL + "api/DriverChecklist/DeleteManifest?MFSTKEY=" + mfstkey, {
-            method: "DELETE",
-            headers,
-        })
-        //console.log(response);
-        return response;
-    }
-
-    //
-    // immediately recreates updated delivery to be added back...
-    async function handleCreate() {
-        //let add2 = "NULL";
-        //if(delivery.CONSADD2){
-        //    add2 = delivery.CONSADD2
-        //}
-        const deliveryString = '?MFSTKEY=' + delivery.MFSTKEY + '&STATUS=1&LASTUPDATE=' + delivery.LASTUPDATE + '&MFSTNUMBER=' + delivery.MFSTNUMBER + '&POWERUNIT=' + delivery.POWERUNIT + '&STOP=' + delivery.STOP +
-            '&MFSTDATE=' + delivery.MFSTDATE + '&PRONUMBER=' + delivery.PRONUMBER + '&PRODATE=' + delivery.PRODATE + '&SHIPNAME=' + delivery.SHIPNAME + '&CONSNAME=' + delivery.CONSNAME +
-            '&CONSADD1=' + delivery.CONSADD1 + '&CONSADD2=' + delivery.CONSADD2 + '&CONSCITY=' + delivery.CONSCITY + '&CONSSTATE=' + delivery.CONSSTATE + '&CONSZIP=' + delivery.CONSZIP +
-            '&TTLPCS=' + delivery.TTLPCS + '&TTLYDS=' + delivery.TTLYDS + '&TTLWGT=' + delivery.TTLWGT + '&DLVDDATE=' + delivery.DLVDDATE + '&DLVDTIME=' + delivery.DLVDTIME + '&DLVDPCS=' + delivery.DLVDPCS +
-            '&DLVDSIGN=' + delivery.DLVDSIGN + '&DLVDNOTE=' + delivery.DLVDNOTE + '&DLVDIMGFILELOCN=' + delivery.DLVDIMGFILELOCN + '&DLVDIMGFILESIGN=' + delivery.DLVDIMGFILESIGN
-
-        const response = await fetch(API_URL + "api/DriverChecklist/AddManifest" + deliveryString, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-        })
-        //console.log(response);
-        return response;
-    }
-    */
-
     //
     // helper function to update delivery and return to previous page...
     async function handleSubmit(e) {
-        //await handleDelete(delivery.MFSTKEY);
-        //await handleCreate();
-        //alert(e.target.id)
         let response = null
 
         if(e.target.id === "undeliver"){
@@ -429,9 +555,11 @@ const DeliveryForm = () => {
         // package delivery/driver information
         const deliveryData = {
             delivery: updateData,
-            driver: driverCredentials
+            driver: driverCredentials,
+            header: header
         };
-        //console.log(response)
+
+        // if request was successful, return to delivery manifest...
         if(response && response.ok == true){
             navigate(`/driverlog`, { state: deliveryData });
         }
@@ -444,66 +572,91 @@ const DeliveryForm = () => {
         // package delivery/driver information
         const deliveryData = {
             delivery: updateData,
-            driver: driverCredentials
+            driver: driverCredentials,
+            header: header,
+            company: company
         };
-        //console.log("returning with deliveryData:", deliveryData)
+
         navigate(`/driverlog`, { state: deliveryData });
     };
 
-    //
-    //
-    function renderImage(URL,id) {
-        const valid = renderTest(URL);
-        console.log("status: ", valid)
-        
-        if(valid){
-            //const response = fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE=" + URL)
-            console.log("if valid test has passed...")
-            return (
-                <div id={id}>
-                    <img className="thumbnail" src={API_URL + "api/DriverChecklist/GetImage?IMAGE=" + URL} alt="Error loading image, please upload new image..."></img>
-                    <label className="thumbnail_label"><smaller>Replace Image?</smaller></label>
-                </div>
-            )            
-        }
-        else {
-            console.log("if valid test has failed...")
-            return (
-                <div id={id}>
-                    <p>Image load failed...</p>
-                </div>
-            )
-        }
-        
+    //const [signStatus,setSignStatus] = useState("No signature chosen");
+    //const [locStatus,setLocStatus] = useState("No image chosen");
+
+    const [userSignature,setUserSignature] = useState(null);
+    const [deliveryLocation,setDeliveryLocation] = useState(null);
+
+    async function handleSignature(image) {
+
+        /* is this necessary?
+        setFormData({
+            ...formData,
+            deliverySignaturePath: "manual signature"
+        });
+        setDelivery({
+            ...delivery,
+            DLVDIMGFILESIGN: image
+        });*/
+
+        //console.log(image);
+        const url = URL.createObjectURL(image);
+        //console.log(url);
+        //setSignStatus("Signature collected")
+        setUserSignature(url);
+        document.getElementById("sigCapture").style.display = "none";
+
+        // is this necessary?
+        setFormData({
+            ...formData,
+            deliverySignaturePath: "manual signature"
+        });
+        setDelivery({
+            ...delivery,
+            DLVDIMGFILESIGN: image
+        });
+
+        document.getElementById("img_Div_Sign").style.display = "none";
+        handlePopupClose();
     }
 
-    async function renderTest(URL) {
-        console.log(URL)
-        if(!URL) {
-            console.log("No image to load...")
-            return false;
-        }
+    const signatureToggle = () => {
+        document.getElementById("popupSignatureWindow").style.visibility = "visible";
+        document.getElementById("popupSignatureWindow").style.opacity = 1;
+        document.getElementById("popupSignatureWindow").style.pointerEvents = "auto";
+    }
 
-        try {
-            const response = await fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE=" + URL)
-            console.log("Response: ", response)
+    const handlePopupClose = () => {
+        document.getElementById("popupSignatureWindow").style.visibility = "hidden";
+        document.getElementById("popupSignatureWindow").style.opacity = 0;
+        document.getElementById("popupSignatureWindow").style.pointerEvents = "none";
+    }
 
-            if(!response.ok){
-                throw new Error(`Response status: ${response.status}`)
+    const hiddenFileInput = useRef(null);
+    const handleImageClick = () => {
+        hiddenFileInput.current.click();
+    }
+
+    const [header,setHeader] = useState(location.state.header);
+
+    const collapseHeader = (e) => {
+        //console.log(e.target.id);
+        if (e.target.id === "collapseToggle" || e.target.id === "toggle_dots") {
+            if (header === "open") {
+                setHeader("close");
+                //e.target.id = "openToggle";
+            } else {
+                setHeader("open");
+                //e.target.id = "collapseToggle";
             }
-            return true;
         }
-        catch (error) {
-            console.error(error.message);
-            return false;
-        }
-        
-
     }
+
+    const [company, setCompany] = useState(location.state.company ? location.state.company : "Transportation Computer Support, LLC");
 
     return (
         <div id="webpage">
             <Header
+                company={company}
                 title="Delivery Update"
                 currUser={currUser}
                 header="Full"
@@ -513,7 +666,10 @@ const DeliveryForm = () => {
                 STOP={delivery.STOP}
                 PRONUMBER={delivery.PRONUMBER}
                 MFSTKEY={delivery.MFSTKEY}
+                toggle={header}
+                onClick={collapseHeader}
             />
+
             <div id="Delivery_Input_Div">
                 <form id="form_data" onSubmit={handleSubmit}>
                     <div id="datetime_Div">
@@ -541,44 +697,81 @@ const DeliveryForm = () => {
                         <input type="text" id="dlvdnote" value={formData.deliveryNotes} className="input_form" onChange={handleChange} maxLength="30"/>
                     </div>
                     <div id="img_Div">
-                        <div>
-                            <label>Consignee Signature: <i>Image</i> </label>
-
-                            { renderImage(img_sign,"img_Div_Sign") }
-
-                            <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_image" name="sign_image" onChange={handleChange}/>
-                            {/*<p id="img_file_sign" className="image_confirmation">Image ({formData.deliverySignaturePath}) On File...</p>
-                            <label className="fileUpload">
-                                <input type="file" accept="image/*" id="dlvdimagefilesign" className="input_form" onChange={handleChange} />
-                                {uploadSignatureStatus}
-                            </label>*/}
+                        <div id="img_sig_div">
+                            <label>Consignee Signature:</label>
+                            {userSignature && (
+                                <>
+                                    <img id="signatureThumbnail" className="thumbnail" src={userSignature} alt="Saved userSignature" onClick={signatureToggle}/>
+                                    {/*<label className="thumbnail_label">
+                                        <small>Replace Signature?</small>
+                                    </label>*/}
+                                </>
+                            )}
+                            <ImageRenderer URL={img_sign} id="img_Div_Sign" onClick={signatureToggle}/>
+                            
+                            <div id="sigCapture" className="file_upload_widget" style={{display: "none"}} onClick={signatureToggle}>
+                                <img id="fileUploadLogo" src={SignUploadLogo} alt="file upload logo" />
+                                <p>Collect a signature</p>
+                            </div>
+                            {/*
+                            <div id="sigCapture" style={{display: "none"}}>
+                                <button id="signatureToggle" type="button" onClick={signatureToggle}>Add Signature</button>
+                                <p>{signStatus}</p>
+                            </div>
+                            */}
+                            
+                            {/*<input type="file" accept="image/*" id="dlvdimagefilesign" className="input_image" name="sign_image" onChange={handleChange} capture="environment" style={{display: "none"}}/>*/}
                         </div>
-                        <div>
-                            <label>Delivery Location: <i> Image</i></label>
-
-                            { renderImage(img_loc,"img_Div_Loc") }
-
-                            <input type="file" accept="image/*" id="dlvdimage" className="input_image" onChange={handleChange}/>
-                            {/*<p id="img_file_locn" className="image_confirmation">Image ({formData.deliveryImagePath}) On File...</p>
-                            <label className="fileUpload">
-                                <input type="file" accept="image/*" id="dlvdimage" className="input_form" onChange={handleChange} />
-                                {uploadImageStatus}
-                            </label>*/}
+                        <div id="img_loc_div">
+                            <label>Delivery Location:</label>
+                            {deliveryLocation && (
+                                <>
+                                    <img id="locationThumbnail" className="thumbnail" src={deliveryLocation} alt="Saved deliveryLocation" onClick={handleImageClick}/>
+                                    {/*<label className="thumbnail_label">
+                                        <small>Replace Image?</small>
+                                    </label>*/}
+                                </>
+                            )}
+                            <ImageRenderer URL={img_loc} id="img_Div_Loc" onClick={handleImageClick}/>
+                            <div id="locCapture" className="file_upload_widget" style={{display: "none"}} onClick={handleImageClick}>
+                                <img id="fileUploadLogo" src={ImageUploadLogo} alt="file upload logo" />
+                                <p>Upload an image</p>
+                            </div>
+                            {/*
+                            <div id="locCapture" style={{display: "none"}}>
+                                <button id="locationToggle" type="button" onClick={handleImageClick}>Add Image</button>
+                                <p>{locStatus}</p>
+                            </div>
+                            */}
+                            <input type="file" accept="image/*" ref={hiddenFileInput} id="dlvdimage" className="input_image" onChange={handleChange} capture="environment" style={{display: "none"}}/>
+                            {/*<input type="file" accept="image/*" id="dlvdimage" className="input_image" onChange={handleChange} capture="environment"/>*/}
                         </div>
                     </div>
                     <div id="print_div">
                         <div className="cont_left">
-                            <label>Consignee Signature: <i>Print</i></label>
+                            <label>Consignee Signature Printed:</label>
                             <input type="text" id="dlvdsign" value={formData.deliverySign} className="input_form" min="0" max="999" onChange={handleChange} required/>
                         </div>
                     </div>
                 </form>
                 <div id="button_div">
-                        <button id="update" onClick={handleSubmit} type="button">Update Delivery</button>
-                        <button id="undeliver" onClick={handleSubmit} type="button">Undo Delivery</button>
-                        <button onClick={handleReturn} type="button">Back To Deliveries</button>
-                    </div>
+                    <button onClick={handleReturn} type="button">Back To Deliveries</button>
+                    <button id="undeliver" onClick={handleSubmit} type="button">Undo Delivery</button>
+                    <button id="update" onClick={handleSubmit} type="button">Update Delivery</button>
+                </div>
             </div>
+
+            {/*** POPUP CONTENT - THIS SECTION IS HIDDEN BY DEFAULT ***/}
+            <div id="popupSignatureWindow" className="overlay">
+                <div className="popupSignature">
+                    <div id="popupExit" className="content">
+                        <h1 id="close" onClick={handlePopupClose}>&times;</h1>
+                    </div>
+                    <SignatureField id="sigField" onSubmit={handleSignature}/>
+                </div>
+            </div>
+            {/***************************************************************/}
+            <Footer id="footer"/>
         </div>
     )
 }

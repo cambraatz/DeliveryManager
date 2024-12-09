@@ -1,28 +1,4 @@
-﻿/* Remnant from test app...
-#root {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 2rem;
-    text-align: center;
-}
-
-tr:nth-child(even) {
-    background: #F2F2F2;
-}
-
-tr:nth-child(odd) {
-    background: #FFF;
-}
-
-th, td {
-    padding-left: 1rem;
-    padding-right: 1rem;
-}
-*/
-
-/* Newly added CSS styling */
-
-:root {
+﻿:root {
     --primary-color: #5A89BB;
     --action-color: #e0eaf3;
 }
@@ -62,21 +38,48 @@ hr {
 }
 
 body {
-    /*margin: 8px;*/
     margin: 0;
     background-color: white;
 }
 
 header h1, header h2, header h3, header h4, header h5 {
-    /*margin: 16px 15px 0 15px;*/
-    margin: 2.5% 4%;
+    /*margin: 2.5% 4%;*/
+    margin: 1% 4%;
     display: flex;
     align-items: start;
 }
 
+/*
 img {
     font-size: smaller;
     display:flex;
+}*/
+
+thead {
+    font-size: 0.85em;
+    /*border-bottom: 1px solid black;*/
+}
+
+.col1 {
+    width: 8%;
+}
+.col2 {
+    width: 12%;
+}
+.col3 {
+    width: 15%;
+}
+.col4 {
+    width: 20%;
+}
+.col5 {
+    width: 20%;
+}
+.col6 {
+    width: 10%;
+}
+.col7 {
+    width: 15%;
 }
 
 .SPM_Col h4, .SPM_Col h5 {
@@ -88,12 +91,44 @@ img {
 #AccountTab {
     display: flex;
     align-items: center;
-    padding: 2.5% 4%;
+    /*padding: 2.5% 4%;*/
+    padding: 1% 4%;
     justify-content: space-between;
     border-top: 1px solid #353535;
     border-bottom: 1px solid #353535;
     box-shadow: 0px 3px 4px #00000020;
     /*background-color: #e0eaf3;*/
+}
+
+#sticky_MDPU {
+    display: flex;
+    justify-content: start;
+    width: 60%;
+    gap: 1%;
+}
+#sticky_MDPU .weak {
+    margin-right: 3%;
+}
+#sticky_MDPU h4 {
+    margin: 0 0% 0 0 ;
+}
+#sticky_MDPU div {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 1%;
+}
+
+#sticky_creds {
+    display: flex;
+    justify-content: end;
+    width: 30%;
+    gap: 5%;
+}
+
+#MDPU_Row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4%;
 }
 
 #MDPU_Row h3 span {
@@ -122,6 +157,33 @@ img {
         opacity: 1;
     }
 
+.popupSignature {
+    margin: 12.5% 25% 0;
+    padding: 5px 20px;
+    background: #fff;
+    border-radius: 5px;
+    width: auto;
+    position: relative;
+    transition: all 1s ease-in-out;
+}
+.popupSignature .close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    transition: all 200ms;
+    font-size: 30px;
+    font-weight: bold;
+    text-decoration: none;
+    color: #333;
+}
+#popupExit {
+    display: flex;
+    justify-content: flex-end;
+}
+#popupExit h1 {
+    margin: 1% 1%;
+}
+
 #popupLogoutWindow {
     visibility: hidden;
     opacity: 0;
@@ -133,7 +195,7 @@ img {
     padding: 5px 20px;
     background: #fff;
     border-radius: 5px;
-    width: 50%;
+    width: 300px;
     position: relative;
     transition: all 5s ease-in-out;
 }
@@ -181,23 +243,26 @@ img {
     justify-content: center;
 }
 
-#popupLoginWindow {
+#popupLoginWindow, 
+#popupEditWindow, 
+#popupAddWindow {
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
+    transition: all 0.75s ease-in-out;
 }
 
 .popupLogin {
-    margin: 50% auto;
+    margin: 25% auto;
     padding: 5px 20px;
     background: #fff;
     border-radius: 5px;
-    width: 50%;
+    width: 25%;
     position: relative;
-    transition: all 5s ease-in-out;
+    transition: all 1s ease-in-out;
 }
 
-    .popupLogin .close {
+    .popupLogin .close, .popupLogin .close_add, .popupLogin .edit_add {
         position: absolute;
         top: 20px;
         right: 30px;
@@ -207,10 +272,6 @@ img {
         text-decoration: none;
         color: #333;
     }
-
-        .popupLogin .close:hover {
-            color: #06D85F;
-        }
 
     .popupLogin .content {
         max-height: 30%;
@@ -233,6 +294,10 @@ img {
         margin-block-end: 0.75em;
         margin-inline-start: 0;
         margin-inline-end: 0;
+    }
+
+    .popupLogin label {
+        font-size: smaller;
     }
 
 #popupLoginPrompt {
@@ -274,7 +339,7 @@ img {
     display: block;
     text-align: center;
     /*margin: 16px 1em 0 1em;
-    margin: 2% 1% 0 1%;*/
+    margin: 5% 30% 0 30%;*/
     margin: 10% 20% 0 20%;
     border-top: solid 1px black;
     border-left: solid 1px black;
@@ -297,6 +362,7 @@ img {
     display: flex;
     align-items: start;
     text-align: left;
+    font-size: 0.75em;
 }
 
 #UserWidget {
@@ -304,10 +370,17 @@ img {
     justify-content: flex-end;
     align-items: center;
     margin-right: 1em;
+    height: 30px;
 }
 
 #UserWidget p {
     margin-bottom: 1.2em;
+}
+
+#UserIcon {
+    height: 30px;
+    width: 30px;
+    margin-right: 10px;
 }
 
 .separator_top {
@@ -353,19 +426,21 @@ table {
     max-width: 1400px;
 }
 
+tbody {
+    font-size: 0.75em;
+}
 tbody tr:nth-child(odd) {
     background-color: #e0eaf3;
 }
 
 td, th {
-    /*padding: 5px 5px;*/
-    padding: 2%;
+    padding: 1%;
     overflow: hidden;
 }
 
 #Delivery_Input_Div {
     /*margin: 0 1em;*/
-    margin: 0 2%;
+    margin: 0 20% 5%;
     border: solid 1px black;
     border-radius: 0 0 5px 5px;
     background-color: #e0eaf3;
@@ -373,17 +448,33 @@ td, th {
 
     #Delivery_Input_Div button {
         margin: 0 0 1.5em 0;
+        padding: 0.75em 0;
         width: 27%;
         height: 3em;
     }
 
 #Logout button {
     height: 2em;
+    width: auto;
+}
+
+#admin_div {
+    margin: 0 20% 5%;
+    padding: 1em 0;
+    border: solid 1px black;
+    border-radius: 0 0 5px 5px;
+    background-color: #e0eaf3;
+}
+
+#admin_div button {
+    margin: 1em 5%;
+    min-height: 3em;
+    width: 50%;
 }
 
 #Delivery_Login_Div {
     /*margin: 0 1em;*/
-    margin: 0 20%;
+    margin: 0 20% 5%;
     border: solid 1px black;
     border-radius: 0 0 5px 5px;
     background-color: #e0eaf3;
@@ -391,7 +482,7 @@ td, th {
 
     #Delivery_Login_Div button {
         margin: 1em 5%;
-        width: 40%;
+        width: 30%;
         height: 2em;
     }
 
@@ -413,8 +504,8 @@ td, th {
 #SPM_Row {
     display: flex;
     justify-content: space-between;
-    margin: 0 2%;
-    padding: 0.5em 0;
+    margin: 0 20%;
+    padding: 0.5em 5%;
     border-top: solid 1px black;
     border-left: solid 1px black;
     border-right: solid 1px black;
@@ -468,7 +559,7 @@ td, th {
 
 #img_Div {
     display: flex;
-    align-items: center;
+    align-items: normal;
     padding: 0 10% 0 10%;
     justify-content: space-between;
     flex-wrap: wrap;
@@ -478,7 +569,7 @@ td, th {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        /*padding-bottom: 1em;*/
+        margin-bottom: 0.5em;
     }
 
 #dlvdpcs {
@@ -501,10 +592,11 @@ td, th {
 }
 
 #button_div {
-    display: flex;
-    justify-content: space-around;
     margin: 0.5em 0;
     padding: 0 10%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
 }
 
 .invalid_input {
@@ -529,7 +621,7 @@ input {
     width: 100%;
     /*background-color: white;*/
     border: 1px solid black;
-    border-radius: 3px;
+    border-radius: 5px;
 }
 
 input:disabled {
@@ -546,6 +638,9 @@ input:disabled {
 
 .cont_left {
     width: 54%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .cont_right {
@@ -560,13 +655,52 @@ input:disabled {
     color: #00000085;
 }
 
+#img_sig_div {
+    /*min-width: 54%;*/
+    width: 47.5%;
+}
+#img_loc_div {
+    /*min-width: 34%;*/
+    width: 47.5%;
+}
+#img_Div_Loc, #img_Div_Sign {
+    width: 100%;
+}
+
 .thumbnail {
-    width: 80%;
+    width: 100%;
     height: auto;
-    max-height: 12em;
+    max-height: 8em;
     /*margin: 0.5em 0 0.5em 0;*/
     border: 1px solid black;
     border-radius: 5px;
+    background-color: white;
+    opacity: 100%;
+    object-fit: contain;
+}
+/*
+#img_Div_Sign img {
+    background-color: white;
+}*/
+#img_Div img {
+    background-color: white;
+}
+
+#signatureThumbnail {
+    max-width: 100%;
+    max-height: 8em;
+    /*margin: 0.5em 0 0.5em 0;*/
+    border: 1px solid black;
+    border-radius: 5px;
+    background-color: white;
+}
+#locationThumbnail {
+    max-width: 100%;
+    max-height: 8em;
+    /*margin: 0.5em 0 0.5em 0;*/
+    border: 1px solid black;
+    border-radius: 5px;
+    background-color: white;
 }
 
 .thumbnail_label {
@@ -574,14 +708,14 @@ input:disabled {
 }
 
 #Header {
-    margin: 0;
+    margin: 0 0 1%;
     position: sticky;
     top: 0;
     background-color: white;
 }
 
 #buffer {
-    height: 60px;
+    height: 20px;
     background-color: white;
 }
 
@@ -601,10 +735,220 @@ input:disabled {
     border-radius: 5px 0;
 }
 
+.Table_Separator {
+    font-size: large;
+}
 
+.Table_Body:hover {
+    background-color: #f3e0c1;
+}
 
+.sigCanvas {
+    border: 1px solid black;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
+    border-radius: 5px;
+    background-color: rgb(252, 252, 252);
+}
 
-@media only screen and (max-width:900px) {
+#sigDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#sigDiv canvas {
+    width: 98%;
+    height: 15em;
+}
+#sigDiv button {
+    margin: 3% 0 2%;
+    padding: 0.75em 0;
+    width: 27%;
+}
+#sigDiv div {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 15%;
+}
+
+#signature_Div {
+    margin: 0 10%;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+input[type="file"]::file-selector-button {
+    border: 1px solid black;
+    padding: 0.2em 0.4em;
+    border-radius: 0.2em;
+    transition: 1s;
+}
+
+input[type="file"] {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    font-size: smaller;
+}
+
+#signatureToggle, #locationToggle {
+    margin: 0 !important;
+    height: auto !important;
+    width: auto !important;
+    border: 1px solid black;
+    padding: 0.2em 0.4em !important;
+    border-radius: 0.2em;
+    transition: 1s;
+}
+/*
+#sigCapture, #locCapture {
+    flex-direction: row !important;
+    align-items: center !important;
+    height: auto !important
+}
+
+#sigCapture p, #locCapture p {
+    margin: 0 0 0 5px;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    font-size: smaller;
+}*/
+
+.file_upload_widget {
+    display: flex;
+    padding: 5% 0;
+    margin-right: 5%;
+    width: 100%;
+    /*border: 2px dashed #5A89BB;*/
+    border: 1px solid black;
+    border-radius: 5px;
+    align-items: center !important;
+    justify-content: center;
+    background-color: white;
+    font-size: small;
+}
+.file_upload_widget p {
+    margin-block: 2% 0;
+}
+
+#fileUploadLogo {
+    height: 5em;
+    width: 5em;
+}
+
+.sticky_header {
+    width: 100%;
+}
+
+.sticky_header div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.sticky_header div h1 {
+    margin: 0 0 1% 4%;
+}
+.sticky_header div h2 {
+    margin: 0 0 1% 1%;
+}
+
+#title_div {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    margin: 0 0 1% 4%;
+}
+#title_div h4 {
+    margin: 0 8px 0 0;
+}
+
+#collapseToggle {
+    width: 10%;
+    height: 10px;
+    padding-bottom: 2px;
+    font-size: x-small;
+    background-color:#e0eaf3;
+    border: 1px solid gray;
+    border-bottom: 0;
+    border-radius: 5px 5px 0 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    left: 45%;
+    bottom: 0;
+    z-index: 10;
+    transition: all 2s ease-in-out;
+}
+
+#collapseToggle img {
+    width: 25%;
+    padding-top: 2px;
+}
+
+#success, #fail {
+    width: 50%;
+    margin-bottom: 1em;
+}
+
+#scroll_footer {
+    display: flex;
+    flex-direction: row-reverse;
+    width: 100%;
+}
+
+#footer {
+    display: flex;
+    flex-direction: row-reverse;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    background-color: white;
+    z-index: -1;
+}
+
+#footer_text {
+    font-size: 0.65em;
+    margin-block: 4%;
+    margin-inline: 4%;
+}
+
+#new_user {
+    color:#5A89BB;
+    text-decoration: underline;
+}
+
+#new_user:hover {
+    color:#2866a8;
+}
+
+#admin_div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#admin_div button {
+    max-width: 300px;
+}
+
+.popup_button {
+    min-height: 2em;
+    width: 40%;
+    max-width: 300px;
+}
+
+/*@media only screen and (max-width:900px) {*/
+@media only screen and (max-width:630px) {
+    #collapseToggle {
+        width: 15%;
+        left: 42.5%;
+    }
+    
     h1 {
         font-size: 1.5em;
     }
@@ -646,6 +990,11 @@ input:disabled {
         font-size: 0.75em;
     }
 
+    td, th {
+        padding: 2%;
+        overflow: hidden;
+    }
+
     .col1 {
         width: 8%;
         overflow: visible;
@@ -665,9 +1014,8 @@ input:disabled {
     }
 
     #MDPU_Row {
+        padding: 0;
         margin: 0 4% 1em;
-        display: flex;
-        justify-content: space-between;
     }
 
     #SPM_Row {
@@ -676,6 +1024,12 @@ input:disabled {
 
     #UserWidget {
         height: 20px;
+        flex-direction: row;
+        margin-right: 0.5em;
+    }
+
+    #UserWidget p {
+        font-size: 0.85em;
     }
 
     #UserIcon {
@@ -687,105 +1041,194 @@ input:disabled {
     .popupLogout {
         width: 50%;
     }
+    .popupLogin {
+        margin: 50% auto;
+        width: 50%;
+    }
+    .popupLogin label {
+        font-size: medium;
+    }
 
     .cont_left {
         width: 60%;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
     }
 
     #button_div {
+        margin: 10% 0 6%;
         align-items: center;
     }
 
+    #Delivery_Input_Div {
+        margin: 0 2% 2%;
+    }
+
     #Delivery_Input_Div button {
+        padding: 0;
         height: 3em;
+        margin: 0 2%;
     }
 
     #loginForm div {
         padding: 0 25% 1em 25%;
     }
-}
 
-@media only screen and (min-width:900px) {
-    header h1, header h2, header h3, header h4, header h5 {
-        /*margin: 16px 15px 0 15px;*/
-        margin: 1% 4%;
-        display: flex;
-        align-items: start;
-    }
-
-    #MDPU_Row {
-        display: flex;
-        justify-content: space-between;
-        padding: 0 4%;
-    }
-
-    #SPM_Row {
-        margin: 0 20%;
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5em 5%;
-    }
-    
-    #Delivery_Input_Div {
-        margin: 0 20%;
-    }
-
-    #Delivery_Input_Div button {
-        padding: 0.75em 0;
-    }
-
-        
-    .input_form {
-        /*width: 95%;*/
-    }
-
-    #img_Div {
-        align-items: normal;
-    }
+    /*#img_Div {
+        align-items: center;
+    }*/
 
     .Table_Separator {
-        font-size: large;
+        font-size: medium;
     }
 
+    #print_div {
+        padding: 0 10% 0 10%;
+    }
+
+    #title_div {
+        flex-direction: row;
+        margin: 0 0 2% 4%;
+    }
+    #title_dash {
+        display: none;
+    }
+    
+    .sticky_header div{
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .sticky_header div h1 {
+        margin: 0 0 2% 4%;
+    }
+    .sticky_header div h2 {
+        margin: 0 0 2% 4%;
+    }
+
+    #AccountTab {
+        flex-direction: row;
+    }
+
+    #sticky_MDPU {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 5%;
+    }
+    #sticky_MDPU div {
+        flex-direction: column;
+    }
+
+    #sticky_creds {
+        flex-direction: row;
+        width: 50%;
+        align-items: center;
+    }
+
+    #Header {
+        margin: 0 0 2%;
+    }
+
+    #buffer {
+        height: 60px;
+    }
+
+    .popupSignatureWindow {
+        width: 100%;
+    }
+    .popupSignature {
+        width: 90%;
+        margin: 50% 3% 0;
+        padding: 0 2%;
+    }
+    .popupSignature .close {
+        padding: 0 2%;
+    }
+    #sigDiv button {
+        padding: 0;
+        width: 30%;
+        height: 3em;
+    }
+
+    #fileUploadLogo {
+        height: 3em;
+        width: 3em;
+    }
+
+    .popup_button {
+        min-height: 2em;
+        width: 60%;
+        max-width: 300px;
+    }
+}
+
+@media only screen and (min-width: 630px) {        
     thead {
-        font-size: 0.85em;
+        font-size: 0.75em;
     }
-
     tbody {
-        font-size: 0.85em;
+        font-size: 0.75em;
     }
-
-    td, th {
-        padding: 1%;
-    }
-
-    .title_row {
+    
+    h1 {
         font-size: 1.5em;
     }
-
-    .title_row th {
-        padding: 1.5% 0;
+    h2 {
+        font-size: 1.25em;
     }
 
-    .Table_Body:hover {
-        background-color: #f3e0c1;
+    #sticky_MDPU {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 5%;
     }
-
-    #UserWidget {
-        height: 30px;
+    #sticky_MDPU div {
+        flex-direction: column;
+        align-items: flex-start;
     }
-
+    #sticky_MDPU h4 {
+        font-size: 0.85em;
+    }
     #UserIcon {
-        height: 30px;
-        width: 30px;
-        margin-right: 10px;
+        height: 25px;
+        width: 25px;
+    }
+    #UserWidget {
+        margin-right: 0.5em;
+    }
+    #SPM_Row {
+        margin: 0 4%;
+    }
+    #Delivery_Input_Div {
+        margin: 0 4% 5%;
+    }
+    .popupSignature {
+        margin: 5% 10% 0;
+    }
+    .popupLogin {
+        margin: 20% auto;
+        width: 25%;
+    }
+    #widgetHeader {
+        margin: 2% 20% 0;
     }
 
-    .popupLogout {
-        width: 300px;
+    #sigDiv canvas {
+        height: 12em;
+    }
+
+    #collapseToggle {
+        width: 8%;
+        left: 46%;
+    }
+    
+    #collapseToggle img {
+        width: 25%;
+    }    
+}
+
+@media only screen and (min-width: 1200px) {        
+    .title_row th {
+        padding: 1% 0;
     }
 
     .popupLogout Button {
@@ -793,65 +1236,89 @@ input:disabled {
         align-self: center;
     }
 
-    .popupLogin {
-        width: 25%;
-    }
-
-    .popupLogin label {
-        font-size: smaller;
-    }
-
     label {
         font-size: 0.8em;
     }
+    
+    thead {
+        font-size: 0.75em;
+    }
+    tbody {
+        font-size: 0.75em;
+    }
 
-    .cont_left {
-        width: 54%;
-        display: flex;
+    .popupSignature {
+        margin: 15% 3% 0;
+    }
+
+    .popupLogin {
+        margin: 18% auto;
+        
+        width: 25%;
+    }
+
+    #widgetHeader {
+        margin: 5% 20% 0 20%;
+    }
+
+    #collapseToggle {
+        width: 6%;
+        left: 47%;
+    }
+    
+    #collapseToggle img {
+        width: 25%;
+    }
+
+    .thumbnail:hover {
+        opacity: 50%;
+        background-color: rgb(51, 51, 51);
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    }
+
+    #footer_text {
+        margin-block: 1%;
+    }
+
+    #SPM_Row {
+        margin: 0 10%;
+    }
+    #Delivery_Input_Div {
+        margin: 0 10% 5%;
+    }
+}
+
+@media only screen and (min-width: 1600px) {        
+    .popupLogin {
+        margin: 20% auto;
+        width: 25%;
+        gap: 2%;
+    }
+}
+
+@media only screen and (max-width:400px) {
+    #sticky_MDPU {
+        text-wrap: wrap;
+    }
+    
+    #sticky_MDPU h4 {
+        font-size: 0.675em;
+    }
+
+    #sticky_creds {
+        width: auto;
+    }
+
+    #UserWidget p {
+        font-size: 0.75em;
+    }
+
+    #Logout button {
+        height: auto;
+    }
+
+    #img_Div {
         flex-direction: column;
-        align-items: flex-start;
-    }
-
-    #button_div {
-        flex-direction: row;
-        align-items: center;
-    }
-
-    #AccountTab {
-        padding: 1% 4%;
-    }
-
-    #loginForm div {
-        padding: 0 30% 1em 30%;
-    }
-
-    #Delivery_Login_Div button {
-        width: 30%;
-    }
-
-    .col1 {
-        width: 8%;
-    }
-    .col2 {
-        width: 12%;
-    }
-    .col3 {
-        width: 15%;
-    }
-    .col4 {
-        width: 20%;
-    }
-    .col5 {
-        width: 20%;
-    }
-    .col6 {
-        width: 10%;
-    }
-    .col7 {
-        width: 15%;
-    }
-
-    .title_row {
-
+        text-align: left;
     }
 }

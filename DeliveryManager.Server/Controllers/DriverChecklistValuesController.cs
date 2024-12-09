@@ -4,6 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Data.SqlClient;
 
+// token initialization...
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
 namespace DeliveryManager.Server.Controllers
 {
     [Route("api/[controller]")]
@@ -24,6 +32,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpGet]
         [Route("GetUndelivered")]
+        [Authorize]
         public JsonResult GetUndelivered(string POWERUNIT, string MFSTDATE)
         {
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=0 order by STOP";
@@ -31,32 +40,43 @@ namespace DeliveryManager.Server.Controllers
             //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
             string sqlDatasource = connString;
             SqlDataReader myReader;
-            using (SqlConnection myCon = new SqlConnection(sqlDatasource))
+            
+            try
             {
-                myCon.Open();
-                using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                using (SqlConnection myCon = new SqlConnection(sqlDatasource))
                 {
-                    myCommand.Parameters.AddWithValue("@POWERUNIT", POWERUNIT);
-                    myCommand.Parameters.AddWithValue("@MFSTDATE", MFSTDATE);
-                    myReader = myCommand.ExecuteReader();
-                    table.Load(myReader);
-                    myReader.Close();
-                    myCon.Close();
+                    myCon.Open();
+                    using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                    {
+                        myCommand.Parameters.AddWithValue("@POWERUNIT", POWERUNIT);
+                        myCommand.Parameters.AddWithValue("@MFSTDATE", MFSTDATE);
+                        myReader = myCommand.ExecuteReader();
+                        table.Load(myReader);
+                        myReader.Close();
+                        myCon.Close();
+                    }
+                }
+                if (table.Rows.Count > 0)
+                {
+                    //return new JsonResult(table);
+                    return new JsonResult(new { success = true, table = table });
+                }
+                else
+                {
+                    //return new JsonResult(table);
+                    //return new JsonResult("Invalid Delivery.");
+                    return new JsonResult(new { success = true, table = table });
                 }
             }
-            if (table.Rows.Count > 0)
+            catch (Exception ex)
             {
-                return new JsonResult(table);
-            }
-            else
-            {
-                return new JsonResult("Invalid Delivery.");
+                return new JsonResult(new { success = false, error = "Error: " + ex.Message });
             }
         }
         
         [HttpGet]
         [Route("GetDelivered")]
-
+        [Authorize]
         public JsonResult GetDelivered(string POWERUNIT, string MFSTDATE)
         {
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=1 order by STOP";
@@ -64,38 +84,48 @@ namespace DeliveryManager.Server.Controllers
             //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
             string sqlDatasource = connString;
             SqlDataReader myReader;
-            using (SqlConnection myCon = new SqlConnection(sqlDatasource))
+            
+            try
             {
-                myCon.Open();
-                using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                using (SqlConnection myCon = new SqlConnection(sqlDatasource))
                 {
-                    myCommand.Parameters.AddWithValue("@POWERUNIT", POWERUNIT);
-                    myCommand.Parameters.AddWithValue("@MFSTDATE", MFSTDATE);
-                    myReader = myCommand.ExecuteReader();
-                    table.Load(myReader);
-                    myReader.Close();
-                    myCon.Close();
+                    myCon.Open();
+                    using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                    {
+                        myCommand.Parameters.AddWithValue("@POWERUNIT", POWERUNIT);
+                        myCommand.Parameters.AddWithValue("@MFSTDATE", MFSTDATE);
+                        myReader = myCommand.ExecuteReader();
+                        table.Load(myReader);
+                        myReader.Close();
+                        myCon.Close();
+                    }
+                }
+                if (table.Rows.Count > 0)
+                {
+                    //return new JsonResult(table);
+                    return new JsonResult(new { success = true, table = table });
+                }
+                else
+                {
+                    //return new JsonResult(table);
+                    //return new JsonResult("No Deliveries On Record.");
+                    return new JsonResult(new { success = true, table = table });
                 }
             }
-            if (table.Rows.Count > 0)
+            catch (Exception ex)
             {
-                return new JsonResult(table);
-            }
-            else
-            {
-                return new JsonResult(table);
-                //return new JsonResult("No Deliveries On Record.");
+                return new JsonResult(new { success = false, error = "Error: " + ex.Message });
             }
         }
 
         [HttpPut]
         [Route("UpdateManifest")]
-
+        [Authorize]
         public async Task<JsonResult> UpdateManifest([FromForm] DeliveryForm data)
         {
             System.Diagnostics.Debug.WriteLine($"Printing test files; DLVDIMGFILELOCN: {data.DLVDIMGFILELOCN}, DLVDIMGFILESIGN: {data.DLVDIMGFILESIGN}");
 
-            // save image locally...
+            // define path where the image is to be saved...
             string location_path = null;
             string loc_name = null;
             string sign_path = null;
@@ -107,9 +137,11 @@ namespace DeliveryManager.Server.Controllers
                 Directory.CreateDirectory(folderPath);
             }
 
-            // define path where the image is to be saved...
+            //
+            // save image locally when photo was uploaded...
             if (data.DLVDIMGFILELOCN != null)
             {
+                //System.Diagnostics.Debug.WriteLine($"data.DLVDIMGFILELOCN: {data.DLVDIMGFILELOCN.FileName}");
                 try 
                 {
                     // generate a unique file name...
@@ -122,21 +154,26 @@ namespace DeliveryManager.Server.Controllers
                         await data.DLVDIMGFILELOCN.CopyToAsync(fileStream);
                     }
 
-                    System.Diagnostics.Debug.WriteLine($"File saved to {location_path}");
+                    //System.Diagnostics.Debug.WriteLine($"File saved to {location_path}");
+                    //System.Diagnostics.Debug.WriteLine($"File saved to {loc_name}");
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error saving file: {ex.Message}");
                 }
             }
+            // omit saving, point back to image already on file...
             else
             {
-                System.Diagnostics.Debug.WriteLine("DLVDIMGFILELOCN is null or empty");
+                //System.Diagnostics.Debug.WriteLine($"DLVDIMGFILELOCN is null or empty; injecting {data.location_string}");
+                loc_name = data.location_string;
             }
 
-            // define path where the image is to be saved...
+            //
+            // save image locally when photo was uploaded...
             if (data.DLVDIMGFILESIGN != null)
             {
+                //System.Diagnostics.Debug.WriteLine($"data.DLVDIMGFILESIGN: {data.DLVDIMGFILESIGN.FileName}");
                 try
                 {
                     // generate a unique file name...
@@ -149,16 +186,19 @@ namespace DeliveryManager.Server.Controllers
                         await data.DLVDIMGFILESIGN.CopyToAsync(fileStream);
                     }
 
-                    System.Diagnostics.Debug.WriteLine($"File saved to {sign_path}");
+                    //System.Diagnostics.Debug.WriteLine($"File saved to {sign_path}");
+                    //System.Diagnostics.Debug.WriteLine($"File saved to {sign_name}");
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error saving file: {ex.Message}");
                 }
             }
+            // omit saving, point back to image already on file...
             else
             {
-                System.Diagnostics.Debug.WriteLine("DLVDIMGFILESIGN is null or empty");
+                //System.Diagnostics.Debug.WriteLine($"DLVDIMGFILESIGN is null or empty; injecting {data.signature_string}");
+                sign_name = data.signature_string;
             }
 
             string query = "update dbo.DMFSTDAT set MFSTKEY = @MFSTKEY,STATUS = @STATUS,LASTUPDATE = @LASTUPDATE,MFSTNUMBER = @MFSTNUMBER," +
@@ -221,7 +261,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpGet]
         [Route("GetDriverLog")]
-
+        [Authorize]
         public JsonResult GetDriverLog(string POWERUNIT)
         {
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT order by STOP";
@@ -247,7 +287,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpPost]
         [Route("AddManifest")]
-
+        [Authorize]
         public JsonResult AddManifest(string MFSTKEY, string STATUS, string LASTUPDATE, string MFSTNUMBER,
             string POWERUNIT, int STOP, string MFSTDATE, string PRONUMBER, string PRODATE,
             string SHIPNAME, string CONSNAME, string CONSADD1, string CONSADD2, string CONSCITY,
@@ -307,7 +347,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpDelete]
         [Route("DeleteManifest")]
-
+        [Authorize]
         public JsonResult DeleteManifest(string MFSTKEY)
         {
             string query = "delete from dbo.DMFSTDAT where MFSTKEY=@MFSTKEY";
@@ -333,7 +373,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpGet]
         [Route("GetImage")]
-
+        [Authorize]
         public IActionResult GetImage(string IMAGE)
         {
             //var fileName = "Default.jpg";

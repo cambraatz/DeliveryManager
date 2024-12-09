@@ -1,6 +1,11 @@
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 
+// token initialization...
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
 // new modification to CORS package...
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
@@ -24,7 +29,27 @@ builder.Services.AddCors(options => {
 
 // Add services to the container.
 builder.Services.AddControllers();
-//builder.Services.AddAuthentication();
+
+// token initialization...
+builder.Services.AddAuthentication(options => 
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            //ClockSkew = TimeSpan.FromMinutes(5),
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -37,6 +62,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore).AddNewtonsoftJson(
     options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+
+builder.Services.AddScoped<TokenService>();
 
 var app = builder.Build();
 
