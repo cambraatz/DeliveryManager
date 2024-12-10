@@ -157,8 +157,6 @@ import Header from './Header';
 import Footer from './Footer';
 import ImageRenderer from './ImageRenderer';
 import SignatureField from './SignatureField';
-//import Popup from './Popup';
-import FileUploadLogo from '../assets/add_file.svg';
 import ImageUploadLogo from '../assets/add_image.svg';
 import SignUploadLogo from '../assets/add_sign.svg';
 
