@@ -20,6 +20,8 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Threading.Tasks;
+using System.Security.Cryptography.X509Certificates;
 
 // add utility to generate JWTs...
 public class TokenService
@@ -323,7 +325,6 @@ namespace DeliveryManager.Server.Controllers
         // ADMIN FUNCTION...
         [HttpPut]
         [Route("AddDriver")]
-        [Authorize]
         public async Task<JsonResult> AddDriver([FromForm] string USERNAME, [FromForm] string PASSWORD, [FromForm] string POWERUNIT)
         {
             string insertQuery = "INSERT INTO dbo.USERS(USERNAME, PASSWORD, POWERUNIT) VALUES (@USERNAME, @PASSWORD, @POWERUNIT)";
@@ -380,7 +381,7 @@ namespace DeliveryManager.Server.Controllers
         [HttpPut]
         [Route("ReplaceDriver")]
         [Authorize]
-        public async Task<JsonResult> ReplaceDriver([FromBody] driverCredentials user, string PREVUSER)
+        public async Task<JsonResult> ReplaceDriver([FromBody] driverReplacement driver)
         {
             string deleteQuery = "DELETE FROM dbo.USERS WHERE USERNAME = @PREVUSER";
             string insertQuery = "INSERT INTO dbo.USERS(USERNAME, PASSWORD, POWERUNIT) VALUES (@USERNAME, @PASSWORD, @POWERUNIT)";
@@ -399,7 +400,7 @@ namespace DeliveryManager.Server.Controllers
                     // delete the old user from dbo.USERS...
                     using (SqlCommand deleteCommand = new SqlCommand(deleteQuery, myCon))
                     {
-                        deleteCommand.Parameters.AddWithValue("@PREVUSER", PREVUSER);
+                        deleteCommand.Parameters.AddWithValue("@PREVUSER", driver.PREVUSER);
 
                         int deleteResult = await deleteCommand.ExecuteNonQueryAsync();
 
@@ -413,9 +414,9 @@ namespace DeliveryManager.Server.Controllers
                     // insert new user to dbo.USERS...
                     using (SqlCommand insertCommand = new SqlCommand(insertQuery, myCon))
                     {
-                        insertCommand.Parameters.AddWithValue("@USERNAME", user.USERNAME);
-                        insertCommand.Parameters.AddWithValue("@PASSWORD", string.IsNullOrEmpty(user.PASSWORD) ? DBNull.Value : user.PASSWORD);
-                        insertCommand.Parameters.AddWithValue("@POWERUNIT", user.POWERUNIT);
+                        insertCommand.Parameters.AddWithValue("@USERNAME", driver.USERNAME);
+                        insertCommand.Parameters.AddWithValue("@PASSWORD", string.IsNullOrEmpty(driver.PASSWORD) ? DBNull.Value : driver.PASSWORD);
+                        insertCommand.Parameters.AddWithValue("@POWERUNIT", driver.POWERUNIT);
 
                         int insertResponse = await insertCommand.ExecuteNonQueryAsync();
 
@@ -442,6 +443,53 @@ namespace DeliveryManager.Server.Controllers
                 catch (Exception ex) 
                 {
                     return new JsonResult("Error: " + ex.Message);
+                }
+            }
+        }
+
+        // ADMIN + LOGIN FUNCTION...
+        [HttpPut]
+        [Route("InitializeDriver")]
+        public async Task<JsonResult> InitializeDriver([FromBody] driverCredentials user)
+        {
+            string updateQuery = "UPDATE dbo.USERS SET PASSWORD=@PASSWORD, POWERUNIT=@POWERUNIT WHERE USERNAME=@USERNAME";
+
+            DataTable table = new DataTable();
+            string sqlDatasource = connString;
+
+            await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
+            {
+                try
+                {
+                    // open the db connection...
+                    myCon.Open();
+
+                    // delete the old user from dbo.USERS...
+                    using (SqlCommand updateCommand = new SqlCommand(updateQuery, myCon))
+                    {
+                        updateCommand.Parameters.AddWithValue("@USERNAME", user.USERNAME);
+                        updateCommand.Parameters.AddWithValue("@PASSWORD", user.PASSWORD);
+                        updateCommand.Parameters.AddWithValue("@POWERUNIT", user.POWERUNIT);
+
+
+                        int updateResult = await updateCommand.ExecuteNonQueryAsync();
+
+                        // check if old user was deleted successfully...
+                        if (updateResult <= 0)
+                        {
+                            return new JsonResult(new { success = false, message = "User not found or no changes made." });
+                        }
+                    }
+
+                    // close db connection...
+                    myCon.Close();
+
+                    // return success message...
+                    return new JsonResult(new { success = true });
+                }
+                catch (Exception ex)
+                {
+                    return new JsonResult(new { success = false, message = "Error: " + ex.Message });
                 }
             }
         }
@@ -494,41 +542,74 @@ namespace DeliveryManager.Server.Controllers
                 }
             }
         }
+
         // ADMIN + LOGIN FUNCTION...
         [HttpPost]
         //[HttpGet]
         [Route("PullDriver")]
-        [Authorize]
-        public JsonResult PullDriver([FromBody] driverCredentials user)
+        public async Task<JsonResult> PullDriver([FromBody] driverRequest request)
         {
             string query = "SELECT USERNAME, PASSWORD, POWERUNIT FROM dbo.USERS WHERE USERNAME = @USERNAME";
 
             DataTable table = new DataTable();
             string sqlDatasource = connString;
+            driverCredentials driver = new driverCredentials();
 
-            SqlDataReader myReader;
-            using (SqlConnection myCon = new SqlConnection(sqlDatasource))
+            //SqlDataReader myReader;
+            await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
                 try
                 {
                     myCon.Open();
                     using (SqlCommand myCommand = new SqlCommand(query, myCon))
                     {
-                        myCommand.Parameters.AddWithValue("@USERNAME", user.USERNAME);
-
-                        myReader = myCommand.ExecuteReader();
-                        table.Load(myReader);
-                        myReader.Close();
+                        myCommand.Parameters.AddWithValue("@USERNAME", request.USERNAME);
+                        using (SqlDataReader myReader = await myCommand.ExecuteReaderAsync())
+                        {
+                            if (myReader.Read())
+                            {
+                                driver.USERNAME = myReader["USERNAME"].ToString();
+                                driver.PASSWORD = myReader["PASSWORD"].ToString();
+                                driver.POWERUNIT = myReader["POWERUNIT"].ToString();
+                            }
+                            myReader.Close();
+                        }
                     }
-
                     myCon.Close();
 
-                    // return success message...
-                    return new JsonResult(table);
+                    // generate token...
+                    var tokenService = new TokenService(_configuration);
+                    (string accessToken, string refreshToken) = tokenService.GenerateToken(driver.USERNAME);
+
+                    // validate password...
+                    bool valid = driver.PASSWORD == null || driver.PASSWORD == "" ? false : true;
+                    if(request.admin)
+                    {
+                        return new JsonResult(new { 
+                            success = true, 
+                            username=driver.USERNAME, 
+                            password=driver.PASSWORD, 
+                            powerunit=driver.POWERUNIT, 
+                            accessToken = accessToken, 
+                            refreshToken = refreshToken 
+                        });
+                    }
+                    else
+                    {
+                        return new JsonResult(new
+                        {
+                            success = true,
+                            username = driver.USERNAME,
+                            password = valid,
+                            powerunit = driver.POWERUNIT,
+                            accessToken = accessToken,
+                            refreshToken = refreshToken
+                        });
+                    }
                 }
                 catch (Exception ex)
                 {
-                    return new JsonResult("Error: " + ex.Message);
+                    return new JsonResult(new { success = false, error = ex.Message });
                 }
             }
         }
@@ -539,7 +620,7 @@ namespace DeliveryManager.Server.Controllers
         public async Task<JsonResult> GetCompany([FromQuery] string COMPANYKEY) 
         {
             string query = "SELECT * FROM dbo.COMPANY where COMPANYKEY=@COMPANYKEY";
-            Company company = null;
+            //Company company = null;
 
             string sqlDatasource = connString;
 
@@ -553,22 +634,24 @@ namespace DeliveryManager.Server.Controllers
                         myCommand.Parameters.AddWithValue("@COMPANYKEY", COMPANYKEY);
                         using(SqlDataReader myReader = await myCommand.ExecuteReaderAsync())
                         {
-                            if (myReader.Read())
+                            if (await myReader.ReadAsync())
                             {
-                                company = new Company
+                                Company company = new Company
                                 {
                                     COMPANYKEY = myReader["COMPANYKEY"].ToString(),
                                     COMPANYNAME = myReader["COMPANYNAME"].ToString()
                                 };
+                                return new JsonResult(new { success = true, COMPANYKEY = company.COMPANYKEY, COMPANYNAME = company.COMPANYNAME });
+                            }
+                            else
+                            {
+                                return new JsonResult(new { success = false, message = "No company found..." });
                             }
                         }
                     }
-
-                    return new JsonResult(new { success=true, COMPANYKEY=company.COMPANYKEY, COMPANYNAME=company.COMPANYNAME });
                 }
                 catch (Exception ex)
                 {
-                    //return new JsonResult("Error: ", ex.Message);
                     return new JsonResult(new { success=false, error=ex.Message });
                 }
             }
@@ -578,14 +661,14 @@ namespace DeliveryManager.Server.Controllers
         [HttpPut]
         [Route("SetCompany")]
         [Authorize]
-        public async Task<JsonResult> SetCompany([FromForm] string COMPANYNAME)
+        public async Task<JsonResult> SetCompany([FromBody] string COMPANYNAME)
         {
             string query = "update dbo.COMPANY set COMPANYNAME=@COMPANYNAME where COMPANYKEY=@COMPANYKEY";
             string insertQuery = "insert into dbo.COMPANY (COMPANYKEY, COMPANYNAME) values (@COMPANYKEY, @COMPANYNAME)";
 
             DataTable table = new DataTable();
             string sqlDatasource = connString;
-            SqlDataReader myReader;
+            //SqlDataReader myReader;
 
             await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {

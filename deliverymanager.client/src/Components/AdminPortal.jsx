@@ -6,11 +6,16 @@ Date: 11/15/2024
 *//////////////////////////////////////////////////////////////////////////////
 
 import { useState, useEffect } from 'react';
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from './Header';
 import Popup from './Popup';
 import Footer from './Footer';
-import { API_URL } from '../Scripts/helperFunctions';
+import { API_URL, 
+    isCompanyValid, 
+    getToken,  
+    logout, 
+    isTokenValid,
+    requestAccess } from '../Scripts/helperFunctions';
 
 /*/////////////////////////////////////////////////////////////////////////////
  
@@ -58,6 +63,7 @@ const AdminPortal = () => {
     *//////////////////////////////////////////////////////////////////////////////
 
     const location = useLocation();
+    const navigate = useNavigate();
 
     const [header,setHeader] = useState(location.state ? location.state.header : "open");
 
@@ -71,7 +77,9 @@ const AdminPortal = () => {
     // "Edit User", "Find User", "Change Company"...
     const [popup, setPopup] = useState("Edit User");
 
-    const [company, setCompany] = useState(location.state ? location.state.company : "contact system admin");
+    //const [company, setCompany] = useState(location.state ? location.state.company : "contact system admin");
+    const name = isCompanyValid();
+    const [company, setCompany] = useState(name ? name : "contact system admin");
     const [activeCompany, setActiveCompany] = useState(company);
 
 
@@ -79,10 +87,41 @@ const AdminPortal = () => {
        Page Rendering Logic / Helpers...
     *//////////////////////////////////////////////////////////////////////////////
 
+    const VALID = location.state ? location.state.valid : false;
+
     useEffect(() => {
-        getCompany()
+        //getCompany()
+        const company = isCompanyValid();
+        if (!company) {
+            renderCompany();
+        } else {
+            setCompany(company);
+        }
+
+        const token = getToken();
+        if(!isTokenValid(token)){
+            logout();
+            navigate('/');
+            return;
+        }
+
+        if(!VALID) {
+            logout();
+            navigate('/');
+            return;
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeCompany])
+
+    async function renderCompany() {
+        // getCompany() also caches company...
+        const company = getCompany();
+        if(!company) {
+            setCompany("No Company Set");
+        } else {
+            setCompany(company);
+        }
+    }
 
     // toggle header open status...
     const collapseHeader = (e) => {
@@ -161,7 +200,7 @@ const AdminPortal = () => {
 
     async function addDriver() {
         //e.prevent.default()
-        if (document.getElementById("username").value === "" || document.getElementById("password") === "") {
+        /*if (document.getElementById("username").value === "" || document.getElementById("powerunit") === "") {
             if (document.getElementById("username").value === "") {
                 document.getElementById("username").classList.add("invalid_input");
             }
@@ -171,6 +210,32 @@ const AdminPortal = () => {
             setTimeout(() => {
                 alert("Username and Powerunit are both Required!");
             },200)
+            return;
+        }*/
+
+        const user_field = document.getElementById("username")
+        const power_field = document.getElementById("powerunit")
+        
+        let code = -1;
+        const alerts = [
+            "Username is required!", 
+            "Powerunit is required!", 
+            "Username and Powerunit are required"
+        ]
+
+        if (user_field.value === "" || user_field.value == null){
+            user_field.classList.add("invalid_input");
+            code += 1;
+
+        } 
+        
+        if (power_field.value === "" || power_field.value == null){
+            power_field.classList.add("invalid_input");
+            code += 2;
+        }
+
+        if (code >= 0) {
+            alert(alerts[code]);
             return;
         }
 
@@ -208,38 +273,41 @@ const AdminPortal = () => {
     }
 
     async function pullDriver() {
-        //console.log(`find me ${renderCredentials.USERNAME}`)
-
         if (document.getElementById("username").value === "") {
             document.getElementById("username").classList.add("invalid_input");
-            setTimeout(() => {
+            alert("Username is Required!");
+            /*setTimeout(() => {
                 alert("Username is Required!");
-            },200)
+            },200)*/
             return;
         }
 
-        let formData = new FormData();
-        formData.append("USERNAME",renderCredentials.USERNAME);
-        formData.append("PASSWORD",null);
-        formData.append("POWERUNIT",null);
+        const body_data ={
+            USERNAME: renderCredentials.USERNAME,
+            PASSWORD: null,
+            POWERUNIT: null,
+            admin: true
+        }
 
         const response = await fetch(API_URL + "api/Registration/PullDriver", {
-            body: formData,
+            body: JSON.stringify(body_data),
             method: "POST",
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
         })
 
         const data = await response.json()
         //console.log(data);
 
         // catch failed request and prevent behavior...
-        if (data[0]) {
-            const rendersafe_Credentials = Object.keys(data[0]).reduce((acc, key) => {
-                acc[key] = data[0][key] === null ? "" : data[0][key];
-                return acc;
-            }, {});
-
+        if (data.success) {
             setPreviousUser(renderCredentials.USERNAME);
-            setRenderCredentials(rendersafe_Credentials);
+            setRenderCredentials({
+                USERNAME: data.username,
+                PASSWORD: data.password,
+                POWERUNIT: data.powerunit
+            })
             setPopup("Edit User");
         }
         else {
@@ -248,28 +316,72 @@ const AdminPortal = () => {
     }
 
     async function updateDriver() {
-        if (document.getElementById("powerunit").value === "") {
+        /*if (document.getElementById("powerunit").value === "") {
             document.getElementById("powerunit").classList.add("invalid_input");
             setTimeout(() => {
                 alert("Power Unit is Required!");
             },200)
             return;
+        }*/
+
+        const user_field = document.getElementById("username")
+        const power_field = document.getElementById("powerunit")
+        
+        // map empty field cases to messages...
+        let code = -1; // case -1...
+        const alerts = {
+            0: "Username is required!", // case 0...
+            1: "Powerunit is required!", // case 1...
+            2: "Username and Powerunit are required" // case 2...
+        }
+        // flag empty username...
+        if (user_field.value === "" || user_field.value == null){
+            user_field.classList.add("invalid_input");
+            code += 1;
+        } 
+        // flag empty powerunit...
+        if (power_field.value === "" || power_field.value == null){
+            power_field.classList.add("invalid_input");
+            code += 2;
         }
 
-        //console.log(`replace with ${renderCredentials}`);
-        let formData = new FormData();
+        // catch and alert user to incomplete fields...
+        if (code >= 0) {
+            alert(alerts[code]);
+            return;
+        }
+
+        // request token from memory, refresh as needed...
+        const token = await requestAccess(renderCredentials.USERNAME);
+        
+        // handle invalid token on login...
+        if (!token) {
+            navigate('/');
+            return;
+        }
+
+        /*let formData = new FormData();
         for (const [key,value] of Object.entries(renderCredentials)){
             formData.append(key,value)
         }
-        formData.append("PREVUSER", previousUser);
+        formData.append("PREVUSER", previousUser);*/
+
+        const body_data = {
+            ...renderCredentials,
+            PREVUSER: previousUser
+        }
 
         //const form = ["USERNAME","PASSWORD","POWERUNIT","PREVUSER"];
         //form.forEach(key => console.log(`${key}: ${formData.get(key)}`));
 
         // eslint-disable-next-line no-unused-vars
         const response = await fetch(API_URL + "api/Registration/ReplaceDriver", {
-            body: formData,
+            body: JSON.stringify(body_data),
             method: "PUT",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
         })
 
         const data = await response.json();
@@ -278,35 +390,37 @@ const AdminPortal = () => {
         if (data.success) {
             setPreviousUser("add new");
             setPopup("Update Success");
-            setTimeout(() => {
-                closePopup();
-            },1000)
         }
         else {
             console.trace("update driver failed");
             setPopup("Fail");
-            setTimeout(() => {
-                closePopup();
-            },1000)
         } 
+        setTimeout(() => {
+            closePopup();
+        },1000)
     }
 
     async function removeDriver() {
         //console.log(`removing user: ${renderCredentials.USERNAME}`);
+        // request token from memory, refresh as needed...
+        const token = await requestAccess(renderCredentials.USERNAME);
+        
+        // handle invalid token on login...
+        if (!token) {
+            navigate('/');
+            return;
+        }
 
         // eslint-disable-next-line no-unused-vars
         const response = await fetch(API_URL + "api/Registration/DeleteDriver?USERNAME=" + renderCredentials.USERNAME, {
             method: "DELETE",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            }
         })
 
         const data = await response.json();
         //console.log(data);
-
-        /*setPopup("Delete Success");
-        
-        setTimeout(() => {
-            closePopup();
-        },1000)*/
 
         if (data.success) {
             setPopup("Delete Success");
@@ -360,9 +474,22 @@ const AdminPortal = () => {
 
     async function getCompany() {
         //console.log(`getting company...`);
+        // request token from memory, refresh as needed...
+        const token = await requestAccess(renderCredentials.USERNAME);
+        
+        // handle invalid token on login...
+        if (!token) {
+            navigate('/');
+            return;
+        }
 
         const response = await fetch(API_URL + "api/Registration/GetCompany?COMPANYKEY=c01", {
+            // should this be set in body?
             method: "GET",
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
         })
 
         // data = {COMPANYKEY: "", COMPANYNAME: ""}...
@@ -379,22 +506,29 @@ const AdminPortal = () => {
     }
 
     async function updateCompany() {
-        if (document.getElementById("company").value === "") {
+        const comp_field = document.getElementById("company");
+        if (comp_field.value === "") {
             document.getElementById("company").classList.add("invalid_input");
-            setTimeout(() => {
-                alert("Company Name is Required!");
-            },200)
+            alert("Company Name is Required!");
             return;
         }
 
-        //console.log(`setting company to ${company}`);
-
-        let formData = new FormData();
-        formData.append("COMPANYNAME", company);
+        // request token from memory, refresh as needed...
+        const token = await requestAccess(renderCredentials.USERNAME);
+        
+        // handle invalid token on login...
+        if (!token) {
+            navigate('/');
+            return;
+        }
 
         const response = await fetch(API_URL + "api/Registration/SetCompany", {
-            body: formData,
+            body: JSON.stringify(company),
             method: "PUT",
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            }
         })
 
         const data = await response.json();

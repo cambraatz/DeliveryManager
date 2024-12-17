@@ -79,32 +79,6 @@ const Popup = (props) => {
             </>
         )
     }
-    /*else if(props.message === "Admin"){
-        return(
-            <>
-                <div className="popupLoginContent">
-                    <div>
-                        <label>Username</label>
-                        <input type="text" id="username" value={props.credentials.USERNAME} className="input_form" onChange={props.handleUpdate}/>
-                    </div>
-                    <div>
-                        <label>Password</label>
-                        <input type="text" id="password" value={props.credentials.PASSWORD} className="input_form" onChange={props.handleUpdate}/>
-                    </div>
-                    <div>
-                        <label>Power Unit</label>
-                        <input type="text" id="powerunit" value={props.credentials.POWERUNIT} className="input_form" onChange={props.handleUpdate}/>
-                    </div>
-                    <div id="update_user">
-                        <button className="popup_button" onClick={props.onPressFunc.updateDriver}>Update User</button>
-                    </div>
-                    <div id="remove_user">
-                        <button className="popup_button" onClick={props.pressButton}>Remove User</button>
-                    </div>
-                </div>
-            </>
-        )
-    }*/
     else if(props.message === "Edit User"){
         return(
             <>
@@ -135,7 +109,6 @@ const Popup = (props) => {
         )
     }
     else if(props.message === "Edit New User"){
-        //console.log("props.message: ", props.message); onSubmit={props.pressButton}
         return(
             <div className="popupLoginContent">
                 <div id="popupLoginPrompt" className="content">

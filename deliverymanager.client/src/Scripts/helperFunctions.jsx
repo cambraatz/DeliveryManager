@@ -10,6 +10,7 @@ export const cacheToken = (access,refresh) => {
 export const logout = () => {
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('refreshToken');
+    localStorage.removeItem('company');
 }
 
 export const isTokenExpiring = (token) => {
@@ -32,10 +33,10 @@ export const isTokenValid = (token) => {
         const currentTime = Date.now();
         const expiration = payload.exp * 1000;
 
-        console.log(`Current Time: ${currentTime}`);
-        console.log(`Expiration: ${expiration}`);
+        //console.log(`Current Time: ${currentTime}`);
+        //console.log(`Expiration: ${expiration}`);
 
-        return (payload.exp * 1000) > currentTime;
+        return expiration > currentTime;
     } catch (e) {
         console.error("Failed to decode token payload", e);
         return false;
@@ -60,14 +61,12 @@ export async function refreshToken(username) {
             body: JSON.stringify(body_data),
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            //body: JSON.stringify({ refreshToken, username })
         }
     )
 
     if (response.ok) {
         const data = await response.json();
 
-        console.log(`refresh accessToken: ${data.AccessToken}`);
         sessionStorage.setItem('accessToken', data.AccessToken);
         sessionStorage.setItem('refreshToken', data.RefreshToken);
 
@@ -76,6 +75,23 @@ export async function refreshToken(username) {
         console.error("Failed to refresh token");
         return null;
     }
+}
+
+export async function requestAccess(username) {
+    let token = getToken();
+
+    if (!token) {
+        console.error("Invalid authorization token");
+        throw new Error("Authorization failed. Please log in.");
+    }
+
+    if (isTokenExpiring(token)) {
+        //console.log("Token expiring soon. Refreshing...");
+        const tokens = await refreshToken(username);
+        token = tokens.access
+    }
+
+    return token;
 }
 
 export const cacheCompany = (company) => {
@@ -91,24 +107,16 @@ export const isCompanyValid = () => {
     return null;
 }
 
-export async function getCompany() {
-    //console.log(`getting company...`)
+export async function getCompany_DB() {
     const response = await fetch(API_URL + "api/Registration/GetCompany?COMPANYKEY=c01", {
         method: "GET",
     })
 
-    // data = {COMPANYKEY: "", COMPANYNAME: ""}...
     const data = await response.json();
-
     if (data.success) {
-        //console.log("new company: ", data["COMPANYNAME"]);
-        //setCompany(data.COMPANYNAME);
         cacheCompany(data.COMPANYNAME);
         return data.COMPANYNAME;
-    }
-    else {
-        //console.log(data);
-        //setCompany("{Your Company Here}");
+    } else {
         return null;
     }
 }

@@ -90,7 +90,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
-import { API_URL, getToken, refreshToken, isTokenExpiring, isTokenValid, getCompany, logout } from '../Scripts/helperFunctions';
+import { API_URL, 
+    getToken, 
+    refreshToken, 
+    isTokenExpiring, 
+    isTokenValid,
+    isCompanyValid,
+    getCompany_DB, 
+    logout } from '../Scripts/helperFunctions';
 
 /*
 // DriverPortal pulls matching deliveries and renders them as an interactive table...
@@ -103,14 +110,23 @@ const DriverPortal = () => {
 
     // set credentials and query delivery information once on page load...
     useEffect(() => {
+        const company = isCompanyValid();
+        if (!company) {
+            renderCompany();
+        } else {
+            setCompany(company);
+        }
+
         const token = getToken();
         if(!isTokenValid(token)){
             logout();
             navigate('/');
+            return;
         }
 
         if(!location.state){
             navigate('/');
+            return;
         }
 
         setDriverCredentials({
@@ -121,9 +137,8 @@ const DriverPortal = () => {
         getDeliveries(updateData["POWERUNIT"],updateData["MFSTDATE"]);
         setLoading(false);
         
-        
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    },[]);
 
     // state 'driverCredentials' to be passed to next page...
     const [driverCredentials, setDriverCredentials] = useState({
@@ -147,7 +162,7 @@ const DriverPortal = () => {
     // loading states for processing lag times...
     const [loading, setLoading] = useState(true); 
 
-    const [header,setHeader] = useState(location.state ? location.state.header : null);
+    const [header,setHeader] = useState(location.state ? location.state.header : "open");
 
     const collapseHeader = (e) => {
         //console.log(e.target.id);
@@ -253,7 +268,8 @@ const DriverPortal = () => {
                         delivery: undelivered[i],
                         driver: driverCredentials,
                         header: header,
-                        company: company
+                        company: company,
+                        valid: true
                     };
                     navigate(`delivery/${undelivered[i].PRONUMBER}`, {state: deliveryData})
                     break
@@ -268,7 +284,8 @@ const DriverPortal = () => {
                         delivery: delivered[i],
                         driver: driverCredentials,
                         header: header,
-                        company: company
+                        company: company,
+                        valid: true
                     };
                     navigate(`delivery/${delivered[i].PRONUMBER}`, {state: deliveryData})
                     break
@@ -278,9 +295,9 @@ const DriverPortal = () => {
         }
     }
 
-    const [company, setCompany] = useState(location.state ? location.state.company : "Transportation Computer Support, LLC");
+    const [company, setCompany] = useState(location.state ? location.state.company : "");
     async function renderCompany() {
-        const company = getCompany();
+        const company = getCompany_DB();
         if(company) {
             setCompany(company);
         } else {

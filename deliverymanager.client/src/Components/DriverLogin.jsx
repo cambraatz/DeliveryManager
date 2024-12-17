@@ -200,7 +200,7 @@ DriverLogin() {
 */////////////////////////////////////////////////////////////////////////////////////
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Header from './Header';
 import Popup from './Popup';
 import Footer from './Footer';
@@ -208,21 +208,16 @@ import { scrapeDate,
     renderDate, 
     getDate, 
     API_URL, 
-    getToken, 
-    isTokenExpiring, 
-    refreshToken, 
     cacheToken,
-    cacheCompany,
+    requestAccess,
     isCompanyValid,
-    getCompany } from '../Scripts/helperFunctions';
+    getCompany_DB } from '../Scripts/helperFunctions';
 
 const DriverLogin = () => {
     // Date processing functions ...
     const currDate = getDate();
     const navigate = useNavigate();
-    const location = useLocation();
 
-    //
     // check delivery validity onLoad and after message state change...
     useEffect(() => {
         const company = isCompanyValid();
@@ -234,9 +229,13 @@ const DriverLogin = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    // Site state & location processing functions...
+    /* Site state & location processing functions... */
+
+    // initialize company state to null, replace with company on file...
+    const [company, setCompany] = useState("");
+
+    // set popup render status...
     const [message, setMessage] = useState(null);
-    //const [status, setStatus] = useState("");
 
     // state 'driverCredentials' to be passed to next page...
     const [driverCredentials, setDriverCredentials] = useState({
@@ -257,7 +256,20 @@ const DriverLogin = () => {
         POWERUNIT: "000"
     });
 
-    const [company, setCompany] = useState(location.state ? location.state.company : "");
+    // retrieve company from database when not in memory...
+    async function renderCompany() {
+        // getCompany() also caches company...
+        const company = await getCompany_DB();
+        if(company) {
+            console.log(`renderCompany retrieved ${company} from database...`);
+            setCompany(company);
+        } else {
+            console.log(`renderCompany could not find company...`);
+            setCompany("No Company Set");
+        }
+    }
+
+    /* Dynamic form/state change functions... */
 
     // handle login form changes...
     const handleLoginChange = (e) => {
@@ -279,22 +291,22 @@ const DriverLogin = () => {
                 break;
         }
 
-        if(document.getElementById(e.target.id).className == "invalid_input"){
+        if(document.getElementById(e.target.id).classList.contains("invalid_input")){
             // reset styling to default...
-            document.getElementById("USERNAME").className = "";
-            document.getElementById("PASSWORD").className = "";
+            document.getElementById("USERNAME").classList.remove("invalid_input");
+            document.getElementById("PASSWORD").classList.remove("invalid_input");
         }
     };
 
     // handle delivery query form changes...
     const handleDeliveryChange = (e) => {
         //console.log("e.target.id: ",e.target.id)
-        if( document.getElementById(e.target.id).classList.contains("invalid_input") ){
+        if( document.getElementById(e.target.id).classList.contains("invalid_input")){
             // reset styling to default...
-            document.getElementById("USERNAME").className = "";
-            document.getElementById("PASSWORD").className = "";
-            document.getElementById("dlvdate").className = "input_form"
-            document.getElementById("powerunit").className = "input_form"
+            document.getElementById("USERNAME").classList.remove("invalid_input");
+            document.getElementById("PASSWORD").classList.remove("invalid_input");
+            document.getElementById("dlvdate").classList.add("input_form");
+            document.getElementById("powerunit").classList.add("input_form");
         }
 
         let val = e.target.value;
@@ -322,29 +334,39 @@ const DriverLogin = () => {
             default:
                 break;
         }
-        /*
-        if(document.getElementById(e.target.id).style.backgroundColor != "white"){
-            // reset styling to default...
-            document.getElementById("dlvdate").className = "input_form"
-            document.getElementById("powerunit").className = "input_form"
-        }*/
     };
     
-    /*
-    // API Calls and Functionality ...
-    */
+    /* API Calls and Functionality... */
 
     // handleClick on initial Login button...
     const handleSubmit = (e) => {
         e.preventDefault();
         setMessage(null);
-        if (document.getElementById("USERNAME").value === "" || document.getElementById("PASSWORD").value === "") {
-            if (document.getElementById("USERNAME").value === "") {
-                document.getElementById("USERNAME").classList.add("invalid_input");
-            }
-            if (document.getElementById("PASSWORD").value === "") {
-                document.getElementById("PASSWORD").classList.add("invalid_input");
-            }
+        
+        const user_field = document.getElementById("USERNAME");
+        const pass_field = document.getElementById("PASSWORD");
+        
+        // map empty field cases to messages...
+        let code = -1; // case -1...
+        const alerts = {
+            0: "Username is required!", // case 0...
+            1: "Password is required!", // case 1...
+            2: "Username and Password are required" // case 2...
+        }
+        // flag empty username...
+        if (user_field.value === "" || user_field.value == null){
+            user_field.classList.add("invalid_input");
+            code += 1;
+        } 
+        // flag empty powerunit...
+        if (pass_field.value === "" || pass_field.value == null){
+            pass_field.classList.add("invalid_input");
+            code += 2;
+        }
+
+        // catch and alert user to incomplete fields...
+        if (code >= 0) {
+            alert(alerts[code]);
             return;
         }
         
@@ -396,7 +418,8 @@ const DriverLogin = () => {
             else if (data.task === "admin") {
                 const adminData = {
                     header: header,
-                    company: company
+                    company: company,
+                    valid: true
                 };
     
                 navigate('/admin', {state: adminData})
@@ -411,20 +434,42 @@ const DriverLogin = () => {
         }
     }
 
-    //
     // onClick response to validate date and power unit data prior to pulling manifest...
     async function handleUpdate() {
-        let token = getToken();
-        if (!token) {
-            console.error("Invalid authorization token");
-            closePopup();
-            throw new Error("Authorization failed. Please log in.");
+        const deliver_field = document.getElementById("dlvdate");
+        const power_field = document.getElementById("powerunit");
+        
+        // map empty field cases to messages...
+        let code = -1; // case -1...
+        const alerts = {
+            0: "Delivery Date is invalid!", // case 0...
+            1: "Powerunit is required!", // case 1...
+            2: "Delivery Date and Powerunit are both required" // case 2...
+        }
+        // flag empty username...
+        if (!(deliver_field.value instanceof Date) && !isNaN(deliver_field.value)){
+            deliver_field.classList.add("invalid_input");
+            code += 1;
+        } 
+        // flag empty powerunit...
+        if (power_field.value === "" || power_field.value == null){
+            power_field.classList.add("invalid_input");
+            code += 2;
         }
 
-        if (isTokenExpiring(token)) {
-            console.log("Token expiring soon. Refreshing...");
-            const tokens = await refreshToken(driverCredentials.USERNAME);
-            token = tokens.access
+        // catch and alert user to incomplete fields...
+        if (code >= 0) {
+            alert(alerts[code]);
+            return;
+        }
+
+        // request token from memory, refresh as needed...
+        const token = await requestAccess(driverCredentials.USERNAME);
+
+        // handle invalid token on login...
+        if (!token) {
+            closePopup();
+            return;
         }
         
         // update driver credentials state...
@@ -439,11 +484,6 @@ const DriverLogin = () => {
             POWERUNIT: updateData.POWERUNIT,
             MFSTDATE: updateData.MFSTDATE,
         }
-
-        /*let formData = new FormData();
-        for (const [key,value] of Object.entries(body_data)){
-            formData.append(key,value)
-        }*/
 
         const response = await fetch(API_URL + "api/Registration/VerifyPowerunit", {
             body: JSON.stringify(body_data),
@@ -463,20 +503,20 @@ const DriverLogin = () => {
                 delivery: updateData,
                 driver: driverCredentials,
                 header: header,
-                company: company
+                company: company,
+                valid: true
             };
             console.log(deliveryData);
             
             navigate(`/driverlog`, {state: deliveryData});
         }
         else {
-            setMessage("Invalid Delivery Information");
+            //setMessage("Invalid Delivery Information");
             document.getElementById('dlvdate').classList.add("invalid_input");
             document.getElementById('powerunit').classList.add("invalid_input");
         }
     }
 
-    //
     // open popup for delivery confirmation...
     const openPopup = () => {
         document.getElementById("popupLoginWindow").style.visibility = "visible";
@@ -484,17 +524,13 @@ const DriverLogin = () => {
         document.getElementById("popupLoginWindow").style.pointerEvents = "auto";  
     };
 
-    //
     // close popup for delivery confirmation...
     const closePopup = () => {
         document.getElementById("popupLoginWindow").style.visibility = "hidden";
         document.getElementById("popupLoginWindow").style.opacity = 0;
         document.getElementById("popupLoginWindow").style.pointerEvents = "none";
         
-        // reset status and message to original state...
-        //setStatus("");
-        //setMessage(null);
-
+        // reset driver credentials to default...
         setDriverCredentials({
             USERNAME: "",
             PASSWORD: "",
@@ -518,38 +554,8 @@ const DriverLogin = () => {
     // "Edit User", "Find User", "Change Company"...
     //const [popup, setPopup] = useState("Edit User");
 
-    async function renderCompany() {
-        const company = getCompany();
-        if(company) {
-            setCompany(company);
-        } else {
-            setCompany("{Your Company Here}");
-        }
-    }
-
-    /*
-    async function getCompany() {
-        //console.log(`getting company...`)
-        const response = await fetch(API_URL + "api/Registration/GetCompany?COMPANYKEY=c01", {
-            method: "GET",
-        })
-
-        // data = {COMPANYKEY: "", COMPANYNAME: ""}...
-        const data = await response.json();
-
-        if (data.success) {
-            //console.log("new company: ", data["COMPANYNAME"]);
-            setCompany(data.COMPANYNAME);
-            cacheCompany(data.COMPANYNAME);
-        }
-        else {
-            //console.log(data);
-            setCompany("{Your Company Here}");
-        }
-    }*/
-
+    // open new user initialization menu...
     async function handleNewUser() {
-        //console.log(e.target);
         const user_data = {
             USERNAME: "",
             PASSWORD: "",
@@ -560,37 +566,19 @@ const DriverLogin = () => {
         openPopup();
     }
 
+    // 
     async function updateDriver() {
-        //console.log(`replace with ${renderCredentials}`);
-        let token = getToken();
-        if (!token) {
-            setMessage("Fail");
-            setTimeout(() => {
-                closePopup();
-            },1000)
-
-            console.error("Invalid authorization token");
-            throw new Error("Authorization failed. Please log in.");
-        }
-
-        if (isTokenExpiring(token)) {
-            console.log("Token expiring soon. Refreshing...");
-            const tokens = await refreshToken(driverCredentials.USERNAME);
-            token = tokens.access
-        }
-
         const body_data = {
             USERNAME: driverCredentials.USERNAME,
             PASSWORD: driverCredentials.PASSWORD,
-            POWERUNIT: driverCredentials.POWERUNIT,
-            PREVUSER: driverCredentials.USERNAME
+            POWERUNIT: driverCredentials.POWERUNIT
         }
 
-        const response = await fetch(API_URL + "api/Registration/ReplaceDriver", {
+        //const response = await fetch(API_URL + "api/Registration/ReplaceDriver", {
+        const response = await fetch(API_URL + "api/Registration/InitializeDriver", {
             body: JSON.stringify(body_data),
             method: "PUT",
             headers: {
-                "Authorization": `Bearer ${token}`,
                 'Content-Type': 'application/json; charset=UTF-8'
             }
         })
@@ -613,40 +601,17 @@ const DriverLogin = () => {
     }
 
     async function pullDriver() {
-        //console.log(`find me ${renderCredentials.USERNAME}`)
-        let token = getToken();
-        if (!token) {
-            setMessage("Fail");
-            setTimeout(() => {
-                closePopup();
-            },1000)
-
-            console.error("Invalid authorization token");
-            throw new Error("Authorization failed. Please log in.");
-        }
-
-        if (isTokenExpiring(token)) {
-            console.log("Token expiring soon. Refreshing...");
-            const tokens = await refreshToken(driverCredentials.USERNAME);
-            token = tokens.access
-        }
-        
-        /*let formData = new FormData();
-        formData.append("USERNAME",driverCredentials.USERNAME);
-        formData.append("PASSWORD",null);
-        formData.append("POWERUNIT",null);*/
-
         const body_data = {
             USERNAME: driverCredentials.USERNAME,
             PASSWORD: null,
-            POWERUNIT: null
+            POWERUNIT: null,
+            admin: false
         }
 
         const response = await fetch(API_URL + "api/Registration/PullDriver", {
             body: JSON.stringify(body_data),
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${token}`,
                 'Content-Type': 'application/json; charset=UTF-8'
             }
         })
@@ -655,20 +620,26 @@ const DriverLogin = () => {
         //console.log(data);
 
         // catch failed request and prevent behavior...
-        if (!data[0]) {
+        if (!data.success) {
             document.getElementById("username").className = "invalid_input";
         }
         else {
-            if (data[0].PASSWORD !== '' && data[0].PASSWORD !== null){
-                //console.log(`non-empty password: ${data[0].PASSWORD}`)
+            // stash tokens in storage...
+            cacheToken(data.accessToken,data.refreshToken)
+            console.log("new tokens cached...")
+            console.log(data)
+
+            // if password exists, fail out...
+            if (data.password){
+                alert(`User ${data.username} already exists.`);
                 document.getElementById("username").className = "invalid_input";
             }
             else {
                 //setDriverCredentials(data[0]);
                 setDriverCredentials({
-                    USERNAME: data[0].USERNAME,
+                    USERNAME: data.username,
                     PASSWORD: "",
-                    POWERUNIT: data[0].POWERUNIT
+                    POWERUNIT: data.powerunit
                 })
                 //console.log(driverCredentials);
                 setMessage("Edit New User");

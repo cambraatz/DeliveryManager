@@ -1,8 +1,11 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
-import { API_URL } from '../Scripts/helperFunctions';
+import { useNavigate } from 'react-router-dom';
+import { API_URL, requestAccess } from '../Scripts/helperFunctions';
 
 const ImageRenderer = (props) => {
+    const navigate = useNavigate();
+
     const [imageSrc, setImageSrc] = useState(null);
     const [error, setError] = useState(false);
 
@@ -14,14 +17,33 @@ const ImageRenderer = (props) => {
         }
 
         const fetchImage = async () => {
+            // request token from memory, refresh as needed...
+            const token = await requestAccess(props.user);
+            
+            // handle invalid token on login...
+            if (!token) {
+                navigate('/');
+                return;
+            }
+
             try {
-                const response = await fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE=" + props.URL);
+                const response = await fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE=" + props.URL, {
+                    method: 'GET',
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
                 
                 if (!response.ok) {
                     console.log('failed here');
                     setError(true);
                 } else {
-                    const image = API_URL + "api/DriverChecklist/GetImage?IMAGE=" + props.URL;
+                    const image = (API_URL + "api/DriverChecklist/GetImage?IMAGE=" + props.URL, {
+                        method: 'GET',
+                        headers: {
+                            "Authorization": `Bearer ${token}`
+                        }
+                    });
                     setImageSrc(image);
                 }
             } catch (error) {
