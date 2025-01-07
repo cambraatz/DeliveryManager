@@ -15,7 +15,8 @@ import { API_URL,
     getToken,  
     logout, 
     isTokenValid,
-    requestAccess } from '../Scripts/helperFunctions';
+    requestAccess,
+    showFailFlag } from '../Scripts/helperFunctions';
 
 /*/////////////////////////////////////////////////////////////////////////////
  
@@ -79,9 +80,8 @@ const AdminPortal = () => {
 
     //const [company, setCompany] = useState(location.state ? location.state.company : "contact system admin");
     const name = isCompanyValid();
-    const [company, setCompany] = useState(name ? name : "contact system admin");
+    const [company, setCompany] = useState(name ? name : "No Company Set");
     const [activeCompany, setActiveCompany] = useState(company);
-
 
     /*/////////////////////////////////////////////////////////////////////////////
        Page Rendering Logic / Helpers...
@@ -217,11 +217,16 @@ const AdminPortal = () => {
         const power_field = document.getElementById("powerunit")
         
         let code = -1;
-        const alerts = [
+        const messages = [
             "Username is required!", 
             "Powerunit is required!", 
-            "Username and Powerunit are required"
+            "Username and Powerunit are required!"
         ]
+        const alerts = {
+            0: "ff_admin_au_un", // Username is required!...
+            1: "ff_admin_au_pu", // Powerunit is required!...
+            2: "ff_admin_au_up" // Username and Powerunit are required!...
+        }
 
         if (user_field.value === "" || user_field.value == null){
             user_field.classList.add("invalid_input");
@@ -235,7 +240,7 @@ const AdminPortal = () => {
         }
 
         if (code >= 0) {
-            alert(alerts[code]);
+            showFailFlag(alerts[code], messages[code])
             return;
         }
 
@@ -265,20 +270,22 @@ const AdminPortal = () => {
         }
         else {
             console.trace("add driver failed");
-            setPopup("Fail");
+            if (data.error.includes("Violation of PRIMARY KEY")) {
+                setPopup("Admin_Add Fail");
+            } else {
+                setPopup("Fail");
+            }
             setTimeout(() => {
                 closePopup();
-            },1000)
+            },1500)
         }
     }
 
     async function pullDriver() {
         if (document.getElementById("username").value === "") {
             document.getElementById("username").classList.add("invalid_input");
-            alert("Username is Required!");
-            /*setTimeout(() => {
-                alert("Username is Required!");
-            },200)*/
+
+            showFailFlag("ff_admin_fu","Username is required!");
             return;
         }
 
@@ -312,27 +319,28 @@ const AdminPortal = () => {
         }
         else {
             document.getElementById("username").className = "invalid_input";
+            document.getElementById("ff_admin_fu").classList.add("visible");
+            setTimeout(() => {
+                document.getElementById("ff_admin_fu").classList.remove("visible");
+            },1500)
         }
     }
 
     async function updateDriver() {
-        /*if (document.getElementById("powerunit").value === "") {
-            document.getElementById("powerunit").classList.add("invalid_input");
-            setTimeout(() => {
-                alert("Power Unit is Required!");
-            },200)
-            return;
-        }*/
-
         const user_field = document.getElementById("username")
         const power_field = document.getElementById("powerunit")
         
         // map empty field cases to messages...
         let code = -1; // case -1...
+        const messages = [
+            "Username is required!", 
+            "Powerunit is required!", 
+            "Username and Powerunit are required!"
+        ]
         const alerts = {
-            0: "Username is required!", // case 0...
-            1: "Powerunit is required!", // case 1...
-            2: "Username and Powerunit are required" // case 2...
+            0: "ff_admin_eu_un", // Username is required!...
+            1: "ff_admin_eu_pu", // Powerunit is required!...
+            2: "ff_admin_eu_up" // Username and Powerunit are required!...
         }
         // flag empty username...
         if (user_field.value === "" || user_field.value == null){
@@ -347,7 +355,12 @@ const AdminPortal = () => {
 
         // catch and alert user to incomplete fields...
         if (code >= 0) {
-            alert(alerts[code]);
+            //alert(alerts[code]);
+            /*document.getElementById(alerts[code]).classList.add("visible");
+            setTimeout(() => {
+                document.getElementById(alerts[code]).classList.remove("visible");
+            },1500)*/
+            showFailFlag(alerts[code],messages[code]);
             return;
         }
 
@@ -501,15 +514,15 @@ const AdminPortal = () => {
         }
         else {
             //console.log(data);
-            setCompany("{Your Company Here}");
+            setCompany("Your Company Here");
         }
     }
 
     async function updateCompany() {
         const comp_field = document.getElementById("company");
-        if (comp_field.value === "") {
+        if (comp_field.value === "" || comp_field.value === "Your Company Here") {
             document.getElementById("company").classList.add("invalid_input");
-            alert("Company Name is Required!");
+            showFailFlag("ff_admin_cc", "Company name is required!")
             return;
         }
 
@@ -532,7 +545,7 @@ const AdminPortal = () => {
         })
 
         const data = await response.json();
-        //console.log("data: ",data);
+        console.log("data: ",data);
 
         if (!data.success) {
             console.trace("company name value mismatch");
@@ -544,7 +557,7 @@ const AdminPortal = () => {
         }
         else {
             // set active, company is updated dynamically...
-            setActiveCompany(company);
+            setActiveCompany(data.COMPANYNAME);
             setPopup("Company Success");
             
             setTimeout(() => {

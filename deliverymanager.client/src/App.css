@@ -942,6 +942,56 @@ input[type="file"] {
     max-width: 300px;
 }
 
+.input_wrapper {
+    position: relative;
+}
+
+.fail_flag {
+    width: auto !important;
+    display: none !important;
+    overflow: visible;
+    position: absolute;
+    top: 110%;
+    left: auto;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 10px 4px;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.fail_flag::before {
+    content: "";
+    position: absolute;
+    top: -18px;
+    left: 20%;
+    transform: translateX(-50%);
+    border-width: 10px;
+    border-style: solid;
+    border-color: transparent transparent #f8d7da transparent;
+    z-index: 11;
+}
+.fail_flag.visible {
+    display: flex !important;
+}
+.fail_flag p {
+    margin: 0;
+    font-size: small;
+}
+#ff_login_un, #ff_login_pw {
+    padding: 10px 4px !important;
+    top: 90%;
+    left: auto;
+}
+#ff_admin_df_pd {
+    right: 0;
+}
+#ff_admin_df_pd::before {
+    left: 80%;
+}
+
 /*@media only screen and (max-width:900px) {*/
 @media only screen and (max-width:630px) {
     #collapseToggle {
@@ -1160,7 +1210,10 @@ input[type="file"] {
     }
 }
 
-@media only screen and (min-width: 630px) {        
+@media only screen and (min-width: 630px) {  
+    .fail_flag p {
+        font-size: smaller;
+    }      
     thead {
         font-size: 0.75em;
     }

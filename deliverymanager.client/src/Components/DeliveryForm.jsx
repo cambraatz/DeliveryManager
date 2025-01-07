@@ -170,7 +170,8 @@ import { scrapeDate,
     getToken, 
     isTokenValid,
     logout,
-    requestAccess /*, scrapeFile*/ } from '../Scripts/helperFunctions';
+    requestAccess, /*, scrapeFile*/ 
+    showFailFlag} from '../Scripts/helperFunctions';
 
 const DeliveryForm = () => {
     // date and time data and processing functions...
@@ -538,7 +539,8 @@ const DeliveryForm = () => {
         const piece_field = document.getElementById("dlvdpcs");
 
         // map empty field cases to messages...
-        let code = 0; 
+        let code = 0;
+        let elementID;
         const alerts = {
             1: "Date is required!", 
             10: "Time is required!", // likely redundant...
@@ -551,6 +553,7 @@ const DeliveryForm = () => {
         // flag empty username...
         if (!(date_field.value instanceof Date) && !isNaN(date_field.value)){
             date_field.classList.add("invalid_input");
+            elementID = "ff_admin_df_d";
             code += 1;
         }
         // flag invalid time format (implicitly not null)...
@@ -563,13 +566,15 @@ const DeliveryForm = () => {
         if (!(piece_field.value && !isNaN(piece_field.value) &&
                 piece_field.value >= piece_field.min && piece_field.value <= piece_field.max)) {
             piece_field.classList.add("invalid_input");
+            elementID = "ff_admin_df_pd";
             code += 100;
         }
 
         // catch and alert user to incomplete fields...
         if (code > 0) {
             //console.log(`code: ${code}`)
-            alert(alerts[code]);
+            //alert(alerts[code]);
+            showFailFlag(elementID, alerts[code]);
             return;
         }
 
@@ -726,9 +731,12 @@ const DeliveryForm = () => {
             <div id="Delivery_Input_Div">
                 <form id="form_data" onSubmit={handleSubmit}>
                     <div id="datetime_Div">
-                        <div className="cont_left">
+                        <div className="cont_left input_wrapper">
                             <label>Date:</label>
                             <input type="date" id="dlvdate" value={formData.deliveryDate} className="input_form" onChange={handleChange} required/>
+                            <div className="fail_flag" id="ff_admin_df_d">
+                                <p>Date is required!</p>
+                            </div>
                         </div>
                         <div className="cont_right">
                             <label>Time:</label>
@@ -740,9 +748,12 @@ const DeliveryForm = () => {
                             <label>Consignee Name:</label>
                             <input type="text" id="dlvcons" value={formData.deliveryConsignee} className="input_form" disabled/>
                         </div>
-                        <div className="cont_right">
+                        <div className="cont_right input_wrapper">
                             <label>Pieces Delivered:</label>
                             <input type="number" id="dlvdpcs" value={formData.deliveredPieces} className="input_form" min="0" max="999" onChange={handleChange} required/>
+                            <div className="fail_flag" id="ff_admin_df_pd">
+                                <p>Pieces Delivered is required!</p>
+                            </div>
                         </div>
                     </div>
                     <div id="notes_Div">

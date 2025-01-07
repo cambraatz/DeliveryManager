@@ -11,13 +11,19 @@ const Popup = (props) => {
                     <p>Confirm Delivery Info</p>
                 </div>
                 <div className="popupLoginContent">
-                    <div>
+                    <div className="input_wrapper">
                         <label>Delivery Date</label>
                         <input type="date" id="dlvdate" value={props.date} className="input_form" onChange={props.handleDeliveryChange} />
+                        <div className="fail_flag" id="ff_admin_dl_un">
+                            <p>Username is required!</p>
+                        </div>
                     </div>
-                    <div>
+                    <div className="input_wrapper">
                         <label>Power Unit</label>
                         <input type="text" id="powerunit" value={props.powerunit} className="input_form" onChange={props.handleDeliveryChange} />
+                        <div className="fail_flag" id="ff_admin_dl_pu">
+                            <p>Powerunit is required!</p>
+                        </div>
                     </div>
                     <div id="popupLoginInner">
                         <button onClick={props.handleUpdate}>Validate</button>
@@ -83,17 +89,26 @@ const Popup = (props) => {
         return(
             <>
                 <div className="popupLoginContent">
-                    <div>
+                    <div className="input_wrapper">
                         <label>Username</label>
                         <input type="text" id="username" value={props.credentials.USERNAME} className="input_form" onChange={props.handleUpdate}/>
+                        <div className="fail_flag" id="ff_admin_eu_un">
+                            <p>Username is required!</p>
+                        </div>
                     </div>
                     <div>
                         <label>Password</label>
                         <input type="text" id="password" value={props.credentials.PASSWORD ? props.credentials.PASSWORD : ""} className="input_form" onChange={props.handleUpdate}/>
                     </div>
-                    <div>
+                    <div className="input_wrapper">
                         <label>Power Unit</label>
                         <input type="text" id="powerunit" value={props.credentials.POWERUNIT} className="input_form" onChange={props.handleUpdate}/>
+                        <div className="fail_flag" id="ff_admin_eu_pu">
+                            <p>Powerunit is required!</p>
+                        </div>
+                        <div className="fail_flag" id="ff_admin_eu_up">
+                            <p>Username and Powerunit are required!</p>
+                        </div>
                     </div>
                     <div id="submit_user">
                         <button className="popup_button" onClick={props.onPressFunc.updateDriver}>Update User</button>
@@ -118,13 +133,19 @@ const Popup = (props) => {
                     <label>Username</label>
                     <input type="text" id="username" value={props.credentials.USERNAME} className="input_form" onChange={props.updateNew} disabled/>
                 </div>
-                <div>
+                <div className="input_wrapper">
                     <label>Password</label>
                     <input type="text" id="password" value={props.credentials.PASSWORD} className="input_form" onChange={props.updateNew} required/>
+                    <div className="fail_flag" id="ff_admin_enu_pw">
+                        <p>Password is required!</p>
+                    </div>
                 </div>
-                <div>
+                <div className="input_wrapper">
                     <label>Power Unit</label>
                     <input type="text" id="powerunit" value={props.credentials.POWERUNIT} className="input_form" onChange={props.updateNew} required/>
+                    <div className="fail_flag" id="ff_admin_enu_pu">
+                        <p>Powerunit is required!</p>
+                    </div>
                 </div>
                 <div id="submit_user">
                     <button className="popup_button" onClick={props.onPressFunc.updateDriver}>Update User</button>
@@ -138,13 +159,22 @@ const Popup = (props) => {
     else if(props.message === "Add User"){
         return(
             <div className="popupLoginContent">
-                <div>
+                <div className="input_wrapper">
                     <label>Username</label>
                     <input type="text" id="username" value={props.credentials.USERNAME} className="input_form" onChange={props.handleUpdate} required/>
+                    <div className="fail_flag" id="ff_admin_au_un">
+                        <p>Username is required!</p>
+                    </div>
                 </div>
-                <div>
+                <div className="input_wrapper">
                     <label>Power Unit</label>
                     <input type="text" id="powerunit" value={props.credentials.POWERUNIT} className="input_form" onChange={props.handleUpdate} required/>
+                    <div className="fail_flag" id="ff_admin_au_pu">
+                        <p>Powerunit is required!</p>
+                    </div>
+                    <div className="fail_flag" id="ff_admin_au_up">
+                        <p>Username and Powerunit are required!</p>
+                    </div>
                 </div>
                 <div id="add_user">
                     <button type="button" className="popup_button" onClick={props.onPressFunc.addDriver}>Add User</button>
@@ -160,9 +190,12 @@ const Popup = (props) => {
         return(
             <>
                 <div className="popupLoginContent">
-                    <div>
+                    <div className="input_wrapper">
                         <label>Username</label>
                         <input type="text" id="username" value={props.credentials.USERNAME} className="input_form" onChange={props.handleUpdate}/>
+                        <div className="fail_flag" id="ff_admin_fu">
+                            <p>Username was not found!</p>
+                        </div>
                     </div>
                     <div id="find_user">
                         <button id="find_user" className="popup_button" onClick={props.onPressFunc.pullDriver}>Find User</button>
@@ -179,9 +212,12 @@ const Popup = (props) => {
         return(
             <>
                 <div className="popupLoginContent">
-                    <div>
+                    <div className="input_wrapper">
                         <label>Username</label>
                         <input type="text" id="username" value={props.credentials.USERNAME ? props.credentials.USERNAME : ""} className="input_form" onChange={props.updateNew}/>
+                        <div className="fail_flag" id="ff_login_nu">
+                            <p>Username was not found!</p>
+                        </div>
                     </div>
                     <div id="set_password">
                         <button id="set_password" className="popup_button" onClick={props.pressButton}>Authorize</button>
@@ -197,9 +233,12 @@ const Popup = (props) => {
         return(
             <>
                 <div className="popupLoginContent">
-                    <div>
+                    <div className="input_wrapper">
                         <label>Company Name</label>
                         <input type="text" id="company" value={props.company} className="input_form" onChange={props.handleUpdate}/>
+                        <div className="fail_flag" id="ff_admin_cc">
+                            <p>Company name is required!</p>
+                        </div>
                     </div>
                     <div id="submit_company">
                         <button className="popup_button" onClick={props.onPressFunc.updateCompany}>Update Company</button>
@@ -245,12 +284,12 @@ const Popup = (props) => {
         )
     }
     else if(props.message === "Company Success"){
-        const company = props.company;
+        //const company = props.company;
         return(
             <>
                 <div className="popupLoginContent">
                     <img id="success" src={Success} alt="succss"/>
-                    <p>{company} successfully updated!</p>
+                    <p>Company successfully updated!</p>
                 </div>
             </>
         )
@@ -261,6 +300,16 @@ const Popup = (props) => {
                 <div className="popupLoginContent">
                     <img id="fail" src={Fail} alt="fail"/>
                     <p>Oops! Something went wrong, please try again.</p>
+                </div>
+            </>
+        )
+    }
+    else if(props.message === "Admin_Add Fail"){
+        return(
+            <>
+                <div className="popupLoginContent">
+                    <img id="fail" src={Fail} alt="fail"/>
+                    <p>Oops! User already exists, please try again.</p>
                 </div>
             </>
         )

@@ -121,6 +121,15 @@ export async function getCompany_DB() {
     }
 }
 
+export const showFailFlag = (id, message) => {
+    const flag = document.getElementById(id);
+    flag.querySelector("p").innerHTML = message;
+    flag.classList.add("visible");
+    setTimeout(() => {
+        flag.classList.remove("visible");
+    },1500)
+}
+
 export const scrapeDate = (date) => {
     const year = date.slice(0,4);
     const month = date.slice(5,7);

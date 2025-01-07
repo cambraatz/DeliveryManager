@@ -21,179 +21,49 @@ package data for interaction with the .NET backend and MSSQL database.
 
 BASIC STRUCTURE:
 DriverLogin() {
-    gather current date
-    initialize react navigation
-    initialize message + status states
-    initialize credentials, form data and update data states
+    // initialize rendered page...
+    initialize date, navigation and states
+    useEffect() => 
+        check delivery validity onLoad and after message state change
+    renderCompany() => 
+        retrieve company name from database when not in memory
 
-    [void] : handleLoginChange(event) {
-        if (e.target.id === "USERNAME"):
-            update driverCredentials with new username
-        if (e.target.id === "PASSWORD"):
-            update driverCredentials with new password
+    // page rendering helper functions //
+    openPopup() => 
+        open popup for delivery confirmation
+    closePopup() => 
+        close popup for delivery confirmation
+    collapseHeader() => 
+        open/close collapsible header
 
-        if (invalid log in is changed):
-            remove USER/PW error styling (class 'invalid_input') on change
-    }
-    
-    [void] : handleDeliveryChange(event) {
-        if (e.target.id === "dlvddate"):
-            update formData with renderDate(date)
-            update updateData with scrapeDate(date)
-        if (e.target.id === "powerunit"):
-            update formData with new date val
-            update updateData with new date val
-        
-        if (e.target.id background color != "white"):
-            remove date/powerunit error styling (class 'invalid_input) on change
-    }
+    // state management functions...
+    handleLoginChange() => 
+        handle login form changes
+    handleDeliveryChange() => 
+        handle delivery query form changes
 
-    useEffect() {
-        getCompany() - render company on file once each load
-    }
+    // API requests + functions...
+    handleSubmit() => 
+        handleClick on initial login button
+    validateCredentials() => 
+        prompt for correction in fail or open popup in success
+    handleUpdate() => 
+        validate delivery data + powerunit, navigate to /driverlog on success
 
-    [void] : handleSubmit(event) {
-        prevent default submit behavior
-        validate input username and password credentials
-    }
+    // user credential management functions...
+    handleNewUser() => 
+        open new user initialization menu
+    updateDriver() =>
+        collect password + powerunit to initialize new driver credentials
+    pullDriver() =>
+        fetch driver and ensure null password for new driver init
+    cancelDriver() =>
+        reset driver credentials on popup close
+    updateNewUser() =>
+        handle updates to new user credentials
 
-    ***
-
-    NOTE: Can this process be streamlined? This seems to be frontend heavy
-
-    ***
-    [void] : validateCredentials(username, password) {
-        package snapshot of user credentials (saved as "user_data")
-        map user_data to a FormData() object prior to "POST" operation
-
-        post user data to database for validation
-        parse JSON data from response - "Valid Login." or "Invalid Login."
-
-        if (data === "Valid Login."):
-            setStatus to "Verifying Delivery Information." for loading message
-            getPowerUnit(username, password) - fetch latest powerunit on file
-            openPopup("popupLoginWindow") - open date/powerunit input popup
-            reset username/password error styling (if present)
-        else:
-            setStatus to "Login Credentials Not Found." to flag bad credentials
-            set username/password error styling - ** add error flag here **
-    }
-   
-    [void] : getPowerUnit(username) {
-        fetch latest powerunit on file attributed with username
-        parse JSON data from response
-
-        update driverCredentials with gathered powerunit
-        update updateData with gathered powerunit
-    }
-
-    [string] : handleEdit(username,password,powerunit) {
-        package snapshot of user credentials (saved as "user_data")
-        map user_data to a FormData() object prior to "PUT" operation
-
-        update driver credentials on database - ** add error flag here **
-        parse JSON data from response
-    }
-
-    [string] : validateDeliveries(mfstdate,powerunit) {
-        package date and powerunit for mapping
-        map user_data to a FormData() object prior to "POST" operation
-
-        post delivery information for validation
-        parse JSON data from response
-
-        if "Valid":
-            setMessage to "Delivery Information Found"
-        else:
-            setMessage to "Invalid Delivery Information"
-
-        return data
-    }
-
-    [void] : handleUpdate() {
-        update driverCredentials with latest powerunit
-
-        handleEdit(driverCredentials: username, password, powerunit) - *** save a API call by checking for new PU? ***
-        handle errors
-
-        validateDeliveries(updateData: MFSTDATE, POWERUNIT)
-        handle errors
-    }
-
-    [void] : openPopup() {
-        self explanatory opening of "popupLoginWindow"
-    }
-    [void] : closePopup() {
-        self explanatory closing of "popupLoginWindow"
-
-        setStatus("") and setMessage(null) - reset state data
-    }
-
-    initialize header toggle to "open" - default for login screen
-
-    [void] : collapseHeader(event) {
-        if (e.target.id === "collapseToggle" or "toggle_dots"):
-            open/close header - do opposite of current "header" state
-    }
-
-    initialize company state to render active company name
-
-    [void] : getCompany() {
-        retrieve the currently saved company name
-        if (company is valid):
-            set rendered company to company on file
-        else:
-            render placeholder
-    }
-
-    [void] : handleNewUser(e) {
-        set user credentials to default
-        set popup to new user prompt and open
-    }
-
-    [void] : updateDriver() {
-        package credentials and cache curr user as previous for updating
-        delete previous user to prevent pk conflicts w/ same username
-        insert new user credentials
-        trigger success message and close popup
-    }
-
-    *** 
-
-    NOTE: makes use of same API as admin...be sure no conflicts occur 
-
-    ***
-    [void] : pullDriver() {
-        fetch driver credentials from curr username
-        if (data is invalid) {
-            set error styling and return (do nothing)
-        }
-        else {
-            if (data.PASSWORD is NOT null/empty):
-                trigger error styling (existing user)
-            else:
-                set credentials to username and powerunit
-                prompt for first password
-        }
-    }
-
-    ***
-
-    NOTE: can this be renamed for clarity? overly redundant?
-
-    ***
-    [void] : submitNewUser(e) {
-        handle popup button (login functions)
-            set_password: fetch username + powerunit for new user
-            submit_user: update user table with newly set password
-            cancel_user: exit/close popup
-    }
-
-    [void] : updateNewUser(e) {
-        clear error styling (if present)
-        handle change for new user credentials
-    }
-
+    // render template + helpers...
+    package popup helper functions
     return render template
 }
 
@@ -211,7 +81,8 @@ import { scrapeDate,
     cacheToken,
     requestAccess,
     isCompanyValid,
-    getCompany_DB } from '../Scripts/helperFunctions';
+    getCompany_DB, 
+    showFailFlag} from '../Scripts/helperFunctions';
 
 const DriverLogin = () => {
     // Date processing functions ...
@@ -256,7 +127,22 @@ const DriverLogin = () => {
         POWERUNIT: "000"
     });
 
+    // state 'header' to maintain collapsible header...
+    const [header,setHeader] = useState("open");
+
+    /* Page rendering helper functions... */
+
+    /*/////////////////////////////////////////////////////////////////
     // retrieve company from database when not in memory...
+    [void] : renderCompany() {
+        fetch company name from database (if present)
+        if (company is valid):
+            setCompany(company)
+        else:
+            setCompany to placeholder
+    } 
+    *//////////////////////////////////////////////////////////////////
+    
     async function renderCompany() {
         // getCompany() also caches company...
         const company = await getCompany_DB();
@@ -269,10 +155,81 @@ const DriverLogin = () => {
         }
     }
 
+    /*/////////////////////////////////////////////////////////////////
+    [void] : openPopup() {
+        make popup window visible on screen
+        enable on click behavior
+    }
+    *//////////////////////////////////////////////////////////////////
+
+    const openPopup = () => {
+        document.getElementById("popupLoginWindow").style.visibility = "visible";
+        document.getElementById("popupLoginWindow").style.opacity = 1;
+        document.getElementById("popupLoginWindow").style.pointerEvents = "auto";  
+    };
+
+    /*/////////////////////////////////////////////////////////////////
+    [void] : closePopup() {
+        self explanatory closing of "popupLoginWindow"
+        setStatus("") and setMessage(null) - reset state data
+    }
+    *//////////////////////////////////////////////////////////////////
+
+    const closePopup = () => {
+        document.getElementById("popupLoginWindow").style.visibility = "hidden";
+        document.getElementById("popupLoginWindow").style.opacity = 0;
+        document.getElementById("popupLoginWindow").style.pointerEvents = "none";
+        
+        // reset driver credentials to default...
+        setDriverCredentials({
+            USERNAME: "",
+            PASSWORD: "",
+            POWERUNIT: ""
+        });
+    };
+
+    /*/////////////////////////////////////////////////////////////////
+    // initialize and manage collapsible header behavior...
+    initialize header toggle to "open" - default for login screen
+    [void] : collapseHeader(event) {
+        if (e.target.id === "collapseToggle" or "toggle_dots"):
+            open/close header - do opposite of current "header" state
+    }
+    *//////////////////////////////////////////////////////////////////
+
+    const collapseHeader = (e) => {
+        //console.log(e.target.id);
+        if (e.target.id === "collapseToggle" || e.target.id === "toggle_dots") {
+            if (header === "open") {
+                setHeader("close");
+            } else {
+                setHeader("open");
+            }
+        }
+    }
+
     /* Dynamic form/state change functions... */
 
+    /*/////////////////////////////////////////////////////////////////
     // handle login form changes...
+    [void] : handleLoginChange(event) {
+        if (invalid log in is changed):
+            remove USER/PW error styling on change
+
+        if (e.target.id === "USERNAME"):
+            update driverCredentials with new username
+        if (e.target.id === "PASSWORD"):
+            update driverCredentials with new password
+    } 
+    *//////////////////////////////////////////////////////////////////
+
     const handleLoginChange = (e) => {
+        if(document.getElementById(e.target.id).classList.contains("invalid_input")){
+            // reset styling to default...
+            document.getElementById("USERNAME").classList.remove("invalid_input");
+            document.getElementById("PASSWORD").classList.remove("invalid_input");
+        }
+
         let val = e.target.value;
         switch(e.target.id) {
             case 'USERNAME':
@@ -290,15 +247,23 @@ const DriverLogin = () => {
             default:
                 break;
         }
-
-        if(document.getElementById(e.target.id).classList.contains("invalid_input")){
-            // reset styling to default...
-            document.getElementById("USERNAME").classList.remove("invalid_input");
-            document.getElementById("PASSWORD").classList.remove("invalid_input");
-        }
     };
 
+    /*/////////////////////////////////////////////////////////////////
     // handle delivery query form changes...
+    [void] : handleDeliveryChange(event) {
+        if (e.target.id === "dlvddate"):
+            update formData with renderDate(date)
+            update updateData with scrapeDate(date)
+        if (e.target.id === "powerunit"):
+            update formData with new date val
+            update updateData with new date val
+        
+        if (e.target.id background color != "white"):
+            remove date/powerunit error styling (class 'invalid_input) on change
+    } 
+    *//////////////////////////////////////////////////////////////////
+
     const handleDeliveryChange = (e) => {
         //console.log("e.target.id: ",e.target.id)
         if( document.getElementById(e.target.id).classList.contains("invalid_input")){
@@ -338,16 +303,34 @@ const DriverLogin = () => {
     
     /* API Calls and Functionality... */
 
+    /*/////////////////////////////////////////////////////////////////
     // handleClick on initial Login button...
+    [void] : handleSubmit(event) {
+        prevent default submit behavior
+        define input field status alerts
+
+        if (user is invalid):
+            set user field to invalid_input styling
+        if (password is invalid):
+            set password field to invalid
+        if alert status is greater than 1:
+            set and render error flag/popup
+            return (dont submit)
+        
+        validateCredentials()
+    }
+    *//////////////////////////////////////////////////////////////////
+
     const handleSubmit = (e) => {
         e.preventDefault();
         setMessage(null);
-        
+
         const user_field = document.getElementById("USERNAME");
         const pass_field = document.getElementById("PASSWORD");
         
         // map empty field cases to messages...
         let code = -1; // case -1...
+        let elementID;
         const alerts = {
             0: "Username is required!", // case 0...
             1: "Password is required!", // case 1...
@@ -357,23 +340,53 @@ const DriverLogin = () => {
         if (user_field.value === "" || user_field.value == null){
             user_field.classList.add("invalid_input");
             code += 1;
+            elementID = "ff_login_un"
         } 
         // flag empty powerunit...
         if (pass_field.value === "" || pass_field.value == null){
             pass_field.classList.add("invalid_input");
             code += 2;
+            elementID = "ff_login_pw"
         }
 
         // catch and alert user to incomplete fields...
         if (code >= 0) {
-            alert(alerts[code]);
+            //alert(alerts[code]);
+            const flag = document.getElementById(elementID);
+            flag.querySelector("p").innerHTML = alerts[code];
+            flag.classList.add("visible");
+            setTimeout(() => {
+                flag.classList.remove("visible");
+            },1500)
+            //showFailFlag(elementID,alerts[code]);
             return;
         }
         
         validateCredentials(driverCredentials.USERNAME,driverCredentials.PASSWORD);
     };
 
+    /*/////////////////////////////////////////////////////////////////
     // validate credentials, prompt for correction in fail or open popup in success...
+    [void] : validateCredentials(username, password) {
+        package snapshot of user credentials
+        post user data to database for validation
+        parse response to JSON
+
+        if (data.success):
+            cache tokens from preliminary API request
+            if (task = "driver"):
+                set POWERUNIT in states
+                reset and open input popup
+                reset input field styling
+            else if (task = "admin"):
+                package admin rendering data
+                navigate to /admin
+        else:
+            set username/password error styling
+            return
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function validateCredentials(username, password){
         const user_data = {
             USERNAME: username,
@@ -426,40 +439,63 @@ const DriverLogin = () => {
             }
         }
         else {
-            //setStatus("Login Credentials Not Found.");
-
             // trigger red borders for errors...
             document.getElementById("USERNAME").className = "invalid_input";
             document.getElementById("PASSWORD").className = "invalid_input";
         }
     }
 
-    // onClick response to validate date and power unit data prior to pulling manifest...
+    /*/////////////////////////////////////////////////////////////////
+    // validate credentials, prompt for correction in fail or open popup in success...
+    [void] : handleUpdate() {
+        handleEdit(driverCredentials: username, password, powerunit) - *** save a API call by checking for new PU? ***
+        handle errors
+
+        validateDeliveries(updateData: MFSTDATE, POWERUNIT)
+        handle errors
+
+
+        handle error codes to provide error styling on invalid inputs
+        ensure valid token + update is needed + return on fail
+
+        update driverCredentials with latest powerunit
+        parse response to JSON
+        if (success):
+            package /driverlog data + navigate
+        else:
+            reset input field styling
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function handleUpdate() {
         const deliver_field = document.getElementById("dlvdate");
         const power_field = document.getElementById("powerunit");
         
         // map empty field cases to messages...
         let code = -1; // case -1...
+        let elementID;
         const alerts = {
             0: "Delivery Date is invalid!", // case 0...
             1: "Powerunit is required!", // case 1...
-            2: "Delivery Date and Powerunit are both required" // case 2...
+            2: "Date and Powerunit are both required" // case 2...
         }
         // flag empty username...
         if (!(deliver_field.value instanceof Date) && !isNaN(deliver_field.value)){
             deliver_field.classList.add("invalid_input");
+            elementID = "ff_admin_dl_un";
             code += 1;
         } 
         // flag empty powerunit...
         if (power_field.value === "" || power_field.value == null){
             power_field.classList.add("invalid_input");
+            elementID = "ff_admin_dl_pu";
             code += 2;
         }
 
         // catch and alert user to incomplete fields...
         if (code >= 0) {
-            alert(alerts[code]);
+            //alert(alerts[code]);
+            showFailFlag(elementID, alerts[code]);
             return;
         }
 
@@ -506,7 +542,7 @@ const DriverLogin = () => {
                 company: company,
                 valid: true
             };
-            console.log(deliveryData);
+            //console.log(deliveryData);
             
             navigate(`/driverlog`, {state: deliveryData});
         }
@@ -517,45 +553,23 @@ const DriverLogin = () => {
         }
     }
 
-    // open popup for delivery confirmation...
-    const openPopup = () => {
-        document.getElementById("popupLoginWindow").style.visibility = "visible";
-        document.getElementById("popupLoginWindow").style.opacity = 1;
-        document.getElementById("popupLoginWindow").style.pointerEvents = "auto";  
-    };
-
-    // close popup for delivery confirmation...
-    const closePopup = () => {
-        document.getElementById("popupLoginWindow").style.visibility = "hidden";
-        document.getElementById("popupLoginWindow").style.opacity = 0;
-        document.getElementById("popupLoginWindow").style.pointerEvents = "none";
-        
-        // reset driver credentials to default...
-        setDriverCredentials({
-            USERNAME: "",
-            PASSWORD: "",
-            POWERUNIT: ""
-        });
-    };
-
-    const [header,setHeader] = useState("open");
-
-    const collapseHeader = (e) => {
-        //console.log(e.target.id);
-        if (e.target.id === "collapseToggle" || e.target.id === "toggle_dots") {
-            if (header === "open") {
-                setHeader("close");
-            } else {
-                setHeader("open");
-            }
-        }
-    }
-
-    // "Edit User", "Find User", "Change Company"...
-    //const [popup, setPopup] = useState("Edit User");
-
+    /*/////////////////////////////////////////////////////////////////
     // open new user initialization menu...
+    [void] : handleNewUser() {
+        reset input field styling
+        set user credentials to default
+        set popup to new user prompt and open
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function handleNewUser() {
+        if(document.getElementById("USERNAME").classList.contains("invalid_input")) {
+            document.getElementById("USERNAME").classList.remove("invalid_input");
+        }
+        if(document.getElementById("PASSWORD").classList.contains("invalid_input")) {
+            document.getElementById("PASSWORD").classList.remove("invalid_input");
+        }
+
         const user_data = {
             USERNAME: "",
             PASSWORD: "",
@@ -566,8 +580,43 @@ const DriverLogin = () => {
         openPopup();
     }
 
-    // 
+    /*/////////////////////////////////////////////////////////////////
+    // collect password + powerunit to initialize new driver credentials...
+    [void] : updateDriver() {
+        handle input field error styling
+        package driver credentials
+        update new user in DB to have valid credentials
+        verify and render success status
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function updateDriver() {
+        const pass_field = document.getElementById("password");
+        const pow_field = document.getElementById("powerunit");
+
+        let code = -1;
+        let elementID;
+        const alerts = {
+            0: "Password is required!",
+            1: "Powerunit is required!",
+            2: "Password and Powerunit are required!"
+        }
+
+        if(!(pass_field.value)) {
+            pass_field.classList.add("invalid_input");
+            elementID = "ff_admin_enu_pw";
+            code += 1;
+        }
+        if (!(pow_field.value)) {
+            pow_field.classList.add("invalid_input");
+            elementID = "ff_admin_enu_pu";
+            code += 2;
+        }
+        if (code >= 0) {
+            showFailFlag(elementID, alerts[code]);
+            return;
+        }
+
         const body_data = {
             USERNAME: driverCredentials.USERNAME,
             PASSWORD: driverCredentials.PASSWORD,
@@ -600,7 +649,33 @@ const DriverLogin = () => {
         }        
     }
 
+    /*/////////////////////////////////////////////////////////////////
+    // fetch driver and ensure null password for new driver init...
+    [void] : pullDriver() {
+        reset input field styling
+        fetch driver credentials using curr username
+
+        if (!success) {
+            set error styling + render error flag
+            return (do nothing)
+        }
+        else {
+            cache tokens from request
+            if (data.PASSWORD):
+                trigger error styling + render error flag
+            else:
+                set credentials to username and powerunit
+                prompt for first password
+        }
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function pullDriver() {
+        if (driverCredentials.USERNAME == "") {
+            document.getElementById("username").className = "invalid_input";
+            showFailFlag("ff_login_nu", "Username is required!");
+            return;
+        }
         const body_data = {
             USERNAME: driverCredentials.USERNAME,
             PASSWORD: null,
@@ -622,30 +697,35 @@ const DriverLogin = () => {
         // catch failed request and prevent behavior...
         if (!data.success) {
             document.getElementById("username").className = "invalid_input";
+            showFailFlag("ff_login_nu", "Username not found!");
         }
         else {
             // stash tokens in storage...
             cacheToken(data.accessToken,data.refreshToken)
-            console.log("new tokens cached...")
-            console.log(data)
 
             // if password exists, fail out...
             if (data.password){
-                alert(`User ${data.username} already exists.`);
                 document.getElementById("username").className = "invalid_input";
+                showFailFlag("ff_login_nu", "Username already exists!");
             }
             else {
-                //setDriverCredentials(data[0]);
                 setDriverCredentials({
                     USERNAME: data.username,
                     PASSWORD: "",
                     POWERUNIT: data.powerunit
                 })
-                //console.log(driverCredentials);
                 setMessage("Edit New User");
             }
         }
     }
+
+    /*/////////////////////////////////////////////////////////////////
+    // reset driver credentials on popup close...
+    [void] : cancelDriver() {
+        reset driver credentials to null
+        close pop up
+    }
+    *//////////////////////////////////////////////////////////////////
 
     async function cancelDriver() {
         setDriverCredentials({
@@ -656,10 +736,20 @@ const DriverLogin = () => {
         closePopup();
     }
 
+    /*/////////////////////////////////////////////////////////////////
+    // reset driver credentials on popup close...
+    [void] : submitNewUser(e) {
+        if (target == "edit new user"):
+            initialize new driver credentials (updateDriver)
+        handle popup button (login functions)
+            set_password: fetch username + powerunit for new user
+            submit_user: update user table with newly set password
+            cancel_user: exit/close popup
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function submitNewUser(e) {
         e.preventDefault();
-        console.log("target parent: ", e.target.parentElement.id);
-        console.log("target: ", e.target);
         if (e.target.id == "edit_new_user") {
             updateDriver();
             return;
@@ -679,8 +769,15 @@ const DriverLogin = () => {
         }
     }
 
+    /*/////////////////////////////////////////////////////////////////
+    // handle updates to new user credentials...
+    [void] : updateNewUser(e) {
+        clear error styling (if present)
+        handle change for new user credentials
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function updateNewUser(e) {
-        //console.log(`updateNewUser [${e.target.id}]: ${e.target.value}`);
         if (document.getElementById(e.target.id).className == "invalid_input"){
             // reset styling to default...
             document.getElementById("username").className = "";
@@ -713,13 +810,13 @@ const DriverLogin = () => {
         }
     }
 
+    // package helper functions to organize popup functions...
     const onPress_functions = {
         "pullDriver": pullDriver,
         "updateDriver": updateDriver,
         "cancelDriver": cancelDriver
     };
 
-    //
     // render template...
     return(
         <div id="webpage">
@@ -739,15 +836,20 @@ const DriverLogin = () => {
             />
             <div id="Delivery_Login_Div">
                 <form id="loginForm" onSubmit={handleSubmit}>
-                    <div>
+                    <div className="input_wrapper">
                         <label htmlFor="USERNAME">Username:</label>
                         <input type="text" id="USERNAME" value={driverCredentials.USERNAME} onChange={handleLoginChange}/>
+                        <div className="fail_flag" id="ff_login_un">
+                            <p>Username is required!</p>
+                        </div>
                     </div>        
-                    <div>
+                    <div className="input_wrapper">
                         <label htmlFor="PASSWORD">Password:</label>
                         <input type="password" id="PASSWORD" value={driverCredentials.PASSWORD} onChange={handleLoginChange}/>
+                        <div className="fail_flag" id="ff_login_pw">
+                            <p>Password is required!</p>
+                        </div>
                     </div>
-                    {/*<h4>{status}</h4>*/}
                     <h4 id="new_user" onClick={handleNewUser}>New User Sign-in</h4>
                     <button type="submit">Login</button>
                 </form>
