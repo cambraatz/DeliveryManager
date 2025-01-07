@@ -1,5 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////
-/* 
+/*////////////////////////////////////////////////////////////////////////////////////
 DriveryLogin() - Driver/Delivery Authentication
 
 DriverLogin serves as the home page for the driver application...
@@ -21,14 +20,14 @@ package data for interaction with the .NET backend and MSSQL database.
 
 BASIC STRUCTURE:
 DriverLogin() {
-    // initialize rendered page...
+// initialize rendered page...
     initialize date, navigation and states
     useEffect() => 
         check delivery validity onLoad and after message state change
     renderCompany() => 
         retrieve company name from database when not in memory
 
-    // page rendering helper functions //
+// page rendering helper functions
     openPopup() => 
         open popup for delivery confirmation
     closePopup() => 
@@ -36,13 +35,13 @@ DriverLogin() {
     collapseHeader() => 
         open/close collapsible header
 
-    // state management functions...
+// state management functions...
     handleLoginChange() => 
         handle login form changes
     handleDeliveryChange() => 
         handle delivery query form changes
 
-    // API requests + functions...
+// API requests + functions...
     handleSubmit() => 
         handleClick on initial login button
     validateCredentials() => 
@@ -50,7 +49,7 @@ DriverLogin() {
     handleUpdate() => 
         validate delivery data + powerunit, navigate to /driverlog on success
 
-    // user credential management functions...
+// user credential management functions...
     handleNewUser() => 
         open new user initialization menu
     updateDriver() =>
@@ -62,7 +61,7 @@ DriverLogin() {
     updateNewUser() =>
         handle updates to new user credentials
 
-    // render template + helpers...
+// render template + helpers...
     package popup helper functions
     return render template
 }
