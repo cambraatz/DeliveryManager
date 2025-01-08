@@ -1,4 +1,28 @@
-/*////////////////////////////////////////////////////////////////////////////////////
+/*/////////////////////////////////////////////////////////////////////
+ 
+Author: Cameron Braatz
+Date: 11/15/2023
+Update Date: 1/7/2025
+
+*//////////////////////////////////////////////////////////////////////
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+import Header from './Header';
+import Popup from './Popup';
+import Footer from './Footer';
+import { scrapeDate, 
+    renderDate, 
+    getDate, 
+    API_URL, 
+    cacheToken,
+    requestAccess,
+    isCompanyValid,
+    getCompany_DB, 
+    showFailFlag} from '../Scripts/helperFunctions';
+
+/*/////////////////////////////////////////////////////////////////////
+
 DriveryLogin() - Driver/Delivery Authentication
 
 DriverLogin serves as the home page for the driver application...
@@ -16,10 +40,9 @@ The driver must be a valid user on file, but are allowed to query delivery data 
 any valid powerunit and delivery date pair. The set of functions below manage and
 package data for interaction with the .NET backend and MSSQL database.
 
-//////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 
 BASIC STRUCTURE:
-DriverLogin() {
 // initialize rendered page...
     initialize date, navigation and states
     useEffect() => 
@@ -27,7 +50,7 @@ DriverLogin() {
     renderCompany() => 
         retrieve company name from database when not in memory
 
-// page rendering helper functions
+// page rendering helper functions...
     openPopup() => 
         open popup for delivery confirmation
     closePopup() => 
@@ -49,7 +72,6 @@ DriverLogin() {
     handleUpdate() => 
         validate delivery data + powerunit, navigate to /driverlog on success
 
-// user credential management functions...
     handleNewUser() => 
         open new user initialization menu
     updateDriver() =>
@@ -66,22 +88,7 @@ DriverLogin() {
     return render template
 }
 
-*/////////////////////////////////////////////////////////////////////////////////////
-
-import { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
-import Header from './Header';
-import Popup from './Popup';
-import Footer from './Footer';
-import { scrapeDate, 
-    renderDate, 
-    getDate, 
-    API_URL, 
-    cacheToken,
-    requestAccess,
-    isCompanyValid,
-    getCompany_DB, 
-    showFailFlag} from '../Scripts/helperFunctions';
+*//////////////////////////////////////////////////////////////////////
 
 const DriverLogin = () => {
     // Date processing functions ...
@@ -306,7 +313,7 @@ const DriverLogin = () => {
     // handleClick on initial Login button...
     [void] : handleSubmit(event) {
         prevent default submit behavior
-        define input field status alerts
+        define input field alert status
 
         if (user is invalid):
             set user field to invalid_input styling

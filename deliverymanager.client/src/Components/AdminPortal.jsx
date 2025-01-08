@@ -1,7 +1,8 @@
 /*/////////////////////////////////////////////////////////////////////////////
  
 Author: Cameron Braatz
-Date: 11/15/2024
+Date: 11/15/2023
+Update Date: 1/7/2025
 
 *//////////////////////////////////////////////////////////////////////////////
 
@@ -28,41 +29,62 @@ admin credentials. The page allows users to add, edit and remove users from the
 driver database. Additionally, the page allows the admin user to change the 
 name of the company to be dynamically rendered across the application.
 
-Logic flow:
-- gather header state (open/collapse) from location
-- set credentials + previous user states to empty (default)
-- set popup state to control popup content
-- set company+active company state to value found in location.state
+BASIC STRUCTURE:
+// initialize rendered page...
+    initialize date, navigation and states
+    verify company name for rendering
+    verify location.state to catch improper navigation
 
-- useEffect(): calls getCompany() to ensure company name is up to date
-- collapseHeader(): open/collapse header function (see if this can be sent as prop)
-- open/closePopup(): handle opening and closing popup styling
-- clearStyling(): remove invalid_input styling from input
+    useEffect() => 
+        check delivery validity onLoad and after message state change
 
-- handleUpdate(): handle form updates, update respective credentials value
-- addDriver(): collect credentials/prev user (set to 'add new') and add to DB
-- pullDriver(): retrieve user credentials for a given username (edit/remove)
-- updateDriver(): collect credentials/prev user (scraped) and update in DB
-- removeDriver(): remove record from DB that matches credentials.USERNAME
-- cancelDriver(): handle cancel, clear credentials and close popup
+// page rendering helper functions...
+    renderCompany() => 
+        retrieve company name from database when not in memory
+    collapseHeader() => 
+        open/close collapsible header
+    openPopup() => 
+        open popup for delivery confirmation
+    closePopup() => 
+        close popup for delivery confirmation
+    clearStyling() =>
+        remove error styling from all input fields (if present)
 
-- pressButton(): handle unique behavior of collection of admin buttons
+// state management functions...
+    handleUpdate() => 
+        handle input field changes
 
+// API requests + functions...
+    getCompany() =>
+        retrieve the active company name from DB
+    updateCompany() =>
+        update active company name with provided user input
 
+    addDriver() =>
+        adds a new driver and conveys errors that occur
+    pullDriver() => 
+        retrieve user credentials for a given username (edit/remove)
+    updateDriver() =>
+        collect credentials/prev user (scraped) and update in DB
+    removeDriver() =>
+        remove record from DB that matches credentials.USERNAME
+    cancelDriver() => 
+        handle cancel, clear credentials and close popup
 
+    pressButton() =>
+        handle button clicks to render respective popup selections
 
+    [inactive] dumpUsers() =>
+        debug function to dump all active users to console.log()
 
-- getCompany(): retrieve the active company name from DB
-- updateCompany(): update active company name with provided user input
+// render template + helpers...
+    package popup helper functions
+    return render template
 
 *//////////////////////////////////////////////////////////////////////////////
 
-
 const AdminPortal = () => {
-    /*/////////////////////////////////////////////////////////////////////////////
-       State and Location Initialization...
-    *//////////////////////////////////////////////////////////////////////////////
-
+    /* Site state & location processing functions... */
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -83,14 +105,12 @@ const AdminPortal = () => {
     const [company, setCompany] = useState(name ? name : "No Company Set");
     const [activeCompany, setActiveCompany] = useState(company);
 
-    /*/////////////////////////////////////////////////////////////////////////////
-       Page Rendering Logic / Helpers...
-    *//////////////////////////////////////////////////////////////////////////////
-
+    // flag invalid navigation with null location.state...
     const VALID = location.state ? location.state.valid : false;
 
+    // ensure company, token and navigation validity onLoad...
     useEffect(() => {
-        //getCompany()
+        // fetch company name...
         const company = isCompanyValid();
         if (!company) {
             renderCompany();
@@ -98,6 +118,7 @@ const AdminPortal = () => {
             setCompany(company);
         }
 
+        // validate token...
         const token = getToken();
         if(!isTokenValid(token)){
             logout();
@@ -105,6 +126,7 @@ const AdminPortal = () => {
             return;
         }
 
+        // validate proper navigation...
         if(!VALID) {
             logout();
             navigate('/');
@@ -112,6 +134,19 @@ const AdminPortal = () => {
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeCompany])
+
+    /* Page rendering helper functions... */
+
+    /*/////////////////////////////////////////////////////////////////
+    // retrieve company from database when not in memory...
+    [void] : renderCompany() {
+        fetch company name from database (if present)
+        if (company is valid):
+            setCompany(company)
+        else:
+            setCompany to placeholder
+    } 
+    *//////////////////////////////////////////////////////////////////
 
     async function renderCompany() {
         // getCompany() also caches company...
@@ -123,30 +158,53 @@ const AdminPortal = () => {
         }
     }
 
-    // toggle header open status...
+    /*/////////////////////////////////////////////////////////////////
+    // initialize and manage collapsible header behavior...
+    initialize header toggle to "open" - default for login screen
+    [void] : collapseHeader(event) {
+        if (e.target.id === "collapseToggle" or "toggle_dots"):
+            open/close header - do opposite of current "header" state
+    }
+    *//////////////////////////////////////////////////////////////////
+
     const collapseHeader = (e) => {
         if (e.target.id === "collapseToggle" || e.target.id === "toggle_dots") {
             setHeader(prev => (prev === "open" ? "close" : "open"));
         }
     }
 
-    // open popup for delivery confirmation...
+    /*/////////////////////////////////////////////////////////////////
+    [void] : openPopup() {
+        make popup window visible on screen
+        enable on click behavior
+    }
+    *//////////////////////////////////////////////////////////////////
+
     const openPopup = () => {
         document.getElementById("popupAddWindow").style.visibility = "visible";
         document.getElementById("popupAddWindow").style.opacity = 1;
         document.getElementById("popupAddWindow").style.pointerEvents = "auto";  
     };
 
-    // close popup for delivery confirmation...
+    /*/////////////////////////////////////////////////////////////////
+    [void] : closePopup() {
+        self explanatory closing of "popupLoginWindow"
+        setStatus("") and setMessage(null) - reset state data
+    }
+    *//////////////////////////////////////////////////////////////////
+
     const closePopup = () => {
-        /*if (document.getElementById("username") && document.getElementById("username").className === "invalid_input") {
-            document.getElementById("username").classList.remove("invalid_input");
-        }*/
         document.getElementById("popupAddWindow").style.visibility = "hidden";
         document.getElementById("popupAddWindow").style.opacity = 0;
         document.getElementById("popupAddWindow").style.pointerEvents = "none";
         clearStyling();
     };
+
+    /*/////////////////////////////////////////////////////////////////
+    [void] : clearStyling() {
+        helper script to remove error styling from all standard fields
+    }
+    *//////////////////////////////////////////////////////////////////
 
     const clearStyling = () => {
         if (document.getElementById("username") && document.getElementById("username").classList.contains("invalid_input")) {
@@ -164,9 +222,15 @@ const AdminPortal = () => {
     }
 
 
-    /*/////////////////////////////////////////////////////////////////////////////
-       Page Rendering Logic / Helpers...
-    *//////////////////////////////////////////////////////////////////////////////
+    /* state management functions... */
+
+    /*/////////////////////////////////////////////////////////////////
+    // handle changes to admin input fields...
+    [void] : handleUpdate() {
+        clear error styling on input fields
+        handle input field changes
+    }
+    *//////////////////////////////////////////////////////////////////
 
     const handleUpdate = (e) => {
         clearStyling();
@@ -198,21 +262,134 @@ const AdminPortal = () => {
         }
     }
 
-    async function addDriver() {
-        //e.prevent.default()
-        /*if (document.getElementById("username").value === "" || document.getElementById("powerunit") === "") {
-            if (document.getElementById("username").value === "") {
-                document.getElementById("username").classList.add("invalid_input");
-            }
-            if (document.getElementById("powerunit").value === "") {
-                document.getElementById("powerunit").classList.add("invalid_input");
-            }
-            setTimeout(() => {
-                alert("Username and Powerunit are both Required!");
-            },200)
-            return;
-        }*/
+    /* API Calls and Functionality... */
 
+    /*/////////////////////////////////////////////////////////////////
+    // handle unique behavior of collection of admin buttons...
+    [void] : getCompany() {
+        verify valid token credentials
+        fetch company name on file
+        if (success):
+            setCompany to name on file
+        else:
+            setCompany to placeholder
+    }
+
+    NOTE: helper `getCompany_DB` does nearly the same, replace this?
+
+    *//////////////////////////////////////////////////////////////////
+
+    async function getCompany() {
+        // request token from memory, refresh as needed...
+        const token = await requestAccess(renderCredentials.USERNAME);
+        
+        // handle invalid token on login...
+        if (!token) {
+            navigate('/');
+            return;
+        }
+
+        const response = await fetch(API_URL + "api/Registration/GetCompany?COMPANYKEY=c01", {
+            method: "GET",
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
+        })
+
+        const data = await response.json();
+        //console.log(data);
+
+        if (data.success) {
+            setCompany(data["COMPANYNAME"]);
+        }
+        else {
+            setCompany("Your Company Here");
+        }
+    }
+
+    /*/////////////////////////////////////////////////////////////////
+    // update active company name with provided user input...
+    [void] : updateCompany() {
+        trigger input error styling when invalid + render flag
+        validate token credentials
+        update the company name in DB
+
+        if (!success):
+            render error popup + reset popup
+        else:
+            set company state
+            render success popup + close popup
+    }
+    *//////////////////////////////////////////////////////////////////
+
+    async function updateCompany() {
+        const comp_field = document.getElementById("company");
+        if (comp_field.value === "" || comp_field.value === "Your Company Here") {
+            document.getElementById("company").classList.add("invalid_input");
+            showFailFlag("ff_admin_cc", "Company name is required!")
+            return;
+        }
+
+        // request token from memory, refresh as needed...
+        const token = await requestAccess(renderCredentials.USERNAME);
+        
+        // handle invalid token on login...
+        if (!token) {
+            navigate('/');
+            return;
+        }
+
+        const response = await fetch(API_URL + "api/Registration/SetCompany", {
+            body: JSON.stringify(company),
+            method: "PUT",
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            }
+        })
+
+        const data = await response.json();
+        //console.log("data: ",data);
+
+        if (!data.success) {
+            console.trace("company name value mismatch");
+            setPopup("Fail");
+
+            setTimeout(() => {
+                setPopup("Change Company");
+            },2000)
+        }
+        else {
+            // set active, company is updated dynamically...
+            setActiveCompany(data.COMPANYNAME);
+            setPopup("Company Success");
+            
+            setTimeout(() => {
+                closePopup();
+            },1000)
+        }
+    }
+
+    /*/////////////////////////////////////////////////////////////////
+    // adds a new driver, convey any errors in response...
+    [void] : addDriver() {
+        define input field alert status
+        apply error styling and render flag when present
+
+        package driver credentials into form for request body
+        add driver credentials to database
+        if (success):
+            render success popup notification
+        else:
+            if (pk violation):
+                render duplicate driver fail popup
+            else:
+                render add driver fail popup
+    }
+    *//////////////////////////////////////////////////////////////////
+
+    async function addDriver() {
         const user_field = document.getElementById("username")
         const power_field = document.getElementById("powerunit")
         
@@ -269,7 +446,6 @@ const AdminPortal = () => {
             },1000)
         }
         else {
-            console.trace("add driver failed");
             if (data.error.includes("Violation of PRIMARY KEY")) {
                 setPopup("Admin_Add Fail");
             } else {
@@ -280,6 +456,24 @@ const AdminPortal = () => {
             },1500)
         }
     }
+
+    /*/////////////////////////////////////////////////////////////////
+    // adds a new driver, convey any errors in response...
+    [void] : pullDriver() {
+        define input field alert status
+        apply error styling and render flag when present
+
+        package driver credentials into form for request body
+        add driver credentials to database
+        if (success):
+            render success popup notification
+        else:
+            if (pk violation):
+                render duplicate driver fail popup
+            else:
+                render add driver fail popup
+    }
+    *//////////////////////////////////////////////////////////////////
 
     async function pullDriver() {
         if (document.getElementById("username").value === "") {
@@ -326,12 +520,28 @@ const AdminPortal = () => {
         }
     }
 
+    /*/////////////////////////////////////////////////////////////////
+    // collect credentials/prev user (scraped) and update in DB...
+    [void] : updateDriver() {
+        define input field alert status
+        apply error styling and render flag when present
+        validate token and refresh as needed
+
+        package driver credentials into form for request body
+        add driver credentials to database
+        if (success):
+            render success popup notification
+        else:
+            render failure popup notification
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function updateDriver() {
         const user_field = document.getElementById("username")
         const power_field = document.getElementById("powerunit")
         
         // map empty field cases to messages...
-        let code = -1; // case -1...
+        let code = -1;
         const messages = [
             "Username is required!", 
             "Powerunit is required!", 
@@ -355,11 +565,6 @@ const AdminPortal = () => {
 
         // catch and alert user to incomplete fields...
         if (code >= 0) {
-            //alert(alerts[code]);
-            /*document.getElementById(alerts[code]).classList.add("visible");
-            setTimeout(() => {
-                document.getElementById(alerts[code]).classList.remove("visible");
-            },1500)*/
             showFailFlag(alerts[code],messages[code]);
             return;
         }
@@ -373,21 +578,12 @@ const AdminPortal = () => {
             return;
         }
 
-        /*let formData = new FormData();
-        for (const [key,value] of Object.entries(renderCredentials)){
-            formData.append(key,value)
-        }
-        formData.append("PREVUSER", previousUser);*/
-
+        // package driver credentials...
         const body_data = {
             ...renderCredentials,
             PREVUSER: previousUser
         }
 
-        //const form = ["USERNAME","PASSWORD","POWERUNIT","PREVUSER"];
-        //form.forEach(key => console.log(`${key}: ${formData.get(key)}`));
-
-        // eslint-disable-next-line no-unused-vars
         const response = await fetch(API_URL + "api/Registration/ReplaceDriver", {
             body: JSON.stringify(body_data),
             method: "PUT",
@@ -407,14 +603,27 @@ const AdminPortal = () => {
         else {
             console.trace("update driver failed");
             setPopup("Fail");
-        } 
+        }
+
         setTimeout(() => {
             closePopup();
         },1000)
     }
 
+    /*/////////////////////////////////////////////////////////////////
+    // remove record from DB that matches credentials.USERNAME...
+    [void] : removeDriver() {
+        validate token and refresh as needed
+
+        remove driver from database
+        if (success):
+            render success popup notification
+        else:
+            render failure popup notification
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function removeDriver() {
-        //console.log(`removing user: ${renderCredentials.USERNAME}`);
         // request token from memory, refresh as needed...
         const token = await requestAccess(renderCredentials.USERNAME);
         
@@ -446,18 +655,35 @@ const AdminPortal = () => {
             setPopup("Fail");
             setTimeout(() => {
                 closePopup();
-            },1000)
-        } 
+            },2000)
+        }
     }
 
+    /*/////////////////////////////////////////////////////////////////
+    // handle cancel, clear credentials and close popup...
+    [void] : cancelDriver() {
+        reset driver credentials to null
+        close pop up
+    }
+    *//////////////////////////////////////////////////////////////////
+
     async function cancelDriver() {
-        closePopup();
         setRenderCredentials({
             USERNAME: "",
             PASSWORD: "",
             POWERUNIT: ""
         })
+        closePopup();
     }
+
+    /*/////////////////////////////////////////////////////////////////
+    // handle unique behavior of collection of admin buttons...
+    [void] : pressButton() {
+        reset driver credentials to null
+        handle admin button clicks to set popup state
+        opens popup
+    }
+    *//////////////////////////////////////////////////////////////////
 
     async function pressButton(e) {
         setRenderCredentials({
@@ -485,86 +711,13 @@ const AdminPortal = () => {
         openPopup();
     }
 
-    async function getCompany() {
-        //console.log(`getting company...`);
-        // request token from memory, refresh as needed...
-        const token = await requestAccess(renderCredentials.USERNAME);
-        
-        // handle invalid token on login...
-        if (!token) {
-            navigate('/');
-            return;
-        }
-
-        const response = await fetch(API_URL + "api/Registration/GetCompany?COMPANYKEY=c01", {
-            // should this be set in body?
-            method: "GET",
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json; charset=UTF-8'
-            }
-        })
-
-        // data = {COMPANYKEY: "", COMPANYNAME: ""}...
-        const data = await response.json();
-
-        if (data.success) {
-            //console.log("new company: ", data["COMPANYNAME"]);
-            setCompany(data["COMPANYNAME"]);
-        }
-        else {
-            //console.log(data);
-            setCompany("Your Company Here");
-        }
+    /*/////////////////////////////////////////////////////////////////
+    // debug function to dump all active users to console.log()...
+    [void] : dumpUsers() {
+        fetch all drivers
+        print to console.log()
     }
-
-    async function updateCompany() {
-        const comp_field = document.getElementById("company");
-        if (comp_field.value === "" || comp_field.value === "Your Company Here") {
-            document.getElementById("company").classList.add("invalid_input");
-            showFailFlag("ff_admin_cc", "Company name is required!")
-            return;
-        }
-
-        // request token from memory, refresh as needed...
-        const token = await requestAccess(renderCredentials.USERNAME);
-        
-        // handle invalid token on login...
-        if (!token) {
-            navigate('/');
-            return;
-        }
-
-        const response = await fetch(API_URL + "api/Registration/SetCompany", {
-            body: JSON.stringify(company),
-            method: "PUT",
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            }
-        })
-
-        const data = await response.json();
-        console.log("data: ",data);
-
-        if (!data.success) {
-            console.trace("company name value mismatch");
-            setPopup("Fail");
-
-            setTimeout(() => {
-                setPopup("Change Company");
-            },2000)
-        }
-        else {
-            // set active, company is updated dynamically...
-            setActiveCompany(data.COMPANYNAME);
-            setPopup("Company Success");
-            
-            setTimeout(() => {
-                closePopup();
-            },1000)
-        }
-    }
+    *//////////////////////////////////////////////////////////////////
 
     // eslint-disable-next-line no-unused-vars
     async function dumpUsers() {
@@ -574,20 +727,9 @@ const AdminPortal = () => {
 
         const data = await response.json();
         console.log("data: ",data);
-
-        if (!data.success) {
-            console.trace("company name value mismatch");
-            setTimeout(() => {
-                setPopup("Change Company");
-            },2000)
-        }
-        else {
-            setTimeout(() => {
-                closePopup();
-            },1000)
-        }
     }
 
+    // package helper functions to organize popup functions...
     const onPress_functions = {
         "addDriver": addDriver,
         "pullDriver": pullDriver,
@@ -597,7 +739,6 @@ const AdminPortal = () => {
         "updateCompany": updateCompany
     };
 
-    //
     // render template...
     return(
         <div id="webpage">
