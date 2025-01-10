@@ -8,10 +8,10 @@ The application compiles and presents delivery data for use by the company’s e
 
 ## UX/UI Workflow
 ### Driver Process Flow
-![Driver Interface](README_Assets/DeliveryManager_UI_02.png)<br>*Figure 1.0: Driver Interface*
+![Driver Interface](README_Assets/DeliveryManager_UI_02_small.png)<br>*Figure 1.0: Driver Interface*
 
 ### Admin Process Flow
-![Admin Interface](README_Assets/DeliveryManager_UI_01.png)<br>*Figure 1.1: Admin Interface*
+![Admin Interface](README_Assets/DeliveryManager_UI_01_small.png)<br>*Figure 1.1: Admin Interface*
 
 ## Login Portal
 The login portal serves as a secure entry point for both drivers and administrative users, providing tailored access to delivery and management tools. Utilizing **username and password credentials**, the portal ensures that only authorized users gain access. Successful login initiates a time-based token verification process, safeguarding all subsequent API requests and sensitive resources.
