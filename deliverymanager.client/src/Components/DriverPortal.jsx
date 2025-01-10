@@ -1,90 +1,10 @@
-//////////////////////////////////////////////////////////////////////////////////////
-/* 
-DriverPortal() - Delivery Manifest Dynamic Table Generation
+/*/////////////////////////////////////////////////////////////////////
+ 
+Author: Cameron Braatz
+Date: 11/15/2023
+Update Date: 1/8/2025
 
-DriverPortal serves a credentialed user a set of dynamically generated interactive 
-tables; one each for "undelivered" and "delivered" deliveries. In short, the functions
-that follow gather a collection of deliveries and parses pertinent identification
-information and renders them.
-
-The data is presented in a standard HTTP JSON response format and is formatted into
-HTML table elements. User click behavior targets individual rows, parses that
-deliveries unique identifier (pronumber) and navigates to that deliveries individual
-record for editing.
-
-Conditional formatting ensures that users on any device is presented enough information
-to filter deliveries, while maintaining visibility/usability. 
-
-//////////////////////////////////////////////////////////////////////////////////////
-
-BASIC STRUCTURE:
-DriverPortal() {
-    initialize location + navigation
-    initialize driverCredentials state using location data
-    initialize updateData object using location data
-    initialize blank undelivered and delivered state data
-    set loading to true : *** determine if this can be handled using try / conditional rendering ***
-
-    useEffect() {
-        catch indirect visits to current page, redirect to login
-        setDriverCredentials to the latest "POWERUNIT" update
-        fetch delivery manifest associated with powerunit/date pair provided
-        set loading to false : *** determine if this is actually protecting render status ***
-    },[]) <-- triggers once on initial render only...
-
-    initialize header toggle to "open" - default for login screen
-
-    [void] : collapseHeader(event) {
-        if (e.target.id === "collapseToggle" or "toggle_dots"):
-            open/close header - do opposite of current "header" state
-    }
-
-    set HTTP headers
-
-    [void] : getDeliveries(powerunit,mfstdate) {
-        initialize delivered and undelivered responses to null
-        try:
-            fetch all DELIVERED deliveries associated with powerunit/date pair
-            fetch all UNDELIVERED deliveries associated with powerunit/date pair
-        catch:
-            log errors to console : *** is this the best way to handle failed fetch? maybe add more handling in request logic ***
-        
-        parse delivery JSON responses
-        store deliveries in respective states
-        setLoading(false)
-    }
-
-    [void] : handleClick(event) {
-        gather delivered status of click target
-        isolate the table row contents of click target
-        parse the contents for the unique delivery pronumber
-
-        if clicked table is "undelivered":
-            loop undelivered deliveries until pronumber is found
-            once found:
-                package snapshot of deliveryData and navigate to specific delivery form
-        else:
-            perform same loop above            
-    } : *** should this be wrapped in try/catch and or conditional rendering protections? ***
-
-    [void] : renderDeliveries(status) {
-        if loading in process:
-            render loading message
-        else:
-            determine status of delivery and direct to corresponding rendering path
-            if no more deliveries:
-                render empty table row w/ prompt
-            else:
-                map deliveries into HTML table rows and return
-    }
-
-    if loading:
-        render loading message : *** try to see if this has been phased out with try/catch? ***
-
-    return render template
-}
-
-*/////////////////////////////////////////////////////////////////////////////////////
+*//////////////////////////////////////////////////////////////////////
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -92,53 +12,66 @@ import Header from './Header';
 import Footer from './Footer';
 import { API_URL, 
     getToken, 
-    refreshToken, 
-    isTokenExpiring, 
+    requestAccess, 
     isTokenValid,
     isCompanyValid,
     getCompany_DB, 
     logout } from '../Scripts/helperFunctions';
 
-/*
-// DriverPortal pulls matching deliveries and renders them as an interactive table...
-// Function pulls username, powerunit and manifest date data from location state...
-*/
+/*/////////////////////////////////////////////////////////////////////
+
+DriverPortal() - Delivery Manifest Dynamic Table Generation
+
+DriverPortal serves a credentialed user a set of dynamically generated 
+interactive tables; one each for "undelivered" and "delivered" 
+deliveries. In short, the functions that follow gather a collection of 
+deliveries and parses pertinent identification information and renders 
+them.
+
+The data is presented in a standard HTTP JSON response format and is 
+formatted into HTML table elements. User click behavior targets 
+individual rows, parses that deliveries unique identifier (pronumber) 
+and navigates to that deliveries individual record for editing.
+
+Conditional formatting ensures that users on any device is presented 
+enough information to filter deliveries, while maintaining 
+visibility/usability. 
+
+///////////////////////////////////////////////////////////////////////
+
+BASIC STRUCTURE:
+// initialize rendered page...
+    initialize navigation and location state data
+    ensure page was reached using standard protocol
+    initialize user and delivery states
+
+    useEffect() =>
+        ensure latest company on file is rendered
+        validate tokens
+        prevent invalid navigation to page
+
+// page rendering helper functions...
+    renderCompany() => 
+        retrieve company name from database when not in memory
+    collapseHeader() => 
+        open/close collapsible header
+
+// API request + functions...
+    query all deliveries matching the provided powerunit and date
+    target row clicked and navigate to respective delivery form
+    generate dynamic HTML table for returned deliveries
+
+*//////////////////////////////////////////////////////////////////////
+
 const DriverPortal = () => {
-    // Site state & location processing functions... 
+    /* Page rendering, navigation and state initialization... */
+
+    // location state and navigation calls...
     const location = useLocation();
     const navigate = useNavigate();
 
-    // set credentials and query delivery information once on page load...
-    useEffect(() => {
-        const company = isCompanyValid();
-        if (!company) {
-            renderCompany();
-        } else {
-            setCompany(company);
-        }
-
-        const token = getToken();
-        if(!isTokenValid(token)){
-            logout();
-            navigate('/');
-            return;
-        }
-
-        if(!location.state){
-            navigate('/');
-            return;
-        }
-
-        setDriverCredentials({
-            ...driverCredentials,
-            POWERUNIT: updateData["POWERUNIT"]
-        });
-
-        getDeliveries(updateData["POWERUNIT"],updateData["MFSTDATE"]);
-        setLoading(false);
-        
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[]);
+    // flag invalid navigation with null location.state...
+    const VALID = location.state ? location.state.valid : false;
 
     // state 'driverCredentials' to be passed to next page...
     const [driverCredentials, setDriverCredentials] = useState({
@@ -160,56 +93,121 @@ const DriverPortal = () => {
     const [delivered, setDelivered] = useState([]);
 
     // loading states for processing lag times...
-    const [loading, setLoading] = useState(true); 
+    //const [loading, setLoading] = useState(true); 
 
+    // header toggle state...
     const [header,setHeader] = useState(location.state ? location.state.header : "open");
 
+    // rendered company state...
+    const [company, setCompany] = useState(location.state ? location.state.company : "");
+
+    // set credentials and query delivery information once on page load...
+    useEffect(() => {
+        // fetch company name...
+        //const company = isCompanyValid();
+        setCompany(isCompanyValid());
+        if (!company) {
+            renderCompany();
+        } else {
+            setCompany(company);
+        }
+        // validate token...
+        const token = getToken();
+        if(!isTokenValid(token)){
+            logout();
+            navigate('/');
+            return;
+        }
+        // validate proper navigation...
+        if(!VALID) {
+            logout();
+            navigate('/');
+            return;
+        }
+
+        setDriverCredentials({
+            ...driverCredentials,
+            POWERUNIT: updateData["POWERUNIT"]
+        });
+
+        getDeliveries(updateData["POWERUNIT"],updateData["MFSTDATE"]);
+        //setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[]);
+
+    /* Page rendering helper functions... */
+
+    /*/////////////////////////////////////////////////////////////////
+    // retrieve company from database when not in memory...
+    [void] : renderCompany() {
+        fetch company name from database (if present)
+        if (company is valid):
+            setCompany(company)
+        else:
+            setCompany to placeholder
+    } 
+    *//////////////////////////////////////////////////////////////////
+
+    async function renderCompany() {
+        const company = getCompany_DB();
+        if(company) {
+            setCompany(company);
+        } else {
+            setCompany("{Your Company Here}");
+        }
+    }
+
+    /*/////////////////////////////////////////////////////////////////
+    // initialize and manage collapsible header behavior...
+    [void] : collapseHeader(event) {
+        if (e.target.id === "collapseToggle" or "toggle_dots"):
+            open/close header - do opposite of current "header" state
+    }
+    *//////////////////////////////////////////////////////////////////
+
     const collapseHeader = (e) => {
-        //console.log(e.target.id);
         if (e.target.id === "collapseToggle" || e.target.id === "toggle_dots") {
-            if (header === "open") {
+            /*if (header === "open") {
                 setHeader("close");
-                //e.target.id = "openToggle";
             } else {
                 setHeader("open");
-                //e.target.id = "collapseToggle";
-            }
+            }*/
+            setHeader(prev => (prev === "open" ? "close" : "open"));
         }
     }
     
-    /*
-    // API Calls and Functionality ...
-    */
-    
-    /* 
-    *-----------------------------------------------------------------------------------*
+    /* API requests + functions... */
+
+    /*/////////////////////////////////////////////////////////////////
     // query all deliveries matching the provided powerunit and date...
-    *-----------------------------------------------------------------------------------*
-    *
-    * 
-    * 
-    *-----------------------------------------------------------------------------------*
-    */
-
+    [void] : getDeliveries(powerunit,mfstdate) {
+        initialize delivered and undelivered responses to null
+        try:
+            fetch all DELIVERED deliveries for powerunit/date pair
+            fetch all UNDELIVERED deliveries for powerunit/date pair
+            parse delivery JSON responses
+            store deliveries in respective states
+        catch:
+            log errors to console + redirect to login page
+    }
+    *//////////////////////////////////////////////////////////////////
+    
     async function getDeliveries(powerunit,mfstdate){
-        let token = getToken();
-
-        if (!token) {
-            console.error("Invalid authorization token");
-            throw new Error("Authorization failed. Please log in.");
-        }
+        // request token from memory, refresh as needed...
+        const token = await requestAccess(driverCredentials.USERNAME);
         
-        if (isTokenExpiring(token)) {
-            console.log("Token expiring soon. Refreshing...");
-            const tokens = await refreshToken(driverCredentials.USERNAME);
-            token = tokens.access;
+        // handle invalid token on login...
+        if (!token) {
+            navigate('/');
+            return;
         }
 
+        // initialize delivered + undelivered responses...
         let responseD = null;
         let responseU = null;
 
+        // attempt to gather delivered + undelivered deliveries...
         try {
-            // execute queries separate for ease of isolating...
             responseD = await fetch(API_URL + "api/DriverChecklist/GetDelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
                 method: 'GET',
                 headers: {
@@ -225,44 +223,48 @@ const DriverPortal = () => {
                 },
             });
 
-            // pull json formatting to allow setting to state...
+            // parse delivery lists into JSON...
             const deliveredData = await responseD.json();
             const undeliveredData = await responseU.json();
 
-            // set states and trigger loading complete...
+            // set delivered + undelivered states...
             setDelivered(deliveredData.table);
-            setUndelivered(undeliveredData.table);        
-            
-            //setLoading(false);
+            setUndelivered(undeliveredData.table);  
 
+        // divert all errors to login page...
         } catch (error) {
             console.log(error);
             navigate('/');
         }
     }
 
-  
-    /* 
-    *-----------------------------------------------------------------------------------*
-    // handleClick to identify row clicked and proceed to edit corresponding delivery...
-    *-----------------------------------------------------------------------------------*
-    *
-    * handles the click event, parsing the table and row before scraping the pronumber
-    * from the row's content string. Iterates the deliveries for the corresponding 
-    * delivery and navigates to that delivery's update form, carrying with it the
-    * packaged delivery/driver information in state...
-    * 
-    *-----------------------------------------------------------------------------------*
-    */
+    /*/////////////////////////////////////////////////////////////////
+    // target row clicked and navigate to respective delivery form...
+    [void] : handleClick(event) {
+        gather delivered status of click target
+        isolate the table row contents of click target
+        parse the contents for the unique delivery pronumber
+
+        if clicked table is "undelivered":
+            loop undelivered deliveries until pronumber is found
+            once found:
+                package deliveryData and navigate to respective form
+        else:
+            perform same logic for delivered      
+    }
+    *//////////////////////////////////////////////////////////////////
 
     const handleClick = (event) => {
+        // cache row class name, row text + parse out the pronumber...
         const parentClass = event.target.parentNode.className;
         const string = event.target.parentNode.innerText;
         const proNum = string.match(/[\t]([A-Za-z0-9]{8})/)[1];
 
         var i = 0;
         if (parentClass.includes("undelivered")){
+            // iterate all undelivered deliveries...
             while (i < undelivered.length) {
+                // clicked delivery found, nav to delivery page...
                 if (undelivered[i]["PRONUMBER"] === proNum) {
                     const deliveryData = {
                         delivery: undelivered[i],
@@ -276,9 +278,10 @@ const DriverPortal = () => {
                 }
                 i = i + 1;
             }
-        }
-        else{
+        } else{
+            // iterate all delivered deliveries...
             while (i < delivered.length) {
+                // clicked delivery found, nav to delivery page...
                 if (delivered[i]["PRONUMBER"] === proNum) {
                     const deliveryData = {
                         delivery: delivered[i],
@@ -295,30 +298,25 @@ const DriverPortal = () => {
         }
     }
 
-    const [company, setCompany] = useState(location.state ? location.state.company : "");
-    async function renderCompany() {
-        const company = getCompany_DB();
-        if(company) {
-            setCompany(company);
-        } else {
-            setCompany("{Your Company Here}");
-        }
+    /*/////////////////////////////////////////////////////////////////
+    // generates dynamic HTML table for returned deliveries...
+    [void] : renderDeliveries(status) {
+        if loading in process:
+            render loading message
+        else:
+            determine status of delivery and direct to corresponding rendering path
+            if no more deliveries:
+                render empty table row w/ prompt
+            else:
+                map deliveries into HTML table rows and return
     }
-    
-    /* 
-    *-----------------------------------------------------------------------------------*
-    // helper to generate dynamic HTML table for returned deliveries...
-    *-----------------------------------------------------------------------------------*
-    *
-    * iteratively renders the delivery tables returned via API to HTML 
-    * format. parses the delivery data separating each delivery and 
-    * rendering only the important information. conditionally render
-    * more/less data columns depending on the size of the display...
-    * 
-    *-----------------------------------------------------------------------------------*
-    */
+    *//////////////////////////////////////////////////////////////////
+
     const renderDeliveries = (status) => {        
-        if(loading) {
+        /*if(loading) {
+            return (<tr><td align="center" colSpan="7">Loading Deliveries...</td></tr>)
+        }*/
+        if (!undelivered.length && !delivered.length) {
             return (<tr><td align="center" colSpan="7">Loading Deliveries...</td></tr>)
         }
         else {
@@ -348,7 +346,7 @@ const DriverPortal = () => {
             else if(status === "undelivered"){
                 try {
                     if(undelivered.length === 0){
-                        return(<tr><td align="center" colSpan="7">NO DELIVERIES COMPLETED</td></tr>);
+                        return(<tr><td align="center" colSpan="7">NO DELIVERIES REMAINING</td></tr>);
                     }
                     return (
                         undelivered.map((delivery,i) => (
@@ -370,9 +368,9 @@ const DriverPortal = () => {
         }
     }
 
-    if(loading) {
+    /*if(loading) {
         return(<h3>Loading Driver Manifest...</h3>)
-    }
+    }*/
 
     return(
         <div id="webpage">
@@ -388,8 +386,6 @@ const DriverPortal = () => {
                 onClick={collapseHeader}
             />
             <div className="table_div">
-                {/*<h3 className="separator_top">Undelivered</h3>
-                <table className="Delivery_Table" onClick={event => handleClick_Undelivered(event)}>*/}
                 <table className="Delivery_Table" onClick={handleClick}>
                     <thead>
                         <tr className="title_row">
@@ -406,14 +402,11 @@ const DriverPortal = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {/*renderUndelivered()*/}
                         { renderDeliveries("undelivered") }
                     </tbody>
                 </table>
             </div>
             <div className="table_div">
-                {/*<h3 className="separator_bottom"><span>Delivered</span></h3>
-                <table className="Delivery_Table" onClick={event => handleClick_Delivered(event)}>*/}
                 <table className="Delivery_Table caboose" onClick={handleClick}>
                     <thead>
                         <tr className="title_row">
@@ -430,7 +423,6 @@ const DriverPortal = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {/*renderDelivered()*/}
                         { renderDeliveries("delivered") }
                     </tbody>
                 </table>

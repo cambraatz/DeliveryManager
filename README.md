@@ -1,50 +1,132 @@
 ﻿# Delivery Manager
-This application was developed for a trucking logistics company looking for a solution for tracking driver/delivery information on a personal device. This application allows drivers to edit and maintain their personal driver logs from the convenience of their personal phone or device. 
+## Project Overview
+This repository contains a robust mobile-friendly web application for a trucking logistics company to streamline delivery tracking and driver log management, with a prominent client base including Home Depot. The application features a responsive **React-based frontend (JavaScript, CSS, HTML)** that delivers an intuitive user experience, paired with a scalable **.NET backend (C#)** for secure and efficient handling of database transactions.
 
-This prevents the need to leave the cab and manually log the data with an on-dock computer, thus streamlining the logging process and enabling drivers to adjust their records anywhere and anytime.
+Hosted on a custom-built **Linux/Apache web server**, this solution provides drivers with the ability to view, edit, and update their delivery records directly from their personal mobile devices. By eliminating the need for on-dock computers, the app improves efficiency and empowers drivers to manage their logs anytime, anywhere.
 
-## Basic Functionality
-The following screenshots log an example of the application's workflow. Beginning with log-in credentials and delivery log validation, the application allows a driver to access their personal logs using their personal credentials while providing flexibility for accessing delivery information from previous dates and power units.
+The application compiles and presents delivery data for use by the company’s existing backend systems. Contributing to the development of live tracking capabilities for fleet management and real-time logistics optimization. Additionally, an administrative portal was developed for administrators to efficiently manage user accounts by adding new users, modifying or deleting existing user records, and updating the active company name as needed. This feature ensures streamlined user management and adaptability to organizational changes, reinforcing the application’s value as a comprehensive logistics solution.
 
-Verification is performed through an API which provides access to delivery information only when the provided delivery information is both valid and belonging to the corresponding driver.
+## UX/UI Workflow
+### Driver Process Flow
+![Driver Interface](README_Assets/DeliveryManager_UI_02.png)<br>*Figure 1.0: Driver Interface*
 
-### Login Credentials
-The user is prompted to add valid credentials that are validated according to current database records. 
+### Admin Process Flow
+![Admin Interface](README_Assets/DeliveryManager_UI_01.png)<br>*Figure 1.1: Admin Interface*
 
-![Login Credentials](README_Assets/DriverApp_1.png)<br>*Figure 1.1: Login Credentials*
+## Login Portal
+The login portal serves as a secure entry point for both drivers and administrative users, providing tailored access to delivery and management tools. Utilizing **username and password credentials**, the portal ensures that only authorized users gain access. Successful login initiates a time-based token verification process, safeguarding all subsequent API requests and sensitive resources.
 
-New drivers are assumed to be logged at the time of hiring, prior to interacting with this application, though the link below will connect the driver to the necessary party to amend the database accordingly.
+### Key Features
+#### Driver Access and Delivery Log Validation
+- Drivers can log in to access their delivery information securely.
+- Upon validation, a popup prompts the driver to input a **delivery date and power unit** (truck ID). The system ensures that a valid delivery manifest exists for the provided date and truck assignment before granting access to the filtered delivery logs.
+- Default values for the current date and latest truck assignment streamline same-day operations while offering flexibility for querying or editing past deliveries.
 
-### Delivery Verification
-Once the user credentials are validated, a popup window prompts the driver to confirm the **delivery date** and **power unit** (truck ID) to query. 
+#### Administrative User Management
+Administrative users are redirected to a credential-protected administrative page, enabling them to manage user accounts and company settings seamlessly.
 
-The current date is assumed as most work through the application will be done same day, while the power unit is assumed to be the latest known truck associated with the driver in the database. 
+#### New User Onboarding
+Newly added users can securely set their initial passwords during their first login, ensuring convenience and security in onboarding processes.
 
-![Delivery Verificaiton](README_Assets/DriverApp_2.png)<br>*Figure 1.1: Delivery Verification*
+### Workflow
+#### Login Credentials
+Users provide valid credentials, verified against current database records. Unauthorized attempts are blocked to ensure data integrity.
 
-Allowing flexibility in these fields allows work to be completed/edited from previous days, or in cases where a driver's truck changes.
+![Login Credentials](README_Assets/DA_login_0.png)<br>*Figure 2.0: Login Credentials*
 
-### Delivery Manifest
-When the provided date and power unit are confirmed, a list of deliveries for that driver corresponding to the given day are pulled from the database and rendered as an interactive table. Undelivered shipments are shown at the top, while delivered shipments are shown lower down.
+#### Delivery Verification
+After login, drivers encounter a popup requesting the **delivery date and power unit**. The portal verifies that the provided information matches an active delivery manifest. Only valid and authorized deliveries are displayed.
+This functionality supports both real-time updates and retrospective data edits, accommodating operational changes or driver reassignments.
 
-Both cases allow a driver to click/hover (depending on user device) and access additional information for the chosen delivery.
+![Delivery Verification](README_Assets/DA_login_4.png)<br>*Figure 2.1: Delivery Verification*
 
-![Delivery Manifest](README_Assets/DriverApp_3.png)<br>*Figure 1.2: Delivery Manifest*
+This login portal exemplifies a robust, user-centric design, balancing accessibility and security while addressing the dynamic needs of the trucking logistics industry.
 
-The mobile version truncates a couple less essential fields from the table, while the console/tablet version will include the hidden fields. In both cases, clicking on the table entry will navigate to a page with complete delivery information for review and manipulation.
+## Delivery Manifest
+Once a driver's credentials and delivery information (date and power unit) are verified, the application presents an interactive **delivery manifest**. This manifest contains a comprehensive list of the driver’s assigned deliveries, categorized into **undelivered** and **delivered** shipments. Undelivered deliveries are prioritized and displayed at the top for quick access, while delivered entries appear below.
 
-![Expanded Delivery Manifest](README_Assets/DriverApp_3A.png)<br>*Figure 1.3: Expanded Delivery Manifest*
+### Interactive Table Functionality
+The manifest is designed to be highly interactive, enhancing usability across various devices:
 
-### Delivery Update
-Upon selection of a specific delivery, additional information is revealed and the driver is prompted to populate the pertinent delivery information needed to process a delivery.
+- Entry Navigation: Drivers can tap (on mobile) or click (on tablets/PCs) any row in the table to access detailed delivery information for editing.
+- Dynamic Columns:
+    - On mobile devices held vertically, the table dynamically truncates non-essential fields to optimize the display for smaller screens.
+    - When the device is rotated horizontally or the app is accessed on a tablet/PC, additional columns are rendered, providing a more detailed overview of delivery data.
 
-If the delivery was errantly selected, the driver can return to the previous screen and select a different delivery. If the information is correct, the driver fills out the needed information and submits the changes. Doing so edits the corresponding delivery in the database, ensuring all records up to date.
+This adaptive design ensures a seamless user experience, regardless of device or orientation, while maintaining access to critical delivery information.
 
-![Delivery Update](README_Assets/DriverApp_4.png)<br>*Figure 1.4: Delivery Update*
+![Delivery Manifest](README_Assets/DA_deliveries_0.png)<br>*Figure 3.0: Delivery Manifest*
 
-### Logout Prompt
-Throughout the session, the user always has the opportunity to log out. Once the work is complete or a session is no longer needed, the user may opt to log out at anytime.
+## Expanded Delivery Information
+By selecting a row in the manifest, users navigate to a detailed view of the chosen delivery. This expanded interface allows drivers to review and edit all associated delivery information, ensuring accuracy and flexibility in maintaining records.
 
-Clicking the logout button triggers a popout to confirm their intent before returning the user to the main menu.
+![Expanded Delivery Information](README_Assets/DA_deliveries_1.png)<br>*Figure 3.1: Expanded Delivery Information*
 
-![Logout Prompt](README_Assets/DriverApp_5.png)<br>*Figure 1.5: Logout Prompt*
+The **Expanded Delivery Information** page empowers drivers to input delivery details through text and number fields, while leveraging custom-built widgets for advanced functionalities like signature collection and image capture.
+
+### Signature and Image Management
+- Signature Collection: Drivers can use the signature widget to digitally sign for deliveries directly within the app.
+- Image Capture and Thumbnails:
+    - Captured images are dynamically rendered as thumbnails immediately upon upload.
+    - Thumbnails double as interactive buttons, allowing drivers to replace existing images with new uploads.
+
+![Signature Capture](README_Assets/DA_signature_0.png)<br>*Figure 3.2: Signature Capture*
+
+![Image Thumbnails](README_Assets/DA_signature_1.png)<br>*Figure 3.3: Image Thumbnails*
+
+### Image Storage and Retrieval Workflow
+- Captured images are uploaded and saved to a predefined file path on the server.
+- The file path, rather than the image itself, is stored in the database for efficient record management.
+- Backend logic handles image retrieval by accepting requests with valid file paths and returning the corresponding image for rendering on subsequent accesses.
+
+This system ensures efficient image storage while enabling seamless and secure image handling across client and server interactions. On subsequent visits to a completed delivery, the driver has the option to *undeliver* or reset a delivery to its original status prior to editing.
+
+![Post-Delivery Interface](README_Assets/DA_images_1.png)<br>*Figure 3.4: Post-Delivery Interface*
+
+## Visual Feedback for Database Changes
+The application provides custom graphic icons and specific feedback messages to visually confirm the outcome of database interactions. Enhancing the user experience by communicating the status of each operation, clearly and effectively.
+
+### Success Icons 
+Displayed for successful database updates, ensuring users receive immediate confirmation.
+
+![Success Iconography](README_Assets/DA_deliveries_2.png)<br>*Figure 3.5: Success Iconography*
+
+### Error Icons
+Highlight failed requests with accompanying messages to guide corrective actions.
+
+![Fail Iconography](README_Assets/DA_graphics_0.png)<br>*Figure 3.6: Fail Iconography*
+
+### Validation Icons
+Indicate invalid or missing inputs for required fields, prompting users to address errors before proceeding.
+
+![Form/Field Validation](README_Assets/DA_login_3.png)<br>*Figure 3.7: Form/Field Validation*
+
+## Administrative Portal
+Administrative users with specific credentials are redirected to an Admin Menu upon successful login. The portal provides a suite of tools for managing user accounts and application settings.
+
+### Admin Menu
+The main menu presents three options:
+1) Add New Users
+2) Change/Remove Existing Users
+3) Edit Active Company Name
+
+![Form/Field Validation](README_Assets/DA_admin_0.png)<br>*Figure 4.1: Admin Menu*
+
+### Add User Interface
+Admins can create new user accounts by specifying a username and assigning a power unit. Validations ensure that required fields are not left empty.
+
+![Add User Interface](README_Assets/DA_admin_1.png)<br>*Figure 4.2: Add User Interface*
+
+### Edit/Remove Existing Users
+Admins can search for existing users through a **username** search field. Upon validation, the user’s current details, including **username, password, and power unit**, are displayed for editing or removal.
+
+![Find User Interface](README_Assets/DA_admin_2.png)<br>*Figure 4.3: Find User Interface*
+
+![Change/Remove User Interface](README_Assets/DA_admin_3.png)<br>*Figure 3.4: Change/Remove User Interface*
+
+### Company Name Configuration
+The portal also allows admins to update the active company name used across the application. This ensures the app aligns with the current operational context.
+
+![Company Name Interface](README_Assets/DA_admin_4.png)<br>*Figure 4.4: Company Name Interface*
+
+This administrative portal provides flexibility and control, enabling efficient management of user accounts and key application settings.

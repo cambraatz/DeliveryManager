@@ -37,7 +37,6 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=0 order by STOP";
             DataTable table = new DataTable();
-            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
             string sqlDatasource = connString;
             SqlDataReader myReader;
             
@@ -78,7 +77,6 @@ namespace DeliveryManager.Server.Controllers
         {
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=1 order by STOP";
             DataTable table = new DataTable();
-            //string sqlDatasource = _configuration.GetConnectionString("DriverChecklistDBCon");
             string sqlDatasource = connString;
             SqlDataReader myReader;
             
@@ -99,13 +97,10 @@ namespace DeliveryManager.Server.Controllers
                 }
                 if (table.Rows.Count > 0)
                 {
-                    //return new JsonResult(table);
                     return new JsonResult(new { success = true, table = table });
                 }
                 else
                 {
-                    //return new JsonResult(table);
-                    //return new JsonResult("No Deliveries On Record.");
                     return new JsonResult(new { success = true, table = table });
                 }
             }
@@ -120,8 +115,6 @@ namespace DeliveryManager.Server.Controllers
         [Authorize]
         public async Task<JsonResult> UpdateManifest([FromForm] DeliveryForm data)
         {
-            //System.Diagnostics.Debug.WriteLine($"Printing test files; DLVDIMGFILELOCN: {data.DLVDIMGFILELOCN}, DLVDIMGFILESIGN: {data.DLVDIMGFILESIGN}");
-
             try
             {
                 // define path where the image is to be saved...
@@ -187,7 +180,6 @@ namespace DeliveryManager.Server.Controllers
                 // omit saving, point back to image already on file...
                 else
                 {
-                    //System.Diagnostics.Debug.WriteLine($"DLVDIMGFILESIGN is null or empty; injecting {data.signature_string}");
                     sign_name = data.signature_string;
                 }
 
@@ -247,8 +239,29 @@ namespace DeliveryManager.Server.Controllers
             }
         }
 
+        [HttpGet]
+        [Route("GetImage")]
+        [Authorize]
+        public IActionResult GetImage(string IMAGE)
+        {
+            var folderPath = Path.Combine(_env.WebRootPath, "uploads");
+            var filePath = Path.Combine(folderPath, IMAGE);
+
+            System.Diagnostics.Debug.WriteLine($"File path to {filePath}");
+
+            if (System.IO.File.Exists(filePath))
+            {
+                var image = System.IO.File.OpenRead(filePath);
+                return File(image, "image/jpeg");
+            }
+            else
+            {
+                return NotFound("Image not found");
+            }
+        }
+
         /*
-         * Inactive Requests; active for maintenance/flexibility, but inactive in current iteration...
+         * Inactive Requests; retained for maintenance/flexibility, but inactive in current iteration...
          */
 
         [HttpGet]
@@ -358,28 +371,6 @@ namespace DeliveryManager.Server.Controllers
             }
 
             return new JsonResult("Deleted Successfully");
-        }
-
-        [HttpGet]
-        [Route("GetImage")]
-        [Authorize]
-        public IActionResult GetImage(string IMAGE)
-        {
-            //var fileName = "Default.jpg";
-            var folderPath = Path.Combine(_env.WebRootPath,"uploads");
-            var filePath = Path.Combine(folderPath, IMAGE);
-
-            System.Diagnostics.Debug.WriteLine($"File path to {filePath}");
-
-            if (System.IO.File.Exists(filePath))
-            {
-                var image = System.IO.File.OpenRead(filePath);
-                return File(image, "image/jpeg");
-            }
-            else
-            {
-                return NotFound("Image not found");
-            }
         }
     }
 }

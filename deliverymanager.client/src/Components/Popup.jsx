@@ -294,6 +294,16 @@ const Popup = (props) => {
             </>
         )
     }
+    else if(props.message === "Success"){
+        return(
+            <>
+                <div className="popupLoginContent">
+                    <img id="success" src={Success} alt="succss"/>
+                    <p>Delivery successfully updated!</p>
+                </div>
+            </>
+        )
+    }
     else if(props.message === "Fail"){
         return(
             <>

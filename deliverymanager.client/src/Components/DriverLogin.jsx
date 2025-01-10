@@ -86,7 +86,6 @@ BASIC STRUCTURE:
 // render template + helpers...
     package popup helper functions
     return render template
-}
 
 *//////////////////////////////////////////////////////////////////////
 
@@ -152,6 +151,7 @@ const DriverLogin = () => {
     async function renderCompany() {
         // getCompany() also caches company...
         const company = await getCompany_DB();
+        // set company state to value or placeholder... 
         if(company) {
             console.log(`renderCompany retrieved ${company} from database...`);
             setCompany(company);
@@ -204,7 +204,7 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     const collapseHeader = (e) => {
-        //console.log(e.target.id);
+        // toggle header only if toggle or dots symbol are clicked...
         if (e.target.id === "collapseToggle" || e.target.id === "toggle_dots") {
             if (header === "open") {
                 setHeader("close");
@@ -230,12 +230,13 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     const handleLoginChange = (e) => {
+        // reset styling to default...
         if(document.getElementById(e.target.id).classList.contains("invalid_input")){
-            // reset styling to default...
             document.getElementById("USERNAME").classList.remove("invalid_input");
             document.getElementById("PASSWORD").classList.remove("invalid_input");
         }
 
+        // handle username + password field changes...
         let val = e.target.value;
         switch(e.target.id) {
             case 'USERNAME':
@@ -271,15 +272,15 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     const handleDeliveryChange = (e) => {
-        //console.log("e.target.id: ",e.target.id)
+        // reset styling to default...
         if( document.getElementById(e.target.id).classList.contains("invalid_input")){
-            // reset styling to default...
             document.getElementById("USERNAME").classList.remove("invalid_input");
             document.getElementById("PASSWORD").classList.remove("invalid_input");
             document.getElementById("dlvdate").classList.add("input_form");
             document.getElementById("powerunit").classList.add("input_form");
         }
 
+        // handle delivery date + powerunit input field changes...
         let val = e.target.value;
         switch(e.target.id) {
             case 'dlvdate':
@@ -328,9 +329,11 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     const handleSubmit = (e) => {
+        // prevent default and reset popup window...
         e.preventDefault();
         setMessage(null);
 
+        // target username and password fields...
         const user_field = document.getElementById("USERNAME");
         const pass_field = document.getElementById("PASSWORD");
         
@@ -340,7 +343,7 @@ const DriverLogin = () => {
         const alerts = {
             0: "Username is required!", // case 0...
             1: "Password is required!", // case 1...
-            2: "Username and Password are required" // case 2...
+            2: "Both fields are required!" // case 2...
         }
         // flag empty username...
         if (user_field.value === "" || user_field.value == null){
@@ -357,9 +360,11 @@ const DriverLogin = () => {
 
         // catch and alert user to incomplete fields...
         if (code >= 0) {
-            //alert(alerts[code]);
+            // initialize flag contents...
             const flag = document.getElementById(elementID);
             flag.querySelector("p").innerHTML = alerts[code];
+
+            // make visible for 1.5 seconds and hide again...
             flag.classList.add("visible");
             setTimeout(() => {
                 flag.classList.remove("visible");
@@ -394,12 +399,12 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function validateCredentials(username, password){
+        // package credentials and attempt login...
         const user_data = {
             USERNAME: username,
             PASSWORD: password,
             POWERUNIT: null
         }
-
         const response = await fetch(API_URL + "api/Registration/Login", {
             body: JSON.stringify(user_data),
             method: "POST",
@@ -407,7 +412,6 @@ const DriverLogin = () => {
                 'Content-Type': 'application/json; charset=UTF-8'
             }
         })
-
         const data = await response.json();
         //console.log(data);
 
@@ -426,28 +430,33 @@ const DriverLogin = () => {
                     POWERUNIT: data.powerunit
                 });
 
+                // reset popup window and open...
                 setMessage(null);
                 openPopup();
                 //alert("Dev Reminder: Use 02/16/2024 for Delivery Date")
 
                 // reset styling to default...
-                document.getElementById("USERNAME").className = "";
-                document.getElementById("PASSWORD").className = "";
+                document.getElementById("USERNAME").classList.remove("visible");
+                document.getElementById("PASSWORD").classList.remove("visible");
+                //document.getElementById("USERNAME").className = "";
+                //document.getElementById("PASSWORD").className = "";
             }
             else if (data.task === "admin") {
+                // package admin data and nav to admin page...
                 const adminData = {
                     header: header,
                     company: company,
                     valid: true
                 };
-    
-                navigate('/admin', {state: adminData})
+                navigate('/admin', {state: adminData});
             }
         }
         else {
             // trigger red borders for errors...
-            document.getElementById("USERNAME").className = "invalid_input";
-            document.getElementById("PASSWORD").className = "invalid_input";
+            document.getElementById("USERNAME").classList.add("invalid_input");
+            document.getElementById("PASSWORD").classList.add("invalid_input");
+            //document.getElementById("USERNAME").className = "invalid_input";
+            //document.getElementById("PASSWORD").className = "invalid_input";
         }
     }
 
@@ -474,6 +483,7 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function handleUpdate() {
+        // target date and powerunit fields...
         const deliver_field = document.getElementById("dlvdate");
         const power_field = document.getElementById("powerunit");
         
@@ -520,13 +530,13 @@ const DriverLogin = () => {
             POWERUNIT: updateData.POWERUNIT
         });
 
+        // package driver/delivery credentials and validate...
         const body_data = {
             USERNAME: driverCredentials.USERNAME,
             PASSWORD: driverCredentials.PASSWORD,
             POWERUNIT: updateData.POWERUNIT,
             MFSTDATE: updateData.MFSTDATE,
         }
-
         const response = await fetch(API_URL + "api/Registration/VerifyPowerunit", {
             body: JSON.stringify(body_data),
             method: "POST",
@@ -540,7 +550,7 @@ const DriverLogin = () => {
 
         // set message state according to validity of delivery information...
         if(data.success){           
-            // package delivery/driver information
+            // package delivery/driver information and nav to /driverlog...
             const deliveryData = {
                 delivery: updateData,
                 driver: driverCredentials,
@@ -548,8 +558,6 @@ const DriverLogin = () => {
                 company: company,
                 valid: true
             };
-            //console.log(deliveryData);
-            
             navigate(`/driverlog`, {state: deliveryData});
         }
         else {
@@ -569,6 +577,7 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function handleNewUser() {
+        // reset input field error styling if triggered...
         if(document.getElementById("USERNAME").classList.contains("invalid_input")) {
             document.getElementById("USERNAME").classList.remove("invalid_input");
         }
@@ -576,12 +585,15 @@ const DriverLogin = () => {
             document.getElementById("PASSWORD").classList.remove("invalid_input");
         }
 
+        // nullify driver credentials...
         const user_data = {
             USERNAME: "",
             PASSWORD: "",
             POWERUNIT: ""
         }
         setDriverCredentials(user_data);
+
+        // set to new user popup and open...
         setMessage("New User Signin");
         openPopup();
     }
@@ -597,17 +609,20 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function updateDriver() {
+        // target password and powerunit fields...
         const pass_field = document.getElementById("password");
         const pow_field = document.getElementById("powerunit");
 
-        let code = -1;
+        // map empty field cases to messages...
+        let code = -1; // case -1...
         let elementID;
         const alerts = {
-            0: "Password is required!",
-            1: "Powerunit is required!",
-            2: "Password and Powerunit are required!"
+            0: "Password is required!", // case 0...
+            1: "Powerunit is required!", // case 1...
+            2: "Password and Powerunit are required!" // case 2...
         }
 
+        // flag empty password and powerunit fields...
         if(!(pass_field.value)) {
             pass_field.classList.add("invalid_input");
             elementID = "ff_admin_enu_pw";
@@ -618,18 +633,19 @@ const DriverLogin = () => {
             elementID = "ff_admin_enu_pu";
             code += 2;
         }
+
+         // catch and alert user to incomplete fields...
         if (code >= 0) {
             showFailFlag(elementID, alerts[code]);
             return;
         }
 
+        // package credentials and attempt updating records...
         const body_data = {
             USERNAME: driverCredentials.USERNAME,
             PASSWORD: driverCredentials.PASSWORD,
-            POWERUNIT: driverCredentials.POWERUNIT
+            POWERUNIT: driverCredentials.POWERUNIT // this is the field that may change...
         }
-
-        //const response = await fetch(API_URL + "api/Registration/ReplaceDriver", {
         const response = await fetch(API_URL + "api/Registration/InitializeDriver", {
             body: JSON.stringify(body_data),
             method: "PUT",
@@ -637,17 +653,16 @@ const DriverLogin = () => {
                 'Content-Type': 'application/json; charset=UTF-8'
             }
         })
-
         const data = await response.json();
         //console.log(data);
 
+        // signal update status on screen...
         if (data.success) {
             setMessage("Update Success");
             setTimeout(() => {
                 closePopup();
             },1000)
-        }
-        else {
+        } else {
             setMessage("Fail");
             setTimeout(() => {
                 closePopup();
@@ -677,18 +692,21 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function pullDriver() {
+        // handle and signal empty username field...
         if (driverCredentials.USERNAME == "") {
-            document.getElementById("username").className = "invalid_input";
+            //document.getElementById("username").className = "invalid_input";
+            document.getElementById("username").classList.add("invalid_input");
             showFailFlag("ff_login_nu", "Username is required!");
             return;
         }
+
+        // package credentials and admin status and attempt driver query...
         const body_data = {
             USERNAME: driverCredentials.USERNAME,
             PASSWORD: null,
             POWERUNIT: null,
             admin: false
         }
-
         const response = await fetch(API_URL + "api/Registration/PullDriver", {
             body: JSON.stringify(body_data),
             method: "POST",
@@ -696,13 +714,13 @@ const DriverLogin = () => {
                 'Content-Type': 'application/json; charset=UTF-8'
             }
         })
-
         const data = await response.json()
         //console.log(data);
 
         // catch failed request and prevent behavior...
         if (!data.success) {
-            document.getElementById("username").className = "invalid_input";
+            //document.getElementById("username").className = "invalid_input";
+            document.getElementById("username").classList.add("invalid_input");
             showFailFlag("ff_login_nu", "Username not found!");
         }
         else {
@@ -711,10 +729,10 @@ const DriverLogin = () => {
 
             // if password exists, fail out...
             if (data.password){
-                document.getElementById("username").className = "invalid_input";
+                document.getElementById("username").classList.add("invalid_input");
                 showFailFlag("ff_login_nu", "Username already exists!");
-            }
-            else {
+            } else {
+                // initialize new user fields and open popup to collect password...
                 setDriverCredentials({
                     USERNAME: data.username,
                     PASSWORD: "",
@@ -734,6 +752,7 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function cancelDriver() {
+        // nullify credentials and close popup...
         setDriverCredentials({
             USERNAME: "",
             PASSWORD: "",
@@ -756,10 +775,14 @@ const DriverLogin = () => {
 
     async function submitNewUser(e) {
         e.preventDefault();
+
+        /* this may be inactive... 
         if (e.target.id == "edit_new_user") {
             updateDriver();
             return;
-        }
+        } */
+
+        // handle new user menu button clicks...
         switch(e.target.parentElement.id){
             case "set_password":
                 pullDriver();
@@ -784,13 +807,25 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function updateNewUser(e) {
-        if (document.getElementById(e.target.id).className == "invalid_input"){
+        //if (document.getElementById(e.target.id).className == "invalid_input"){
+        if (document.getElementById(e.target.id).classList.contains("invalid_input")){
+            //document.getElementById("username").className = "";
+            //document.getElementById("password").className = "";
+            //document.getElementById("powerunit").className = "";
+
             // reset styling to default...
-            document.getElementById("username").className = "";
-            document.getElementById("password").className = "";
-            document.getElementById("powerunit").className = "";
+            document.getElementById("username").classList.remove("invalid_input");
+
+            // skip password + powerunit when username specific...
+            if (document.getElementById("password")){
+                document.getElementById("password").classList.remove("invalid_input");
+            }
+            if (document.getElementById("powerunit")){
+                document.getElementById("powerunit").classList.remove("invalid_input");
+            }
         }
 
+        // update credentials state on change...
         let val = e.target.value;
         switch(e.target.id){
             case 'username':

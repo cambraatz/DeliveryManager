@@ -2,6 +2,7 @@
  
 Author: Cameron Braatz
 Date: 11/15/2024
+Update: 1/9/2025
 
 *//////////////////////////////////////////////////////////////////////////////
 
@@ -121,11 +122,6 @@ namespace DeliveryManager.Server.Controllers
             if (validatedToken is JwtSecurityToken jwtToken &&
                 jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
             {
-                /*var username = principal.Identity.Name;
-                if (username == null)
-                {
-                    return Unauthorized("Invalid token payload");
-                }*/
                 var tokenService = new TokenService(_configuration);
                 var tokens = tokenService.GenerateToken(request.Username);
                 return Ok(new { AccessToken = tokens.AccessToken, RefreshToken = tokens.RefreshToken });
@@ -240,12 +236,10 @@ namespace DeliveryManager.Server.Controllers
 
                     if (table.Rows.Count > 0)
                     {
-                        //return new JsonResult("Valid");
                         return new JsonResult(new { success = true });
                     }
                     else
                     {
-                        //return new JsonResult("Invalid");
                         return new JsonResult(new { success = false });
                     }
                 }
@@ -287,8 +281,6 @@ namespace DeliveryManager.Server.Controllers
                     myCon.Close();
                 }
             }
-
-            //return new JsonResult(table);
             return new JsonResult(new { success = true, table = table });
         }
 
@@ -531,12 +523,10 @@ namespace DeliveryManager.Server.Controllers
                     myCon.Close();
 
                     // return success message...
-                    //return new JsonResult(table);
                     return new JsonResult(new { success = true });
                 }
                 catch (Exception ex)
                 {
-                    //return new JsonResult("Error: " + ex.Message);
                     return new JsonResult(new { success = false, error = "Error: " + ex.Message });
 
                 }
@@ -555,7 +545,6 @@ namespace DeliveryManager.Server.Controllers
             string sqlDatasource = connString;
             driverCredentials driver = new driverCredentials();
 
-            //SqlDataReader myReader;
             await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {
                 try
@@ -620,7 +609,6 @@ namespace DeliveryManager.Server.Controllers
         public async Task<JsonResult> GetCompany([FromQuery] string COMPANYKEY) 
         {
             string query = "SELECT * FROM dbo.COMPANY where COMPANYKEY=@COMPANYKEY";
-            //Company company = null;
 
             string sqlDatasource = connString;
 
@@ -668,7 +656,6 @@ namespace DeliveryManager.Server.Controllers
 
             DataTable table = new DataTable();
             string sqlDatasource = connString;
-            //SqlDataReader myReader;
 
             await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
             {

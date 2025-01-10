@@ -150,14 +150,7 @@ export const renderTime = (time) => {
     const new_time = hour + ":" + minute;
     return new_time
 };
-/*
-export const translateDate = (date) => {
-    const month = date.slice(0,2);
-    const day = date.slice(2,4);
-    const year = date.slice(4);
-    return month + "/" + day + "/" + year;
-};
-*/
+
 export const translateDate = (date) => {
     const month = date.slice(0,2);
     const day = date.slice(2,4);

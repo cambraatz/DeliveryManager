@@ -1,10 +1,10 @@
-/*/////////////////////////////////////////////////////////////////////////////
+/*/////////////////////////////////////////////////////////////////////
  
 Author: Cameron Braatz
 Date: 11/15/2023
-Update Date: 1/7/2025
+Update Date: 1/8/2025
 
-*//////////////////////////////////////////////////////////////////////////////
+*//////////////////////////////////////////////////////////////////////
 
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from "react-router-dom";
@@ -19,15 +19,18 @@ import { API_URL,
     requestAccess,
     showFailFlag } from '../Scripts/helperFunctions';
 
-/*/////////////////////////////////////////////////////////////////////////////
+/*/////////////////////////////////////////////////////////////////////
  
 AdminPortal() - Administrative menu page and functionality
 
 The following React functional component structures and renders the 
-administrative menu user interface accessed only from successful login using 
-admin credentials. The page allows users to add, edit and remove users from the 
-driver database. Additionally, the page allows the admin user to change the 
-name of the company to be dynamically rendered across the application.
+administrative menu user interface accessed only from successful 
+login using admin credentials. The page allows users to add, edit and 
+remove users from the driver database. Additionally, the page allows 
+the admin user to change the name of the company to be dynamically 
+rendered across the application.
+
+///////////////////////////////////////////////////////////////////////
 
 BASIC STRUCTURE:
 // initialize rendered page...
@@ -81,16 +84,20 @@ BASIC STRUCTURE:
     package popup helper functions
     return render template
 
-*//////////////////////////////////////////////////////////////////////////////
+*//////////////////////////////////////////////////////////////////////
 
 const AdminPortal = () => {
-    /* Site state & location processing functions... */
+    /* Page rendering, navigation and state initialization... */
+
+    // location state and navigation calls...
     const location = useLocation();
     const navigate = useNavigate();
 
+    // header toggle state...
     const [header,setHeader] = useState(location.state ? location.state.header : "open");
 
-    const [renderCredentials, setRenderCredentials] = useState({
+    // driver credentials state...
+    const [credentials, setCredentials] = useState({
         USERNAME: "",
         PASSWORD: "",
         POWERUNIT: ""
@@ -111,13 +118,13 @@ const AdminPortal = () => {
     // ensure company, token and navigation validity onLoad...
     useEffect(() => {
         // fetch company name...
-        const company = isCompanyValid();
+        //const company = isCompanyValid();
+        setCompany(isCompanyValid());
         if (!company) {
             renderCompany();
         } else {
             setCompany(company);
         }
-
         // validate token...
         const token = getToken();
         if(!isTokenValid(token)){
@@ -125,7 +132,6 @@ const AdminPortal = () => {
             navigate('/');
             return;
         }
-
         // validate proper navigation...
         if(!VALID) {
             logout();
@@ -160,7 +166,6 @@ const AdminPortal = () => {
 
     /*/////////////////////////////////////////////////////////////////
     // initialize and manage collapsible header behavior...
-    initialize header toggle to "open" - default for login screen
     [void] : collapseHeader(event) {
         if (e.target.id === "collapseToggle" or "toggle_dots"):
             open/close header - do opposite of current "header" state
@@ -221,8 +226,7 @@ const AdminPortal = () => {
         }
     }
 
-
-    /* state management functions... */
+    /* State management functions... */
 
     /*/////////////////////////////////////////////////////////////////
     // handle changes to admin input fields...
@@ -237,20 +241,20 @@ const AdminPortal = () => {
         let val = e.target.value;
         switch(e.target.id){
             case 'username':
-                setRenderCredentials({
-                    ...renderCredentials,
+                setCredentials({
+                    ...credentials,
                     USERNAME: val
                 });
                 break;
             case 'password':
-                setRenderCredentials({
-                    ...renderCredentials,
+                setCredentials({
+                    ...credentials,
                     PASSWORD: val
                 });
                 break;
             case 'powerunit':
-                setRenderCredentials({
-                    ...renderCredentials,
+                setCredentials({
+                    ...credentials,
                     POWERUNIT: val
                 });
                 break;
@@ -281,7 +285,7 @@ const AdminPortal = () => {
 
     async function getCompany() {
         // request token from memory, refresh as needed...
-        const token = await requestAccess(renderCredentials.USERNAME);
+        const token = await requestAccess(credentials.USERNAME);
         
         // handle invalid token on login...
         if (!token) {
@@ -332,7 +336,7 @@ const AdminPortal = () => {
         }
 
         // request token from memory, refresh as needed...
-        const token = await requestAccess(renderCredentials.USERNAME);
+        const token = await requestAccess(credentials.USERNAME);
         
         // handle invalid token on login...
         if (!token) {
@@ -421,11 +425,11 @@ const AdminPortal = () => {
             return;
         }
 
-        //console.log(`replace with ${renderCredentials}`);
+        //console.log(`replace with ${credentials}`);
         let formData = new FormData()
-        formData.append("USERNAME", renderCredentials.USERNAME);
+        formData.append("USERNAME", credentials.USERNAME);
         formData.append("PASSWORD", null);
-        formData.append("POWERUNIT", renderCredentials.POWERUNIT);
+        formData.append("POWERUNIT", credentials.POWERUNIT);
 
         //const form = ["USERNAME","PASSWORD","POWERUNIT","PREVUSER"];
         //form.forEach(key => console.log(`${key}: ${formData.get(key)}`));
@@ -484,7 +488,7 @@ const AdminPortal = () => {
         }
 
         const body_data ={
-            USERNAME: renderCredentials.USERNAME,
+            USERNAME: credentials.USERNAME,
             PASSWORD: null,
             POWERUNIT: null,
             admin: true
@@ -503,8 +507,8 @@ const AdminPortal = () => {
 
         // catch failed request and prevent behavior...
         if (data.success) {
-            setPreviousUser(renderCredentials.USERNAME);
-            setRenderCredentials({
+            setPreviousUser(credentials.USERNAME);
+            setCredentials({
                 USERNAME: data.username,
                 PASSWORD: data.password,
                 POWERUNIT: data.powerunit
@@ -570,7 +574,7 @@ const AdminPortal = () => {
         }
 
         // request token from memory, refresh as needed...
-        const token = await requestAccess(renderCredentials.USERNAME);
+        const token = await requestAccess(credentials.USERNAME);
         
         // handle invalid token on login...
         if (!token) {
@@ -578,12 +582,11 @@ const AdminPortal = () => {
             return;
         }
 
-        // package driver credentials...
+        // package driver credentials and attempt to replace...
         const body_data = {
-            ...renderCredentials,
+            ...credentials,
             PREVUSER: previousUser
         }
-
         const response = await fetch(API_URL + "api/Registration/ReplaceDriver", {
             body: JSON.stringify(body_data),
             method: "PUT",
@@ -625,7 +628,7 @@ const AdminPortal = () => {
 
     async function removeDriver() {
         // request token from memory, refresh as needed...
-        const token = await requestAccess(renderCredentials.USERNAME);
+        const token = await requestAccess(credentials.USERNAME);
         
         // handle invalid token on login...
         if (!token) {
@@ -634,7 +637,7 @@ const AdminPortal = () => {
         }
 
         // eslint-disable-next-line no-unused-vars
-        const response = await fetch(API_URL + "api/Registration/DeleteDriver?USERNAME=" + renderCredentials.USERNAME, {
+        const response = await fetch(API_URL + "api/Registration/DeleteDriver?USERNAME=" + credentials.USERNAME, {
             method: "DELETE",
             headers: {
                 "Authorization": `Bearer ${token}`,
@@ -668,7 +671,7 @@ const AdminPortal = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function cancelDriver() {
-        setRenderCredentials({
+        setCredentials({
             USERNAME: "",
             PASSWORD: "",
             POWERUNIT: ""
@@ -686,7 +689,7 @@ const AdminPortal = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function pressButton(e) {
-        setRenderCredentials({
+        setCredentials({
             USERNAME: "",
             PASSWORD: "",
             POWERUNIT: ""
@@ -774,7 +777,7 @@ const AdminPortal = () => {
                         handleDeliveryChange={null}
                         handleUpdate={handleUpdate}
                         pressButton={pressButton}
-                        credentials={renderCredentials}
+                        credentials={credentials}
                         company={company}
                         onPressFunc={onPress_functions}
                     />
