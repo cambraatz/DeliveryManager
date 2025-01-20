@@ -216,6 +216,7 @@ namespace DeliveryManager.Server.Controllers
                         myCommand.Parameters.AddWithValue("@USERNAME", driver.USERNAME);
                         myCommand.Parameters.AddWithValue("@PASSWORD", driver.PASSWORD);
                         myCommand.Parameters.AddWithValue("@POWERUNIT", driver.POWERUNIT);
+                        // need to include previous COMPANYKEY and MODULE values here...
 
                         myReader = myCommand.ExecuteReader();
                         table.Load(myReader);
