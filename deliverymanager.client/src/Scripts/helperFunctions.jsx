@@ -231,13 +231,16 @@ function getQueryParameter(param) {
 }
 
 export const scrapeURL = () => {
-    const username = getQueryParameter('user') ? getQueryParameter('user') : null;
-    const company = getQueryParameter('company') ? getQueryParameter('company') : null;
+    let username = getQueryParameter('user') ? getQueryParameter('user') : null;
+    let company = getQueryParameter('company') ? getQueryParameter('company') : null;
 
     if (!username || !company) {
-        alert("Failed to scrape data from URL...");
+        alert("DEVNOTE: Failed to scrape data from URL, hardcoding to prevent failure...");
         return ["cbraatz","Brauns Express Inc."]
     }
+
+    username = username.endsWith("/") ? username.slice(0,-1) : username;
+    company = company.endsWith("/") ? company.slice(0,-1) : company;
 
     return [username,company]
 };
@@ -247,6 +250,11 @@ export const scrapeFile = (file) => {
     return relLink;
 };
 
+export const clearMemory = () => {
+    // clears all, use localStorage.removeItem('keyName') to filter...
+    localStorage.clear();
+};
+
 export const COMPANY_MAP = {
     BRAUNS: "Brauns Express Inc.",
     NTS: "Normandin Trucking LLC.",
@@ -254,5 +262,5 @@ export const COMPANY_MAP = {
 }
 
 //export const API_URL = "http://www.tcsservices.com:40730/"
-export const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
-//export const API_URL = "http://localhost:5113/";
+//export const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"
+export const API_URL = "http://localhost:5113/";

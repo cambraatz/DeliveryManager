@@ -26,8 +26,8 @@ namespace DeliveryManager.Server.Controllers
         {
             _configuration = configuration;
             _env = env;
-            //connString = _configuration.GetConnectionString("DriverChecklistTestCon");
-            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            connString = _configuration.GetConnectionString("LOCAL");
+            //connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
 
         [HttpGet]

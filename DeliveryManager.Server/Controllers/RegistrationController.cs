@@ -112,8 +112,8 @@ namespace DeliveryManager.Server.Controllers
         {
             _configuration = configuration;
             //_tokenService = tokenService;
-            //connString = _configuration.GetConnectionString("DriverChecklistTestCon");
-            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            connString = _configuration.GetConnectionString("LOCAL");
+            //connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
 
         [HttpPost]

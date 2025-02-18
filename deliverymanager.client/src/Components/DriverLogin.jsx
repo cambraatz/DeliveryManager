@@ -21,7 +21,8 @@ import { scrapeDate,
     isCompanyValid, 
     showFailFlag,
     getCookie,
-    scrapeURL} from '../Scripts/helperFunctions';
+    scrapeURL,
+    clearMemory} from '../Scripts/helperFunctions';
 
 /*/////////////////////////////////////////////////////////////////////
 
@@ -116,28 +117,14 @@ const DriverLogin = () => {
         let username;
         let company;
         [username,company] = scrapeURL();
+
         if (username && company) {
             console.log(`User: ${username}\nCompany: ${company} have been parsed from URL`)
+        } else {
+            clearMemory();
+            window.location.href = `http://www.login.tcsservices.com:40730/`;
         }
-        const onFile = isCompanyValid();
-        renderCompany(onFile);
-        const companyCookie = getCookie("company");
-        console.log(`Cookie: ${companyCookie}`);
-
-        /*const un = localStorage.getItem('username');
-        const pu = localStorage.getItem('powerunit');
-        const cp = localStorage.getItem('company');
-        const db = localStorage.getItem('DB');*/
-
-        //const un = getCookie('username');
-        //const pu = getCookie('powerunit');
-        //const cp = getCookie('company');
-        //const db = getCookie('DB');
-
-        //console.log(`Username: ${un}`);
-        //console.log(`Powerunit: ${pu}`);
-        //console.log(`Company: ${cp}`);
-        //console.log(`Database: ${db}`);
+        setCurrCompany(company);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
