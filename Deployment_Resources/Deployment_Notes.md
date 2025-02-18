@@ -377,6 +377,31 @@ Environment=DOTNET_CLI_HOME=/tmp
 WantedBy=multi-user.target
 ```
 
+```
+[Unit]
+Description=Example .NET Web API App running on CentOS 7
+
+[Service]
+WorkingDirectory=/var/www/deliverymanager
+ExecStart=/usr/share/dotnet/dotnet /var/www/deliverymanager/DeliveryManager.Server.dll
+Restart=always
+# Restart service after 10 seconds if the dotnet service crashes:
+RestartSec=10
+KillSignal=SIGINT
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=dotnet-DM
+
+#User=apache
+User=DM_User
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_CLI_HOME=/tmp
+
+[Install]
+WantedBy=multi-user.target
+```
+
 Use *TimeoutStopSet* to configure the duration of time to wait for the app to shut down after it receives the intial interrupt signal. If the app doesn't shut down in this period, SIGKILL is issued to terminate the app. If nothing is specified, it defaults to the value *DefaultTimeoutStopSec* in the manager configuration file (systemd-system.conf, system.conf.d, systemd-user.conf, user.conf.d). Most defaults are set for 90 seconds.
 
 **Note:** The preceding example used *DM_User* as the specified User, this user must exist and have proper ownership over the app's files.

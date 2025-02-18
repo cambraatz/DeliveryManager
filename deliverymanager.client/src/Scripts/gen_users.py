@@ -12,6 +12,8 @@ conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};'
 # create cursor object...
 cursor = conn.cursor()
 
+cursor.execute("DROP TABLE USERS")
+
 # create an SQL table...
 cursor.execute('''CREATE TABLE USERS (USERNAME VARCHAR(30) PRIMARY KEY,
                PASSWORD VARCHAR(30),
@@ -33,65 +35,50 @@ cursor.execute('''CREATE TABLE USERS (USERNAME VARCHAR(30) PRIMARY KEY,
                MODULE09 VARCHAR(10),
                MODULE10 VARCHAR(10))''')
 
-# generate query string...
-#
-# open CSV file...
-with open('dmfstdat.csv','r') as f:
-    reader = csv.reader(f)
+users = {
+    "admin": ["password", None],
+    "cbraatz": ["password", 47],
+    "cnormandin": ["password", 60],
+    "gbraatz": ["password", 41],
+    "snormandin": ["password", 58]
+}
 
-    # skip headers, maintain just in case...
-    headers = next(reader)
+for key,value in users.items():
+    query = """
+        INSERT INTO dbo.USERS (
+            USERNAME, PASSWORD, PERMISSIONS, POWERUNIT, 
+            COMPANYKEY01, COMPANYKEY02, COMPANYKEY03, COMPANYKEY04, COMPANYKEY05,
+            MODULE01, MODULE02, MODULE03, MODULE04, MODULE05, MODULE06, MODULE07, MODULE08, MODULE09, MODULE10
+        ) 
+        VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        );
+    """
 
-    # skip buffer...
-    next(reader)
+    # Prepare parameters
+    params = (
+        key,
+        value[0],
+        None,  # or specify the permissions you want
+        value[1] if value[1] else None,  # Use None for NULL
+        'BRAUNS',  # Static value for example
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None
+    )
 
-    # initialize int columns...
-    int_col = [5,16,17,18,21]
-    
-    # iterate each CSV row and build query string from contents...
-    for row in reader:
-        col_index = 0
-        query = "("
-        for col in row:
-            # column is INT data...
-            if col_index in int_col:
-                query += row[col_index].strip()
-
-            # column is NULL data...
-            elif row[col_index].strip() == "NULL":
-                query += row[col_index].strip()
-            
-            # column is empty...
-            elif len(row[col_index].strip()) == 0:
-                query += "NULL"
-
-            # column is VARCHAR/Non-NULL data...
-            else:
-                query += "'" + row[col_index].strip() + "'"
-
-            if col_index < len(row)-1:
-                query += ","
-
-            col_index += 1
-            
-        # end row query line...
-        query += ");"
-
-        # insert data into table...
-        cursor.execute('INSERT INTO dbo.DMFSTDAT VALUES' + query)
-
-# close CSV file...
-f.close()
-
-# insert data manually or as group (limit of 1000 row entries)...
-#
-#cursor.execute('INSERT INTO dbo.DMFSTDAT values' + query)
-'''
-cursor.execute(INSERT INTO dbo.DMFSTDAT values('045X021624001','0','20240201123000','045X021624',
-               '045',1,'02162024','41750686','02152024','DOOLITTLE CARPET & PAINT','MOHAWK WHSE/MENDOTA HEIGHTS',
-               '2359 WATERS DRIVE',NULL,'MENDOTA HEIGHTS','MN','55120',NULL,NULL,NULL,NULL,NULL,NULL,
-               NULL,NULL,NULL,NULL))
-'''
+    cursor.execute(query,params)
 
 # commit changes...
 conn.commit()

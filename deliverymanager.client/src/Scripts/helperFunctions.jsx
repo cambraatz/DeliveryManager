@@ -99,16 +99,38 @@ export const cacheCompany = (company) => {
 }
 
 export const isCompanyValid = () => {
-    const company = localStorage.getItem('company')
+    let company = localStorage.getItem('company');
     if(company) {
         return company;
+    } else {
+        const urlParams = new URLSearchParams(window.location.search);
+        company = urlParams.get("company");
+        if (company) { 
+            cacheCompany(company);
+            console.log(`${company} retrieved from URL...`)
+            return company; 
+        }
+        return null;
     }
-
-    return null;
 }
 
 export async function getCompany_DB() {
     const response = await fetch(API_URL + "api/Registration/GetCompany?COMPANYKEY=c01", {
+        method: "GET",
+    })
+
+    const data = await response.json();
+    if (data.success) {
+        cacheCompany(data.COMPANYNAME);
+        return data.COMPANYNAME;
+    } else {
+        return null;
+    }
+}
+
+export async function getCompany_target(target) {
+    console.log(target);
+    const response = await fetch(API_URL + `api/Registration/GetCompany?COMPANYKEY=${target}`, {
         method: "GET",
     })
 
@@ -192,10 +214,44 @@ export const scrapeTime = (time) => {
     return hour + minute;
 };
 
+export const getCookie = (name) => {
+    const cookies = document.cookie.split("; ");
+    for (let cookie of cookies) {
+        const [key,value] = cookie.split("=");
+        if (key === name) {
+            return decodeURIComponent(value);
+        }
+    }
+    return null;
+};
+
+function getQueryParameter(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
+export const scrapeURL = () => {
+    const username = getQueryParameter('user') ? getQueryParameter('user') : null;
+    const company = getQueryParameter('company') ? getQueryParameter('company') : null;
+
+    if (!username || !company) {
+        alert("Failed to scrape data from URL...");
+        return ["cbraatz","Brauns Express Inc."]
+    }
+
+    return [username,company]
+};
+
 export const scrapeFile = (file) => {
     const relLink = file.slice(12);
     return relLink;
 };
+
+export const COMPANY_MAP = {
+    BRAUNS: "Brauns Express Inc.",
+    NTS: "Normandin Trucking LLC.",
+    TCS: "Transportation Computer Support"
+}
 
 //export const API_URL = "http://www.tcsservices.com:40730/"
 export const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"

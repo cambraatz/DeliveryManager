@@ -32,13 +32,18 @@ public class TokenService
     {
         _configuration = configuration;
     }
-    public (string AccessToken, string RefreshToken) GenerateToken(string username)
+    public (string AccessToken, string RefreshToken) GenerateToken(string username, string companyDbName = null)
     {
-        var accessClaims = new[]
+        var accessClaims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, username),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (!string.IsNullOrEmpty(companyDbName) )
+        {
+            accessClaims.Add(new Claim("company_db_name", companyDbName));
+        }
 
         var refreshClaims = new[]
         {
@@ -73,6 +78,14 @@ public class RefreshRequest
     public string RefreshToken { get; set; }
 }
 
+public class CompanyRequest
+{
+    public string Username { get; set; }
+    public string Company { get; set; }
+    public string AccessToken { get; set; }
+
+}
+
 /*/////////////////////////////////////////////////////////////////////////////
  
 Registration Controller API Functions
@@ -99,8 +112,8 @@ namespace DeliveryManager.Server.Controllers
         {
             _configuration = configuration;
             //_tokenService = tokenService;
-            connString = _configuration.GetConnectionString("DriverChecklistTestCon");
-            //connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            //connString = _configuration.GetConnectionString("DriverChecklistTestCon");
+            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
 
         [HttpPost]
@@ -126,7 +139,7 @@ namespace DeliveryManager.Server.Controllers
                 var tokens = tokenService.GenerateToken(request.Username);
                 return Ok(new { AccessToken = tokens.AccessToken, RefreshToken = tokens.RefreshToken });
             }
-            return Unauthorized();
+            return Unauthorized("Invalid Token.");
         }
 
         /*/////////////////////////////////////////////////////////////////////////////
@@ -199,7 +212,7 @@ namespace DeliveryManager.Server.Controllers
         [Authorize]
         public async Task<JsonResult> VerifyPowerunit([FromBody] driverVerification driver)
         {
-            string updatequery = "update dbo.USERS set USERNAME=@USERNAME, PASSWORD=@PASSWORD, POWERUNIT=@POWERUNIT where USERNAME=@USERNAME";
+            string updatequery = "update dbo.USERS set POWERUNIT=@POWERUNIT where USERNAME=@USERNAME";
             string selectquery = "select * from dbo.DMFSTDAT where MFSTDATE=@MFSTDATE and POWERUNIT=@POWERUNIT";
 
             DataTable table = new DataTable();
@@ -211,6 +224,7 @@ namespace DeliveryManager.Server.Controllers
                 try
                 {
                     myCon.Open();
+
                     using (SqlCommand myCommand = new SqlCommand(updatequery, myCon))
                     {
                         myCommand.Parameters.AddWithValue("@USERNAME", driver.USERNAME);
@@ -285,6 +299,7 @@ namespace DeliveryManager.Server.Controllers
             return new JsonResult(new { success = true, table = table });
         }
 
+        // is this still active???
         // ADMIN FUNCTION...
         [HttpPut]
         [Route("UpdateDriver")]

@@ -14,12 +14,14 @@ import Footer from './Footer';
 import { scrapeDate, 
     renderDate, 
     getDate, 
-    API_URL, 
+    API_URL,
+    getCompany_target,
     cacheToken,
     requestAccess,
-    isCompanyValid,
-    getCompany_DB, 
-    showFailFlag} from '../Scripts/helperFunctions';
+    isCompanyValid, 
+    showFailFlag,
+    getCookie,
+    scrapeURL} from '../Scripts/helperFunctions';
 
 /*/////////////////////////////////////////////////////////////////////
 
@@ -89,6 +91,21 @@ BASIC STRUCTURE:
 
 *//////////////////////////////////////////////////////////////////////
 
+/*function getCookie(name){
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    if(ca != ""){
+        for (let i=0; i,ca.length; i++){
+            let c = ca[i].trim();
+            if (c.indexOf(nameEQ) === 0){
+                return c.substring(nameEQ.length, c.length);
+            }
+        }
+    }
+    
+    return null;
+}*/
+
 const DriverLogin = () => {
     // Date processing functions ...
     const currDate = getDate();
@@ -96,19 +113,39 @@ const DriverLogin = () => {
 
     // check delivery validity onLoad and after message state change...
     useEffect(() => {
-        const company = isCompanyValid();
-        if (!company) {
-            renderCompany();
-        } else {
-            setCompany(company);
+        let username;
+        let company;
+        [username,company] = scrapeURL();
+        if (username && company) {
+            console.log(`User: ${username}\nCompany: ${company} have been parsed from URL`)
         }
+        const onFile = isCompanyValid();
+        renderCompany(onFile);
+        const companyCookie = getCookie("company");
+        console.log(`Cookie: ${companyCookie}`);
+
+        /*const un = localStorage.getItem('username');
+        const pu = localStorage.getItem('powerunit');
+        const cp = localStorage.getItem('company');
+        const db = localStorage.getItem('DB');*/
+
+        //const un = getCookie('username');
+        //const pu = getCookie('powerunit');
+        //const cp = getCookie('company');
+        //const db = getCookie('DB');
+
+        //console.log(`Username: ${un}`);
+        //console.log(`Powerunit: ${pu}`);
+        //console.log(`Company: ${cp}`);
+        //console.log(`Database: ${db}`);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     /* Site state & location processing functions... */
 
     // initialize company state to null, replace with company on file...
-    const [company, setCompany] = useState("");
+    const [currCompany, setCurrCompany] = useState("");
 
     // set popup render status...
     const [message, setMessage] = useState(null);
@@ -137,6 +174,29 @@ const DriverLogin = () => {
 
     /* Page rendering helper functions... */
 
+    // Function to get query parameters from the URL
+    function getQueryParameter(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+
+    async function queryData() {
+        if (localStorage.getItem('accessToken')) {
+            console.log('Access token (from memory):', localStorage.getItem('accessToken'));
+        } else {
+            console.log("no token in memory...");
+            // Extract the access token from the URL
+            const accessToken = getQueryParameter('access_token');
+
+            if (accessToken) {
+                console.log('Access token:', accessToken);
+                // Now you can use the access token for authentication
+            } else {
+                console.error('Access token not found!');
+            }
+        }
+    }
+
     /*/////////////////////////////////////////////////////////////////
     // retrieve company from database when not in memory...
     [void] : renderCompany() {
@@ -148,16 +208,21 @@ const DriverLogin = () => {
     } 
     *//////////////////////////////////////////////////////////////////
     
-    async function renderCompany() {
+    async function renderCompany(company) {
         // getCompany() also caches company...
-        const company = await getCompany_DB();
+        //const company = await getCompany_DB();
+        //const company = await getCompany_target("BRAUNS");
+        //const company = localStorage.getItem('company');
+
         // set company state to value or placeholder... 
         if(company) {
-            console.log(`renderCompany retrieved ${company} from database...`);
-            setCompany(company);
+            console.log(`renderCompany retrieved ${company}...`);
+            //localStorage.setItem('company', company);
+            setCurrCompany(company);
         } else {
             console.log(`renderCompany could not find company...`);
-            setCompany("No Company Set");
+            setCurrCompany("No Company Set");
+            //localStorage.removeItem('company');
         }
     }
 
@@ -445,7 +510,7 @@ const DriverLogin = () => {
                 // package admin data and nav to admin page...
                 const adminData = {
                     header: header,
-                    company: company,
+                    company: currCompany,
                     valid: true
                 };
                 navigate('/admin', {state: adminData});
@@ -555,7 +620,7 @@ const DriverLogin = () => {
                 delivery: updateData,
                 driver: driverCredentials,
                 header: header,
-                company: company,
+                company: currCompany,
                 valid: true
             };
             navigate(`/driverlog`, {state: deliveryData});
@@ -862,7 +927,7 @@ const DriverLogin = () => {
     return(
         <div id="webpage">
             <Header 
-                company={company}
+                company={currCompany}
                 title="Driver Login"
                 alt="Enter your login credentials"
                 status="Off"
@@ -895,6 +960,7 @@ const DriverLogin = () => {
                     <button type="submit">Login</button>
                 </form>
             </div>
+            <button onClick={queryData}>Test Memory</button>
             <div id="popupLoginWindow" className="overlay">
                 <div className="popupLogin">
                     <div id="popupLoginExit" className="content">
