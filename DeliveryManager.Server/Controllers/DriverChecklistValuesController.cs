@@ -1,4 +1,6 @@
 ﻿using DeliveryManager.Server.Models;
+using DeliveryManager.Server.Services;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
@@ -26,18 +28,30 @@ namespace DeliveryManager.Server.Controllers
         {
             _configuration = configuration;
             _env = env;
-            connString = _configuration.GetConnectionString("LOCAL");
+            connString = _configuration.GetConnectionString("TCSWEB");
             //connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
 
         [HttpGet]
         [Route("GetUndelivered")]
-        [Authorize]
         public JsonResult GetUndelivered(string POWERUNIT, string MFSTDATE)
         {
+            var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            if (!tokenAuth.success)
+            {
+                return new JsonResult(new { success = false, message = tokenAuth.message });
+            }
+
+            var company = Request.Cookies["company"];
+            if (string.IsNullOrEmpty(company))
+            {
+                return new JsonResult(new { success = false, message = "Company key is missing." });
+            }
+
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=0 order by STOP";
             DataTable table = new DataTable();
-            string sqlDatasource = connString;
+            string sqlDatasource = _configuration.GetConnectionString(company);
             SqlDataReader myReader;
             
             try
@@ -61,7 +75,7 @@ namespace DeliveryManager.Server.Controllers
                 }
                 else
                 {
-                    return new JsonResult(new { success = true, table = table });
+                    return new JsonResult(new { success = false, error = "Error: Empty table results" });
                 }
             }
             catch (Exception ex)
@@ -72,12 +86,24 @@ namespace DeliveryManager.Server.Controllers
         
         [HttpGet]
         [Route("GetDelivered")]
-        [Authorize]
         public JsonResult GetDelivered(string POWERUNIT, string MFSTDATE)
         {
+            var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            if (!tokenAuth.success)
+            {
+                return new JsonResult(new { success = false, message = tokenAuth.message });
+            }
+
+            var company = Request.Cookies["company"];
+            if (string.IsNullOrEmpty(company))
+            {
+                return new JsonResult(new { success = false, message = "Company key is missing." });
+            }
+
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=1 order by STOP";
             DataTable table = new DataTable();
-            string sqlDatasource = connString;
+            string sqlDatasource = _configuration.GetConnectionString(company);
             SqlDataReader myReader;
             
             try
@@ -112,14 +138,25 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpPut]
         [Route("UpdateManifest")]
-        [Authorize]
         public async Task<JsonResult> UpdateManifest([FromForm] DeliveryForm data)
         {
+            var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            if (!tokenAuth.success)
+            {
+                return new JsonResult(new { success = false, message = tokenAuth.message });
+            }
+
             try
             {
+                var company = Request.Cookies["company"];
+                if (string.IsNullOrEmpty(company))
+                {
+                    return new JsonResult(new { success = false, message = "Company key is missing." });
+                }
+
                 // define path where the image is to be saved...
                 string folderPath = Path.Combine("wwwroot", "uploads");
-
                 if (!Directory.Exists(folderPath))
                 {
                     Directory.CreateDirectory(folderPath);
@@ -190,7 +227,7 @@ namespace DeliveryManager.Server.Controllers
                 "DLVDNOTE = @DLVDNOTE,DLVDIMGFILELOCN = @DLVDIMGFILELOCN,DLVDIMGFILESIGN = @DLVDIMGFILESIGN where MFSTKEY=@MFSTKEY";
 
                 DataTable table = new DataTable();
-                string sqlDatasource = connString;
+                string sqlDatasource = _configuration.GetConnectionString(company);
                 SqlDataReader myReader;
 
                 await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
@@ -241,9 +278,15 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpGet]
         [Route("GetImage")]
-        [Authorize]
         public IActionResult GetImage(string IMAGE)
         {
+            var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            if (!tokenAuth.success)
+            {
+                return new JsonResult(new { success = false, message = tokenAuth.message });
+            }
+
             var folderPath = Path.Combine(_env.WebRootPath, "uploads");
             var filePath = Path.Combine(folderPath, IMAGE);
 

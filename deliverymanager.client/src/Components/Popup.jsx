@@ -22,7 +22,7 @@ const Popup = (props) => {
                         <label>Power Unit</label>
                         <input type="text" id="powerunit" value={props.powerunit} className="input_form" onChange={props.handleDeliveryChange} />
                         <div className="fail_flag" id="ff_admin_dl_pu">
-                            <p>Powerunit is required!</p>
+                            <p>Power unit is required!</p>
                         </div>
                     </div>
                     <div id="popupLoginInner">

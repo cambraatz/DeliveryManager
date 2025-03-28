@@ -1,0 +1,38 @@
+0010 REM 0"
+0011 BEGIN
+0040 LET OS$="W",W$=CVS(INFO(0,1),4); IF POS("LINUX"=W$) THEN LET OS$="L"
+0050 LET SQLCMD$="sqlcmd",DB$="TCSWEB",TBL$="MODULE"
+0052 IF OS$="L" THEN LET SQLCMD$="/opt/mssql-tools/bin/sqlcmd",IP$="192.168.1.33,1433",UN$="SA",PW$="Sql2023!"
+0100 REM ^100"***** Initialize Stuff
+0110 LET W$="/temp/scratchfile"; IF OS$="W" THEN LET W$="c:\temp\scratchfile"
+0120 LET SQLBF$=W$+".bat",SQLSF$=W$+".s",SQLOF$=W$+".o",CHAN=UNT
+0130 GOSUB 1000; REM ** Erase Files
+0200 REM ^100"***** Batch File
+0210 LET X$=SQLCMD$+" -U "+UN$+" -P "+PW$+" -S "+IP$+" -d "+DB$+" -i "+SQLSF$+" -s"+CHR(34)+CHR(9)+CHR(34)+" >> "+SQLOF$
+0220 IF OS$="W" THEN LET X$=SQLCMD$+" -d "+DB$+" -i "+SQLSF$+" -s"+CHR(34)+CHR(9)+CHR(34)+" >> "+SQLOF$
+0230 STRING SQLBF$; OPEN (CHAN)SQLBF$; PRINT (CHAN)X$; CLOSE (CHAN)
+0240 IF OS$="L" THEN LET A=SCALL("chmod 777 "+SQLBF$)
+0300 REM ^100"***** Create Script File / Load Script File
+0310 STRING SQLSF$; OPEN (CHAN)SQLSF$
+0320 LET L$="drop table "+TBL$; PRINT (CHAN)L$,CHR(13)
+0330 LET L$="create table "+TBL$+" (MODULEURL VARCHAR(20) PRIMARY KEY,MODULENAME VARCHAR(30))"; PRINT (CHAN)L$,CHR(13)
+0340 LET L$="insert into "+TBL$+" (MODULEURL,MODULENAME) VALUES ('admin','Administrative Portal')"; PRINT (CHAN)L$,CHR(13)
+0350 LET L$="insert into "+TBL$+" (MODULEURL,MODULENAME) VALUES ('deliverymanager','Delivery Manager')"; PRINT (CHAN)L$,CHR(13)
+0360 LET L$="insert into "+TBL$+" (MODULEURL,MODULENAME) VALUES ('warehouse','Warehouse App')"; PRINT (CHAN)L$,CHR(13)
+0400 REM ^100"***** Execute Batch File
+0410 CLOSE (CHAN)
+0420 LET SUCCESS$="N",A=SCALL(SQLBF$); IF A=0 THEN LET SUCCESS$="Y"
+0430 PRINT SUCCESS$
+0500 REM ^100"***** If Linux Send Output File
+0510 IF OS$="L" THEN LET SUCCESS$="N",X$="sz "+SQLOF$,A=SCALL(X$); IF A=0 THEN LET SUCCESS$="Y"
+0520 IF OS$="L" THEN PRINT SUCCESS$
+0900 REM ^100"***** Cleanup
+0910 GOSUB 1000; REM ** Erase Files
+0920 GOTO 9500
+1000 REM ^1000"***** Erase Files
+1020 ERASE SQLBF$,ERR=1030
+1030 ERASE SQLSF$,ERR=1040
+1040 ERASE SQLOF$,ERR=1050
+1090 RETURN
+9500 REM 0"***** End
+9510 END

@@ -27,6 +27,7 @@ import { scrapeDate,
     logout,
     requestAccess, /*, scrapeFile*/
     showFailFlag } from '../Scripts/helperFunctions';
+import Logout from '../Scripts/Logout.jsx';
 
 //////////////////////////////////////////////////////////////////////////////////////
 /* 
@@ -91,6 +92,8 @@ const DeliveryForm = () => {
     // site state & location processing functions...  
     const location = useLocation();
     const navigate = useNavigate();
+
+    const [loading, setLoading] = useState(true);
 
     // flag invalid navigation with null location.state...
     const VALID = location.state ? location.state.valid : false;
@@ -186,7 +189,9 @@ const DeliveryForm = () => {
     });
 
     // store company name when present, else replace with placeholder...
-    const company = COMPANY ? COMPANY : "No company active"
+    //const company = COMPANY ? COMPANY : "No company active";
+    // rendered company state...
+    const [company, setCompany] = useState(location.state ? location.state.company : "");
 
     // header toggle condition state...
     const [header,setHeader] = useState(HEADER);
@@ -202,22 +207,16 @@ const DeliveryForm = () => {
 
     // pre-render + on-refresh behavior...
     useEffect(() => {
-        // retrieve token and validate...
-        const token = getToken();
-        if(!isTokenValid(token)){
-            logout();
-            navigate('/');
-            return;
+        let username = sessionStorage.getItem("username");
+        let activeCompany = sessionStorage.getItem("company");
+        if (!username || !activeCompany) {
+            Logout();
         }
-        // prevent random access...
-        if(!VALID){
-            logout();
-            navigate('/');
-            return;
-        } else {
-            // pre-render initialization...
-            initializeRender();
-        }        
+        console.log(activeCompany);
+        setCompany(activeCompany);
+
+        // pre-render initialization...
+        initializeRender();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
 
@@ -278,6 +277,8 @@ const DeliveryForm = () => {
             document.getElementById('button_div').style.justifyContent = "space-around";
             document.getElementById('button_div').style.padding = "0 10%";
         }
+
+        setLoading(false);
     }
 
     /*/////////////////////////////////////////////////////////////////
@@ -411,22 +412,24 @@ const DeliveryForm = () => {
     // pull image from server...
     async function retrieveImage(image) {
         // request token from memory, refresh as needed...
-        const token = await requestAccess(driverCredentials.USERNAME);
+        /*const token = await requestAccess(driverCredentials.USERNAME);
         
         // handle invalid token on login...
         if (!token) {
             navigate('/');
             return;
-        }
+        }*/
 
         try {
             // fetch image from server using stored file paths...
             const response = await fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE=" + image, {
                 method: 'GET',
                 headers: {
-                    "Authorization": `Bearer ${token}`
-                }
+                    //"Authorization": `Bearer ${token}`
+                },
+                credentials: 'include'
             });
+
             if(!response.ok) { throw new Error('Failed to fetch image...'); }
 
             // convert image response to blob + blob to URL...
@@ -487,13 +490,13 @@ const DeliveryForm = () => {
 
     async function clearDelivery(navigateData) {
         // request token from memory, refresh as needed...
-        const token = await requestAccess(driverCredentials.USERNAME);
+        /*const token = await requestAccess(driverCredentials.USERNAME);
         
         // handle invalid token on login...
         if (!token) {
             navigate('/');
             return;
-        }
+        }*/
         
         // package default delivery information...
         const default_data = {...delivery,
@@ -519,8 +522,9 @@ const DeliveryForm = () => {
             body: deliveryData,
             method: "PUT",
             headers: {
-                "Authorization": `Bearer ${token}`
-            }
+                //"Authorization": `Bearer ${token}`
+            },
+            credentials: 'include'
         })
 
         const data = await response.json();
@@ -530,7 +534,7 @@ const DeliveryForm = () => {
             openPopup();
             setTimeout(() => {
                 closePopup();
-                navigate(`/driverlog`, { state: navigateData });
+                navigate(`/deliveries`, { state: navigateData });
             },1000)
         } else {
             console.trace("update delivery failed");
@@ -611,13 +615,13 @@ const DeliveryForm = () => {
         }
 
         // request token from memory, refresh as needed...
-        const token = await requestAccess(driverCredentials.USERNAME);
+        /*const token = await requestAccess(driverCredentials.USERNAME);
         
         // handle invalid token on login...
         if (!token) {
             navigate('/');
             return;
-        }
+        }*/
 
         // package data into form object to support image files...
         let deliveryData = new FormData();
@@ -650,12 +654,14 @@ const DeliveryForm = () => {
         deliveryData.set("LASTUPDATE",currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00");
 
         // send request; returns ...
+        console.log("attempting update manifest...");
         const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest", {
             body: deliveryData,
             method: "PUT",
             headers: {
-                "Authorization": `Bearer ${token}`
-            }
+                //"Authorization": `Bearer ${token}`
+            },
+            credentials: 'include'
         })
 
         const data = await response.json();
@@ -665,7 +671,7 @@ const DeliveryForm = () => {
             openPopup();
             setTimeout(() => {
                 closePopup();
-                navigate(`/driverlog`, { state: navigateData });
+                navigate(`/deliveries`, { state: navigateData });
             },1000)
         } else {
             console.trace("update delivery failed");
@@ -734,7 +740,8 @@ const DeliveryForm = () => {
             company: COMPANY,
             valid: true
         };
-        navigate(`/driverlog`, { state: deliveryData });
+        document.getElementById('Return').style.display = "flex";
+        navigate(`/deliveries`, { state: deliveryData });
     };
 
     /*/////////////////////////////////////////////////////////////////
@@ -807,133 +814,141 @@ const DeliveryForm = () => {
     // render template...
     return (
         <div id="webpage">
-            <Header
-                company={company}
-                title="Delivery Update"
-                currUser={currUser}
-                header="Full"
-                alt="Provide Delivery Information"
-                MFSTDATE={delivery.MFSTDATE}
-                POWERUNIT={delivery.POWERUNIT}
-                STOP={delivery.STOP}
-                PRONUMBER={delivery.PRONUMBER}
-                MFSTKEY={delivery.MFSTKEY}
-                toggle={header}
-                onClick={collapseHeader}
-            />
+            {loading ? (
+                <h2>Loading...</h2>
+            ) : (
+                <>
+                <Header
+                    company={company}
+                    title="Delivery Update"
+                    currUser={currUser}
+                    header="Full"
+                    status=""
+                    alt="Provide Delivery Information"
+                    MFSTDATE={delivery.MFSTDATE}
+                    POWERUNIT={delivery.POWERUNIT}
+                    STOP={delivery.STOP}
+                    PRONUMBER={delivery.PRONUMBER}
+                    MFSTKEY={delivery.MFSTKEY}
+                    toggle={header}
+                    onClick={collapseHeader}
+                />
 
-            <div id="Delivery_Input_Div">
-                <form id="form_data" onSubmit={handleSubmit}>
-                    <div id="datetime_Div">
-                        <div className="cont_left input_wrapper">
-                            <label>Date:</label>
-                            <input type="date" id="dlvdate" value={formData.deliveryDate} className="input_form" onChange={handleChange} required/>
-                            <div className="fail_flag" id="ff_admin_df_d">
-                                <p>Date is required!</p>
+                <div id="Delivery_Input_Div">
+                    <form id="form_data" onSubmit={handleSubmit}>
+                        <div id="datetime_Div">
+                            <div className="cont_left input_wrapper">
+                                <label>Date:</label>
+                                <input type="date" id="dlvdate" value={formData.deliveryDate} className="input_form" onChange={handleChange} required/>
+                                <div className="fail_flag" id="ff_admin_df_d">
+                                    <p>Date is required!</p>
+                                </div>
+                            </div>
+                            <div className="cont_right">
+                                <label>Time:</label>
+                                <input type="time" id="dlvtime" value={formData.deliveryTime} className="input_form" onChange={handleChange} required/>
                             </div>
                         </div>
-                        <div className="cont_right">
-                            <label>Time:</label>
-                            <input type="time" id="dlvtime" value={formData.deliveryTime} className="input_form" onChange={handleChange} required/>
+                        <div id="pis_Div">
+                            <div className="cont_left">
+                                <label>Consignee Name:</label>
+                                <input type="text" id="dlvcons" value={formData.deliveryConsignee} className="input_form" disabled/>
+                            </div>
+                            <div className="cont_right input_wrapper">
+                                <label>Pieces Delivered:</label>
+                                <input type="number" id="dlvdpcs" value={formData.deliveredPieces} className="input_form" min="0" max="999" onChange={handleChange} required/>
+                                <div className="fail_flag" id="ff_admin_df_pd">
+                                    <p>Pieces Delivered is required!</p>
+                                </div>
+                            </div>
                         </div>
+                        <div id="notes_Div">
+                            <label>Delivery Note: </label>
+                            <input type="text" id="dlvdnote" value={formData.deliveryNotes} className="input_form" onChange={handleChange} maxLength="30"/>
+                        </div>
+                        <div id="img_Div">
+                            <div id="img_sig_div">
+                                <label>Consignee Signature:</label>
+                                <div id="img_Div_Sign">
+                                    {images.Signature ? (
+                                        <img 
+                                            id="signatureThumbnail" 
+                                            className="thumbnail" 
+                                            src={images.Signature} 
+                                            alt="Saved userSignature" 
+                                            onClick={signatureToggle}
+                                        />
+                                    ) : null}
+                                </div>
+                                <div id="sigCapture" className="file_upload_widget" style={{display: "none"}} onClick={signatureToggle}>
+                                    <img id="fileUploadLogo" src={SignUploadLogo} alt="file upload logo" />
+                                    <p>Collect a signature</p>
+                                </div>
+                            </div>
+                            <div id="img_loc_div">
+                                <label>Delivery Location:</label>
+                                <div id="img_Div_Loc">
+                                    {images.Location ? (
+                                        <img 
+                                            id="locationThumbnail" 
+                                            className="thumbnail" 
+                                            src={images.Location} 
+                                            alt="Saved delivery location" 
+                                            onClick={handleImageClick}
+                                        />
+                                    ) : null}
+                                </div>
+                                <div id="locCapture" className="file_upload_widget" style={{display: "none"}} onClick={handleImageClick}>
+                                    <img id="fileUploadLogo" src={ImageUploadLogo} alt="file upload logo" />
+                                    <p>Upload an image</p>
+                                </div>
+                                <input type="file" accept="image/*" ref={hiddenFileInput} id="dlvdimage" className="input_image" onChange={handleChange} capture="environment" style={{display: "none"}}/>
+                            </div>
+                        </div>
+                        <div id="print_div">
+                            <div className="cont_left">
+                                <label>Consignee Signature Printed:</label>
+                                <input type="text" id="dlvdsign" value={formData.deliverySign} className="input_form" min="0" max="999" onChange={handleChange} required/>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="button_div">
+                        {/*<button onClick={handleReturn} type="button">Back To Deliveries</button>*/}
+                        <button id="undeliver" onClick={handleSubmit} type="button">Undo Delivery</button>
+                        <button id="update" onClick={handleSubmit} type="button">Update Delivery</button>
                     </div>
-                    <div id="pis_Div">
-                        <div className="cont_left">
-                            <label>Consignee Name:</label>
-                            <input type="text" id="dlvcons" value={formData.deliveryConsignee} className="input_form" disabled/>
-                        </div>
-                        <div className="cont_right input_wrapper">
-                            <label>Pieces Delivered:</label>
-                            <input type="number" id="dlvdpcs" value={formData.deliveredPieces} className="input_form" min="0" max="999" onChange={handleChange} required/>
-                            <div className="fail_flag" id="ff_admin_df_pd">
-                                <p>Pieces Delivered is required!</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="notes_Div">
-                        <label>Delivery Note: </label>
-                        <input type="text" id="dlvdnote" value={formData.deliveryNotes} className="input_form" onChange={handleChange} maxLength="30"/>
-                    </div>
-                    <div id="img_Div">
-                        <div id="img_sig_div">
-                            <label>Consignee Signature:</label>
-                            <div id="img_Div_Sign">
-                                {images.Signature ? (
-                                    <img 
-                                        id="signatureThumbnail" 
-                                        className="thumbnail" 
-                                        src={images.Signature} 
-                                        alt="Saved userSignature" 
-                                        onClick={signatureToggle}
-                                    />
-                                ) : null}
-                            </div>
-                            <div id="sigCapture" className="file_upload_widget" style={{display: "none"}} onClick={signatureToggle}>
-                                <img id="fileUploadLogo" src={SignUploadLogo} alt="file upload logo" />
-                                <p>Collect a signature</p>
-                            </div>
-                        </div>
-                        <div id="img_loc_div">
-                            <label>Delivery Location:</label>
-                            <div id="img_Div_Loc">
-                                {images.Location ? (
-                                    <img 
-                                        id="locationThumbnail" 
-                                        className="thumbnail" 
-                                        src={images.Location} 
-                                        alt="Saved delivery location" 
-                                        onClick={handleImageClick}
-                                    />
-                                ) : null}
-                            </div>
-                            <div id="locCapture" className="file_upload_widget" style={{display: "none"}} onClick={handleImageClick}>
-                                <img id="fileUploadLogo" src={ImageUploadLogo} alt="file upload logo" />
-                                <p>Upload an image</p>
-                            </div>
-                            <input type="file" accept="image/*" ref={hiddenFileInput} id="dlvdimage" className="input_image" onChange={handleChange} capture="environment" style={{display: "none"}}/>
-                        </div>
-                    </div>
-                    <div id="print_div">
-                        <div className="cont_left">
-                            <label>Consignee Signature Printed:</label>
-                            <input type="text" id="dlvdsign" value={formData.deliverySign} className="input_form" min="0" max="999" onChange={handleChange} required/>
-                        </div>
-                    </div>
-                </form>
-                <div id="button_div">
-                    <button onClick={handleReturn} type="button">Back To Deliveries</button>
-                    <button id="undeliver" onClick={handleSubmit} type="button">Undo Delivery</button>
-                    <button id="update" onClick={handleSubmit} type="button">Update Delivery</button>
                 </div>
-            </div>
 
-            {/*** POPUP CONTENT - THIS SECTION IS HIDDEN BY DEFAULT ***/}
-            <div id="popupSignatureWindow" className="overlay">
-                <div className="popupSignature">
-                    <div id="popupExit" className="content">
-                        <h1 id="close" onClick={handlePopupClose}>&times;</h1>
+                {/*** POPUP CONTENT - THIS SECTION IS HIDDEN BY DEFAULT ***/}
+                <div id="popupSignatureWindow" className="overlay">
+                    <div className="popupSignature">
+                        <div id="popupExit" className="content">
+                            <h1 id="close" onClick={handlePopupClose}>&times;</h1>
+                        </div>
+                        <SignatureField id="sigField" onSubmit={handleSignature}/>
                     </div>
-                    <SignatureField id="sigField" onSubmit={handleSignature}/>
                 </div>
-            </div>
-            <div id="popupAddWindow" className="overlay">
-                <div className="popupLogin">
-                    <div id="popupAddExit" className="content">
-                        <h1 id="close_add" className="popupLoginWindow" onClick={closePopup}>&times;</h1>
+                <div id="popupAddWindow" className="overlay">
+                    <div className="popupLogin">
+                        <div id="popupAddExit" className="content">
+                            <h1 id="close_add" className="popupLoginWindow" onClick={closePopup}>&times;</h1>
+                        </div>
+                        <Popup 
+                            message={popup}
+                            date={null}
+                            powerunit={null}
+                            closePopup={closePopup}
+                            handleDeliveryChange={null}
+                            handleUpdate={handleUpdate}
+                            company={company}
+                        />
                     </div>
-                    <Popup 
-                        message={popup}
-                        date={null}
-                        powerunit={null}
-                        closePopup={closePopup}
-                        handleDeliveryChange={null}
-                        handleUpdate={handleUpdate}
-                        company={company}
-                    />
                 </div>
-            </div>
 
-            <Footer id="footer"/>
+                <Footer id="footer"/>
+                </>
+            )
+        }
         </div>
     )
 }

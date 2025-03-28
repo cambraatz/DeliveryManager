@@ -1,10 +1,49 @@
-/* eslint-disable react/prop-types */
 /*import React, { useEffect, useState } from 'react';
 import { translateDate } from '../Scripts/helperFunctions';*/
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import UserWidget from './UserWidget';
 
 //const Header = (props) => {
 const Header = (props) => {
+    //const company = props.company && props.company !== "" ? props.company.split(' ') : [""];
+    const [company, setCompany] = useState(["Transportation", "Computer Support", "LLC."]);
+    const [user, setUser] = useState(props.currUser);
+
+    useEffect(() => {
+        if (props.company && props.company != "") {
+            setCompany(props.company.split(' '));
+        }
+        setUser(props.currUser);
+    }, [props.company, props.currUser]);
+
+    const deliveryHeader = () => {
+        let header = (
+            <>
+                <div id="title_div">
+                    {company.map((word, index) => (<h4 className="TCS_title" key={index}>{word}</h4>))}
+                </div>
+                <div className="sticky_header" onClick={props.onClick}>
+                    <div id="main_title">
+                        <h1>Delivery Manager</h1>
+                        <h2 id="title_dash">-</h2>
+                        <h2 id="title-id-title">{props.title}</h2>
+                    </div>
+                    <UserWidget 
+                        company={company}
+                        driver={user} 
+                        status={props.status} 
+                        header={props.header} 
+                        MFSTDATE={props.MFSTDATE} 
+                        POWERUNIT={props.POWERUNIT} 
+                        toggle={props.toggle}/>
+                </div>
+            </>
+        );
+        
+        return header;
+    }
+
     const deliveryCondition = () => {
         let condition = (
             <div id="widgetHeader">
@@ -37,36 +76,6 @@ const Header = (props) => {
         }
         return condition;
     };
-
-    const company = props.company !== "" ? props.company.split(' ') : [""];
-
-
-    const deliveryHeader = () => {
-        let header = (
-            <>
-                <div id="title_div">
-                    {company.map((word, index) => (<h4 className="TCS_title" key={index}>{word}</h4>))}
-                </div>
-                <div className="sticky_header" onClick={props.onClick}>
-                    <div id="main_title">
-                        <h1>Driver Manifest</h1>
-                        <h2 id="title_dash">-</h2>
-                        <h2>{props.title}</h2>
-                    </div>
-                    <UserWidget 
-                        company={props.company}
-                        driver={props.currUser} 
-                        status={props.status} 
-                        header={props.header} 
-                        MFSTDATE={props.MFSTDATE} 
-                        POWERUNIT={props.POWERUNIT} 
-                        toggle={props.toggle}/>
-                </div>
-            </>
-        );
-        
-        return header;
-    }
     
 
     return(
@@ -74,7 +83,25 @@ const Header = (props) => {
         <header id="Header">
             <div id="buffer"></div>
             
-            {deliveryHeader()}
+            <div id="title_div">
+                {company.map((word, index) => (<h4 className="TCS_title" key={index}>{word}</h4>))}
+            </div>
+            <div className="sticky_header" onClick={props.onClick}>
+                <div id="main_title">
+                    <h1>Delivery Manager</h1>
+                    <h2 id="title_dash">-</h2>
+                    <h2>{props.title}</h2>
+                </div>
+                <UserWidget 
+                    company={company}
+                    driver={user} 
+                    status={props.status} 
+                    header={props.header} 
+                    MFSTDATE={props.MFSTDATE} 
+                    POWERUNIT={props.POWERUNIT} 
+                    toggle={props.toggle}
+                />
+            </div>
         </header>
         {deliveryCondition()}
         </>
@@ -82,3 +109,20 @@ const Header = (props) => {
 };
 
 export default Header;
+
+Header.propTypes = {
+    alt: PropTypes.string,
+    header: PropTypes.string,
+    STOP: PropTypes.string,
+    PRONUMBER: PropTypes.string,
+    MFSTKEY: PropTypes.string,
+    MFSTDATE: PropTypes.string,
+    POWERUNIT: PropTypes.string,
+    company: PropTypes.string,
+    title: PropTypes.string,
+    status: PropTypes.string,
+    toggle: PropTypes.string,
+    currUser: PropTypes.string,
+    onClick: PropTypes.func,
+    onReturn: PropTypes.func
+};

@@ -1,9 +1,8 @@
-import logo from './logo.svg';
+//import logo from './logo.svg';
 import './App.css';
 import DriverPortal from './Components/DriverPortal'
 import DeliveryForm from './Components/DeliveryForm'
 import DriverLogin from './Components/DriverLogin'
-import AdminPortal from './Components/AdminPortal'
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 function App() {
@@ -12,9 +11,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<DriverLogin />} />
-          <Route path='/driverlog' element={<DriverPortal />} />
-          <Route path='driverlog/delivery/:mfstkey' element={<DeliveryForm />} />
-          <Route path='/admin' element={<AdminPortal />} />
+          <Route path='/deliveries' element={<DriverPortal />} />
+          <Route path='/deliveries/:mfstkey' element={<DeliveryForm />} />
         </Routes>
       </BrowserRouter>
     </div>
@@ -22,55 +20,3 @@ function App() {
 }
 
 export default App;
-
-/*
-import { useEffect, useState } from 'react';
-import './App.css';
-
-function App() {
-    const [forecasts, setForecasts] = useState();
-
-    useEffect(() => {
-        populateWeatherData();
-    }, []);
-
-    const contents = forecasts === undefined
-        ? <p><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationreact">https://aka.ms/jspsintegrationreact</a> for more details.</em></p>
-        : <table className="table table-striped" aria-labelledby="tabelLabel">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Temp. (C)</th>
-                    <th>Temp. (F)</th>
-                    <th>Summary</th>
-                </tr>
-            </thead>
-            <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
-                    </tr>
-                )}
-            </tbody>
-        </table>;
-
-    return (
-        <div>
-            <h1 id="tabelLabel">Weather forecast</h1>
-            <p>This component demonstrates fetching data from the server.</p>
-            {contents}
-        </div>
-    );
-    
-    async function populateWeatherData() {
-        const response = await fetch('weatherforecast');
-        const data = await response.json();
-        setForecasts(data);
-    }
-}
-
-export default App;
-*/

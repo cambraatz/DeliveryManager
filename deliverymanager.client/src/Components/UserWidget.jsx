@@ -1,8 +1,9 @@
-/* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
-import userIcon from "../images/userIcon.png";
+import PropTypes from 'prop-types';
 import { useNavigate } from "react-router-dom";
-import { translateDate, logout } from '../Scripts/helperFunctions';
+
+import userIcon from "../images/userIcon.png";
+import { API_URL, clearMemory } from '../Scripts/helperFunctions';
 import toggleDots from '../images/Toggle_Dots.svg';
 
 const UserWidget = (props) => {
@@ -10,12 +11,12 @@ const UserWidget = (props) => {
     //const [status, setStatus] = useState(props.status);
 
     useEffect(() => {        
-        if (props.status === "Off"){
-            document.getElementById("Logout").style.display = "none";
+        /*if (props.status === "Off"){
+            document.getElementById("Return").style.display = "none";
         }
         else {
-            document.getElementById("Logout").style.display = "flex";
-        }
+            document.getElementById("Return").style.display = "flex";
+        }*/
 
         if (props.toggle === "close") {
             document.getElementById("main_title").style.display = "none";
@@ -28,17 +29,24 @@ const UserWidget = (props) => {
             document.getElementById("buffer").style.height = "20px";
             setStatus("open");
         }
-    });
+
+        setUser(props.driver);
+    }, [props.status, props.driver, props.toggle]);
 
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        logout();
+        //logout();
+        Logout();
         if (localStorage.getItem('accessToken') == null && localStorage.getItem('refreshToken') == null) {
-            console.log("Successful log out operation!");
+            console.log("Logged out, redirecting to login!");
         }
-        setUser("Signed Out");
-        navigate('/', {state: props.company});
+        //setUser("Signed Out");
+        //navigate('/', {state: props.company});
+        setTimeout(() => {
+            window.location.href = `https://www.login.tcsservices.com`;
+        },1500)
+        
     }
 
     /*
@@ -77,60 +85,86 @@ const UserWidget = (props) => {
             }
         }
     } 
+
+    async function Logout() {
+        clearMemory();
+        const response = await fetch(API_URL + "api/Registration/Logout", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            },
+        })
+        if (response.ok) {
+            console.log("Logout Successful!");
+        } else {
+            console.alert("Cookie removal failed, Logout failure.")
+        }
+    }
+
+    async function Return() {
+        const handleGoBack = () => {
+            //window.history.back();
+            const path = window.location.pathname;
+            let oneBack = path.substring(0, path.lastIndexOf('/'));
+
+            if (oneBack === "") {
+                oneBack = "/";
+            }
+            navigate(oneBack);
+        };
+
+        console.log(window.location.pathname);
+        if (window.location.pathname !== '/') {
+            handleGoBack();
+            return;
+        }
+        const response = await fetch(`${API_URL}api/Registration/Return`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            },
+            credentials: "include"
+        });
+
+        if (response.ok) {
+            console.log("Return Successful!");
+            setTimeout(() => {
+                window.location.href = `https://login.tcsservices.com`;
+            },1500)
+        } else {
+            console.error("Return cookie generation failed, return failure.");
+        }
+    }
     
     return(
         <>
-            <div id="collapseToggle" onClick={collapseHeader}><img id="toggle_dots" src={toggleDots} alt="toggle dots" /></div>
+            <div id="collapseToggle" onClick={collapseHeader}>
+                <img id="toggle_dots" src={toggleDots} alt="toggle dots" />
+            </div>
             <div id="AccountTab" onClick={collapseHeader}>
-                <div id="sticky_MDPU">
-                {(props.header === "Full" || props.header === "Manifest") && (
-                    <>
-                        <div>
-                            <h4>Manifest Date:</h4>
-                            <h4 className="weak">{props.MFSTDATE ? translateDate(props.MFSTDATE) : "00/00/0000"}</h4>
-                        </div>
-                        <div>
-                            <h4>Power Unit:</h4>
-                            <h4 className="weak">{props.POWERUNIT}</h4>
-                        </div>
-                    </>
-                )}
-                {(props.header === "Admin") && (
-                    <>
-                        
-                    </>
-                )}
-                </div>
-                
                 <div id="sticky_creds">
                     <div id="UserWidget">
                         <img id="UserIcon" src={userIcon} alt="User Icon"/>
                         <p>{user}</p>
                     </div>
-                    <div id="Logout">
-                        <button onClick={handleLogout}>Log Out</button>
-                    </div>
-                </div>
-            </div>
-            {/*
-            <div id="popupLogoutWindow" className="overlay">
-                <div className="popupLogout">
-                    <div id="popupExit" className="content">
-                        <h1 id="close" onClick={handleClose}>&times;</h1>
-                    </div>
-                    <div id="popupLogoutPrompt" className="content">
-                        <p>Are you sure you want to log out? </p>
-                    </div>
-                    <div className="content">
-                        <div id="popupLogoutInner">
-                            <button onClick={handleLogout}>Yes</button>
+                    <div id="nav-buttons">
+                        <div id="Return">
+                            <button onClick={Return}>Go Back</button>
+                        </div>
+                        <div id="Logout">
+                            <button onClick={handleLogout}>Log Out</button>
                         </div>
                     </div>
                 </div>
             </div>
-            */}
         </>
     );
 };
 
 export default UserWidget;
+
+UserWidget.propTypes = {
+    driver: PropTypes.string, //username
+    status: PropTypes.string, // button visibility state
+    toggle: PropTypes.string, // header collapse state
+};

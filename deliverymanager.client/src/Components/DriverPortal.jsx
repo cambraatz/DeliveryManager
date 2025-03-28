@@ -16,7 +16,11 @@ import { API_URL,
     isTokenValid,
     isCompanyValid,
     getCompany_DB, 
-    logout } from '../Scripts/helperFunctions';
+    logout,
+    translateDate,
+    clearMemory,
+    COMPANIES } from '../Scripts/helperFunctions';
+import Logout from '../Scripts/Logout.jsx';
 
 /*/////////////////////////////////////////////////////////////////////
 
@@ -65,28 +69,19 @@ BASIC STRUCTURE:
 
 const DriverPortal = () => {
     /* Page rendering, navigation and state initialization... */
+    const [loading, setLoading] = useState(true);
 
     // location state and navigation calls...
     const location = useLocation();
     const navigate = useNavigate();
 
-    // flag invalid navigation with null location.state...
-    const VALID = location.state ? location.state.valid : false;
-
     // state 'driverCredentials' to be passed to next page...
-    const [driverCredentials, setDriverCredentials] = useState({
+    /*const [driverCredentials, setDriverCredentials] = useState({
         USERNAME: location.state ? location.state.driver["USERNAME"] : null,
         POWERUNIT: location.state ? location.state.driver["POWERUNIT"] : null,
-    });
+    });*/
 
-    // set current username for rendering...
-    const currUser = driverCredentials.USERNAME;
-
-    // const 'updateData' to be passed to next page...
-    const updateData = {
-        MFSTDATE: location.state ? location.state.delivery["MFSTDATE"] : null,
-        POWERUNIT: location.state ? location.state.delivery["POWERUNIT"] : null,
-    };
+    
 
     // set delivery json data for table rendering...
     const [undelivered, setUndelivered] = useState([]);
@@ -99,63 +94,71 @@ const DriverPortal = () => {
     const [header,setHeader] = useState(location.state ? location.state.header : "open");
 
     // rendered company state...
-    const [company, setCompany] = useState(location.state ? location.state.company : "");
+    //const [company, setCompany] = useState(location.state ? location.state.company : "");
+    const [company, setCompany] = useState();
+    const [updateData, setUpdateData] = useState();
+    const [driverCredentials, setDriverCredentials] = useState();
 
     // set credentials and query delivery information once on page load...
     useEffect(() => {
+        let username = sessionStorage.getItem("username");
+        let powerunit = sessionStorage.getItem("powerunit");
+        let delivery_date = sessionStorage.getItem("delivery-date");
+        let activeCompany = sessionStorage.getItem("company");
+        if (!username || !delivery_date || !powerunit || !activeCompany) {
+            Logout();
+        }
+        /*Object.entries(user).forEach(([key,value]) => {
+            console.log(`key: ${key}, value: ${value}`);
+        });*/
+
         // fetch company name...
         //const company = isCompanyValid();
-        setCompany(isCompanyValid());
-        if (!company) {
+        //setCompany(isCompanyValid());
+        /*if (!company) {
             renderCompany();
         } else {
             setCompany(company);
-        }
-        // validate token...
-        const token = getToken();
-        if(!isTokenValid(token)){
-            logout();
-            navigate('/');
-            return;
-        }
-        // validate proper navigation...
-        if(!VALID) {
-            logout();
-            navigate('/');
-            return;
-        }
+        }*/
+        console.log(activeCompany);
+        setCompany(activeCompany);
 
         setDriverCredentials({
-            ...driverCredentials,
-            POWERUNIT: updateData["POWERUNIT"]
+            USERNAME: username,
+            POWERUNIT: powerunit
         });
 
-        getDeliveries(updateData["POWERUNIT"],updateData["MFSTDATE"]);
+        // const 'updateData' to be passed to next page...
+        setUpdateData({
+            MFSTDATE: delivery_date,
+            POWERUNIT: powerunit,
+        });
+
+        //getDeliveries(updateData["POWERUNIT"],updateData["MFSTDATE"]);
+        getDeliveries(powerunit, delivery_date);
         //setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     },[]);
 
     /* Page rendering helper functions... */
 
-    /*/////////////////////////////////////////////////////////////////
-    // retrieve company from database when not in memory...
-    [void] : renderCompany() {
-        fetch company name from database (if present)
-        if (company is valid):
-            setCompany(company)
-        else:
-            setCompany to placeholder
-    } 
-    *//////////////////////////////////////////////////////////////////
-
-    async function renderCompany() {
-        const company = getCompany_DB();
-        if(company) {
-            setCompany(company);
+    /*async function Logout() {
+        clearMemory();
+        const response = await fetch(`${API_URL}/api/Registration/Logout`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            },
+        })
+        if (response.ok) {
+            console.log("Logout Successful!");
+            setTimeout(() => {
+                window.location.href = `https://login.tcsservices.com`;
+            },1500)
         } else {
-            setCompany("{Your Company Here}");
+            console.alert("Cookie removal failed, Logout failure.")
         }
-    }
+    }*/
 
     /*/////////////////////////////////////////////////////////////////
     // initialize and manage collapsible header behavior...
@@ -192,15 +195,16 @@ const DriverPortal = () => {
     }
     *//////////////////////////////////////////////////////////////////
     
+    /* REDO THIS FUNCTION, IT SEEMS VERY INEFFICIENT */
     async function getDeliveries(powerunit,mfstdate){
         // request token from memory, refresh as needed...
-        const token = await requestAccess(driverCredentials.USERNAME);
+        /*const token = await requestAccess(driverCredentials.USERNAME);
         
         // handle invalid token on login...
         if (!token) {
             navigate('/');
             return;
-        }
+        }*/
 
         // initialize delivered + undelivered responses...
         let responseD = null;
@@ -212,29 +216,37 @@ const DriverPortal = () => {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json; charset=UTF-8',
-                    "Authorization": `Bearer ${token}`
+                    //"Authorization": `Bearer ${token}`
                 },
+                credentials: 'include'
             });
             responseU = await fetch(API_URL + "api/DriverChecklist/GetUndelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json; charset=UTF-8',
-                    "Authorization": `Bearer ${token}`
+                    //"Authorization": `Bearer ${token}`
                 },
+                credentials: 'include'
             });
 
             // parse delivery lists into JSON...
             const deliveredData = await responseD.json();
             const undeliveredData = await responseU.json();
 
+            if (!deliveredData.success || !undeliveredData.success) {
+                console.error("Delivery data access failed, ensure valid auth token.");
+                Logout();
+            }
+
             // set delivered + undelivered states...
             setDelivered(deliveredData.table);
             setUndelivered(undeliveredData.table);  
+            setLoading(false);
 
         // divert all errors to login page...
         } catch (error) {
-            console.log(error);
-            navigate('/');
+            console.error(error);
+            Logout();
         }
     }
 
@@ -273,8 +285,8 @@ const DriverPortal = () => {
                         company: company,
                         valid: true
                     };
-                    navigate(`delivery/${undelivered[i].PRONUMBER}`, {state: deliveryData})
-                    break
+                    navigate(`/deliveries/${undelivered[i].PRONUMBER}`, {state: deliveryData});
+                    break;
                 }
                 i = i + 1;
             }
@@ -290,8 +302,8 @@ const DriverPortal = () => {
                         company: company,
                         valid: true
                     };
-                    navigate(`delivery/${delivered[i].PRONUMBER}`, {state: deliveryData})
-                    break
+                    navigate(`/deliveries/${delivered[i].PRONUMBER}`, {state: deliveryData});
+                    break;
                 }
                 i = i + 1;
             }
@@ -316,7 +328,7 @@ const DriverPortal = () => {
         /*if(loading) {
             return (<tr><td align="center" colSpan="7">Loading Deliveries...</td></tr>)
         }*/
-        if (!undelivered.length && !delivered.length) {
+        if (!undelivered || !delivered) {
             return (<tr><td align="center" colSpan="7">Loading Deliveries...</td></tr>)
         }
         else {
@@ -374,60 +386,80 @@ const DriverPortal = () => {
 
     return(
         <div id="webpage">
-            <Header 
-                company={company}
-                title="Delivery Manifest"
-                header="Manifest"
-                alt="Select Delivery to Update"
-                currUser={currUser}
-                MFSTDATE={updateData.MFSTDATE} 
-                POWERUNIT={driverCredentials.POWERUNIT}
-                toggle={header}
-                onClick={collapseHeader}
-            />
-            <div className="table_div">
-                <table className="Delivery_Table" onClick={handleClick}>
-                    <thead>
-                        <tr className="title_row">
-                            <th className="title" colSpan="7">Undelivered</th>
-                        </tr>
-                        <tr>
-                            <th className="col1">Stop</th>
-                            <th className="col2">Pro No</th>
-                            <th className="col3">Consignee</th>
-                            <th className="col4">Address<span className="desktop_table"> 1</span></th>
-                            <th className="col5 desktop_table">Address 2</th>
-                            <th className="col6 desktop_table">City</th>
-                            <th className="col7 desktop_table">Shipper</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        { renderDeliveries("undelivered") }
-                    </tbody>
-                </table>
-            </div>
-            <div className="table_div">
-                <table className="Delivery_Table caboose" onClick={handleClick}>
-                    <thead>
-                        <tr className="title_row">
-                            <th className="title" colSpan="7">Delivered</th>
-                        </tr>
-                        <tr className="delivered_items">
-                            <th className="col1">Stop</th>
-                            <th className="col2">Pro No</th>
-                            <th className="col3">Consignee</th>
-                            <th className="col4">Address<span className="desktop_table"> 1</span></th>
-                            <th className="col5 desktop_table">Address 2</th>
-                            <th className="col6 desktop_table">City</th>
-                            <th className="col7 desktop_table">Shipper</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        { renderDeliveries("delivered") }
-                    </tbody>
-                </table>
-            </div>
-            <Footer id="scroll_footer" />
+            {loading ? (
+                <div className="loading-container">
+                    <p>Loading...</p>
+                </div>
+                ) : (
+                    <>
+                    <Header 
+                        company={company}
+                        title="Delivery Manifest"
+                        header="Manifest"
+                        alt="Select Delivery to Update"
+                        status=""
+                        currUser={driverCredentials.USERNAME}
+                        MFSTDATE={updateData.MFSTDATE} 
+                        POWERUNIT={driverCredentials.POWERUNIT}
+                        toggle={header}
+                        onClick={collapseHeader}
+                    />
+                    <div id="mdpu-subheader">
+                        <div className="mdpu-subheader-div">
+                            <h4>Manifest Date:</h4>
+                            <h4 className="weak">{translateDate(updateData.MFSTDATE)}</h4>
+                        </div>
+                        <div className="mdpu-subheader-div">
+                            <h4>Power Unit:</h4>
+                            <h4 className="weak">{driverCredentials.POWERUNIT}</h4>
+                        </div>
+                    </div>
+                    <div className="table_div">
+                        <table className="Delivery_Table" onClick={handleClick}>
+                            <thead>
+                                <tr className="title_row">
+                                    <th className="title" colSpan="7">Undelivered</th>
+                                </tr>
+                                <tr>
+                                    <th className="col1">Stop</th>
+                                    <th className="col2">Pro No</th>
+                                    <th className="col3">Consignee</th>
+                                    <th className="col4">Address<span className="desktop_table"> 1</span></th>
+                                    <th className="col5 desktop_table">Address 2</th>
+                                    <th className="col6 desktop_table">City</th>
+                                    <th className="col7 desktop_table">Shipper</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                { renderDeliveries("undelivered") }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="table_div">
+                        <table className="Delivery_Table caboose" onClick={handleClick}>
+                            <thead>
+                                <tr className="title_row">
+                                    <th className="title" colSpan="7">Delivered</th>
+                                </tr>
+                                <tr className="delivered_items">
+                                    <th className="col1">Stop</th>
+                                    <th className="col2">Pro No</th>
+                                    <th className="col3">Consignee</th>
+                                    <th className="col4">Address<span className="desktop_table"> 1</span></th>
+                                    <th className="col5 desktop_table">Address 2</th>
+                                    <th className="col6 desktop_table">City</th>
+                                    <th className="col7 desktop_table">Shipper</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                { renderDeliveries("delivered") }
+                            </tbody>
+                        </table>
+                    </div>
+                    <Footer id="scroll_footer" />
+                    </>
+                )
+            }
         </div>
     );
 }

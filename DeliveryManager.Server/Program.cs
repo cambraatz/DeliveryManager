@@ -1,5 +1,6 @@
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
+using DeliveryManager.Server.Services;
 
 // token initialization...
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,19 +12,35 @@ var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(5000);
+});
+/*if (!builder.Environment.IsDevelopment())
+{
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(5000);
+    });
+}*/
+
 // new modification to CORS package...
 builder.Services.AddCors(options => {
     options.AddPolicy(name: MyAllowSpecificOrigins,
         policy => {
-            policy.WithOrigins("http://www.tcsservices.com:40730", 
-                                "www.tcsservices.com:40730", 
-                                "tcsservices.com/40730",
-                                "http://www.deliverymanager.tcsservices.com:40730",
-                                "www.deliverymanager.tcsservices.com:40730",
-                                "deliverymanager.tcsservices.com:40730",
-                                "https://localhost:5173")
+            /*policy.WithOrigins("https://localhost:5173",
+                                "http://localhost:5113",
+                                "http://www.login.tcsservices.com",
+                                "http://www.login.tcsservices.com:40730",
+                                "https://www.deliverymanager.tcsservices.com",
+                                "https://deliverymanager.tcsservices.com")
                                 .AllowAnyHeader()
-                                .AllowAnyMethod();
+                                .AllowAnyMethod()
+                                .AllowCredentials();*/
+            policy.SetIsOriginAllowed(origin => new Uri(origin).Host.EndsWith("tcsservices.com"))
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
         });
 });
 
@@ -31,6 +48,7 @@ builder.Services.AddCors(options => {
 builder.Services.AddControllers();
 
 // token initialization...
+var jwtKey = Environment.GetEnvironmentVariable("Jwt__Key") ?? builder.Configuration["Jwt:Key"];
 builder.Services.AddAuthentication(options => 
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -47,7 +65,8 @@ builder.Services.AddAuthentication(options =>
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            //IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
@@ -79,7 +98,14 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-//app.UseAuthentication();
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    MinimumSameSitePolicy = SameSiteMode.None,
+    HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always,
+    Secure = CookieSecurePolicy.Always
+});
+
+app.UseAuthentication();
 
 // new modification to CORS package...
 //app.UseCors(MyAllowSpecificOrigins);
@@ -92,10 +118,11 @@ app.UseStaticFiles();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseHttpsRedirection();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-if (!app.Environment.IsDevelopment())
+else
 {
     app.UseHttpsRedirection();
 }

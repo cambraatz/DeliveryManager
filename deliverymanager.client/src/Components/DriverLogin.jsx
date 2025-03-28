@@ -9,20 +9,22 @@ Update Date: 1/7/2025
 import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import Header from './Header';
-import Popup from './Popup';
+//import Popup from './Popup';
 import Footer from './Footer';
 import { scrapeDate, 
     renderDate, 
     getDate, 
     API_URL,
-    getCompany_target,
+    //getCompany_target,
     cacheToken,
     requestAccess,
-    isCompanyValid, 
+    //isCompanyValid, 
     showFailFlag,
-    getCookie,
-    scrapeURL,
-    clearMemory} from '../Scripts/helperFunctions';
+    //getCookie,
+    //scrapeURL,
+    clearMemory,
+    COMPANIES} from '../Scripts/helperFunctions';
+import Logout from '../Scripts/Logout.jsx';
 
 /*/////////////////////////////////////////////////////////////////////
 
@@ -108,34 +110,46 @@ BASIC STRUCTURE:
 }*/
 
 const DriverLogin = () => {
+    //const API_URL = import.meta.env.VITE_API_URL;
+    //console.log("API URL:", API_URL);
+
     // Date processing functions ...
     const currDate = getDate();
     const navigate = useNavigate();
-
-    // check delivery validity onLoad and after message state change...
-    useEffect(() => {
-        let username;
-        let company;
-        [username,company] = scrapeURL();
-
-        if (username && company) {
-            console.log(`User: ${username}\nCompany: ${company} have been parsed from URL`)
-        } else {
-            clearMemory();
-            window.location.href = `http://www.login.tcsservices.com:40730/`;
-        }
-        setCurrCompany(company);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
 
     /* Site state & location processing functions... */
 
     // initialize company state to null, replace with company on file...
     const [currCompany, setCurrCompany] = useState("");
 
+    const [loading,setLoading] = useState(true);
+
+    // check delivery validity onLoad and after message state change...
+    useEffect(() => {
+        //let username;
+        //let company;
+        /*[username,company] = scrapeURL();
+
+        if (username && company) {
+            console.log(`User: ${username}\nCompany: ${company} have been parsed from URL`)
+            localStorage.setItem('company',company);
+        } else {
+            clearMemory();
+            Logout();
+            window.location.href = `https://www.login.tcsservices.com`;
+        }
+        setCurrCompany(company);*/
+
+        // LEFT OFF HERE!!!!!!!!!!!!!!!!!
+        // how to get the username on this end??
+        validateUser();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     // set popup render status...
-    const [message, setMessage] = useState(null);
+    //const [message, setMessage] = useState(null);
+    const [currUser,setCurrUser] = useState("Sign In");
 
     // state 'driverCredentials' to be passed to next page...
     const [driverCredentials, setDriverCredentials] = useState({
@@ -161,29 +175,6 @@ const DriverLogin = () => {
 
     /* Page rendering helper functions... */
 
-    // Function to get query parameters from the URL
-    function getQueryParameter(param) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(param);
-    }
-
-    async function queryData() {
-        if (localStorage.getItem('accessToken')) {
-            console.log('Access token (from memory):', localStorage.getItem('accessToken'));
-        } else {
-            console.log("no token in memory...");
-            // Extract the access token from the URL
-            const accessToken = getQueryParameter('access_token');
-
-            if (accessToken) {
-                console.log('Access token:', accessToken);
-                // Now you can use the access token for authentication
-            } else {
-                console.error('Access token not found!');
-            }
-        }
-    }
-
     /*/////////////////////////////////////////////////////////////////
     // retrieve company from database when not in memory...
     [void] : renderCompany() {
@@ -193,7 +184,6 @@ const DriverLogin = () => {
         else:
             setCompany to placeholder
     } 
-    *//////////////////////////////////////////////////////////////////
     
     async function renderCompany(company) {
         // getCompany() also caches company...
@@ -212,6 +202,7 @@ const DriverLogin = () => {
             //localStorage.removeItem('company');
         }
     }
+    *//////////////////////////////////////////////////////////////////
 
     /*/////////////////////////////////////////////////////////////////
     [void] : openPopup() {
@@ -220,11 +211,11 @@ const DriverLogin = () => {
     }
     *//////////////////////////////////////////////////////////////////
 
-    const openPopup = () => {
+    /*const openPopup = () => {
         document.getElementById("popupLoginWindow").style.visibility = "visible";
         document.getElementById("popupLoginWindow").style.opacity = 1;
         document.getElementById("popupLoginWindow").style.pointerEvents = "auto";  
-    };
+    };*/
 
     /*/////////////////////////////////////////////////////////////////
     [void] : closePopup() {
@@ -239,12 +230,33 @@ const DriverLogin = () => {
         document.getElementById("popupLoginWindow").style.pointerEvents = "none";
         
         // reset driver credentials to default...
+        // ********** HOW DOES THIS FIT WITH THE MODULE-ORIENTED APPROACH???
         setDriverCredentials({
             USERNAME: "",
             PASSWORD: "",
             POWERUNIT: ""
         });
+
+        Logout();
     };
+
+    /*async function Logout() {
+        clearMemory();
+        const response = await fetch(`${API_URL}/api/Registration/Logout`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            },
+        })
+        if (response.ok) {
+            console.log("Logout Successful!");
+            setTimeout(() => {
+                window.location.href = `https://www.login.tcsservices.com`;
+            },1500)
+        } else {
+            console.alert("Cookie removal failed, Logout failure.")
+        }
+    }*/
 
     /*/////////////////////////////////////////////////////////////////
     // initialize and manage collapsible header behavior...
@@ -269,46 +281,6 @@ const DriverLogin = () => {
     /* Dynamic form/state change functions... */
 
     /*/////////////////////////////////////////////////////////////////
-    // handle login form changes...
-    [void] : handleLoginChange(event) {
-        if (invalid log in is changed):
-            remove USER/PW error styling on change
-
-        if (e.target.id === "USERNAME"):
-            update driverCredentials with new username
-        if (e.target.id === "PASSWORD"):
-            update driverCredentials with new password
-    } 
-    *//////////////////////////////////////////////////////////////////
-
-    const handleLoginChange = (e) => {
-        // reset styling to default...
-        if(document.getElementById(e.target.id).classList.contains("invalid_input")){
-            document.getElementById("USERNAME").classList.remove("invalid_input");
-            document.getElementById("PASSWORD").classList.remove("invalid_input");
-        }
-
-        // handle username + password field changes...
-        let val = e.target.value;
-        switch(e.target.id) {
-            case 'USERNAME':
-                setDriverCredentials({
-                    ...driverCredentials,
-                    USERNAME: val
-                });
-                break;
-            case 'PASSWORD':
-                setDriverCredentials({
-                    ...driverCredentials,
-                    PASSWORD: val
-                });
-                break;
-            default:
-                break;
-        }
-    };
-
-    /*/////////////////////////////////////////////////////////////////
     // handle delivery query form changes...
     [void] : handleDeliveryChange(event) {
         if (e.target.id === "dlvddate"):
@@ -326,8 +298,8 @@ const DriverLogin = () => {
     const handleDeliveryChange = (e) => {
         // reset styling to default...
         if( document.getElementById(e.target.id).classList.contains("invalid_input")){
-            document.getElementById("USERNAME").classList.remove("invalid_input");
-            document.getElementById("PASSWORD").classList.remove("invalid_input");
+            document.getElementById("dlvdate").classList.remove("invalid_input");
+            document.getElementById("powerunit").classList.remove("invalid_input");
             document.getElementById("dlvdate").classList.add("input_form");
             document.getElementById("powerunit").classList.add("input_form");
         }
@@ -363,72 +335,7 @@ const DriverLogin = () => {
     /* API Calls and Functionality... */
 
     /*/////////////////////////////////////////////////////////////////
-    // handleClick on initial Login button...
-    [void] : handleSubmit(event) {
-        prevent default submit behavior
-        define input field alert status
-
-        if (user is invalid):
-            set user field to invalid_input styling
-        if (password is invalid):
-            set password field to invalid
-        if alert status is greater than 1:
-            set and render error flag/popup
-            return (dont submit)
-        
-        validateCredentials()
-    }
-    *//////////////////////////////////////////////////////////////////
-
-    const handleSubmit = (e) => {
-        // prevent default and reset popup window...
-        e.preventDefault();
-        setMessage(null);
-
-        // target username and password fields...
-        const user_field = document.getElementById("USERNAME");
-        const pass_field = document.getElementById("PASSWORD");
-        
-        // map empty field cases to messages...
-        let code = -1; // case -1...
-        let elementID;
-        const alerts = {
-            0: "Username is required!", // case 0...
-            1: "Password is required!", // case 1...
-            2: "Both fields are required!" // case 2...
-        }
-        // flag empty username...
-        if (user_field.value === "" || user_field.value == null){
-            user_field.classList.add("invalid_input");
-            code += 1;
-            elementID = "ff_login_un"
-        } 
-        // flag empty powerunit...
-        if (pass_field.value === "" || pass_field.value == null){
-            pass_field.classList.add("invalid_input");
-            code += 2;
-            elementID = "ff_login_pw"
-        }
-
-        // catch and alert user to incomplete fields...
-        if (code >= 0) {
-            // initialize flag contents...
-            const flag = document.getElementById(elementID);
-            flag.querySelector("p").innerHTML = alerts[code];
-
-            // make visible for 1.5 seconds and hide again...
-            flag.classList.add("visible");
-            setTimeout(() => {
-                flag.classList.remove("visible");
-            },1500)
-            //showFailFlag(elementID,alerts[code]);
-            return;
-        }
-        
-        validateCredentials(driverCredentials.USERNAME,driverCredentials.PASSWORD);
-    };
-
-    /*/////////////////////////////////////////////////////////////////
+    // inactive but required...
     // validate credentials, prompt for correction in fail or open popup in success...
     [void] : validateCredentials(username, password) {
         package snapshot of user credentials
@@ -448,7 +355,7 @@ const DriverLogin = () => {
             set username/password error styling
             return
     }
-    *//////////////////////////////////////////////////////////////////
+    
 
     async function validateCredentials(username, password){
         // package credentials and attempt login...
@@ -511,6 +418,77 @@ const DriverLogin = () => {
             //document.getElementById("PASSWORD").className = "invalid_input";
         }
     }
+    *//////////////////////////////////////////////////////////////////
+
+    async function validateUser(){
+        //setLoading(true);
+        // direct bypass to powerunit validation...
+        const response = await fetch(API_URL + "api/Registration/ValidateUser", {
+            //body: JSON.stringify(username),
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            },
+            credentials: 'include',
+        })
+
+        if (!response.ok) {Logout()}
+
+        const data = await response.json();
+        console.log(data);
+
+        if (data.success) {
+            // stash tokens in storage...
+            //cacheToken(data.accessToken,data.refreshToken)
+
+            // update state variables with latest powerunit...
+            setDriverCredentials({
+                ...driverCredentials,
+                USERNAME: data.user.Username,
+                POWERUNIT: data.user.Powerunit
+            });
+            setUpdateData({
+                ...updateData,
+                USERNAME: data.user.Username,
+                POWERUNIT: data.user.Powerunit
+            });
+            setFormData({
+                ...formData,
+                powerUnit: data.user.Powerunit
+            });
+
+            setCurrCompany(COMPANIES[data.user.ActiveCompany]);
+            setCurrUser(data.user.Username);
+
+            sessionStorage.setItem("company",COMPANIES[data.user.ActiveCompany]);
+            sessionStorage.setItem("username",data.user.Username);
+
+            //console.log(`currCompany: ${currCompany}`);
+            //console.log(`data.user.Username: ${data.user.Username}`);
+            //console.log(`currUser: ${currUser}`);
+
+            // reset popup window and open...
+            //setMessage(null);
+            //openPopup();
+            //alert("Dev Reminder: Use 02/16/2024 for Delivery Date")
+
+            // reset styling to default...
+            //document.getElementById("dlvdate").classList.remove("visible");
+            //document.getElementById("powerunit").classList.remove("visible");
+        }
+        else {
+            // trigger red borders for errors...
+            //document.getElementById("USERNAME").classList.add("invalid_input");
+            //document.getElementById("PASSWORD").classList.add("invalid_input");
+            //document.getElementById("dlvdate").classList.add("invalid_input");
+            //document.getElementById("powerunit").classList.add("invalid_input");
+            
+            Logout();
+            return;
+        }
+
+        setLoading(false);
+    }
 
     /*/////////////////////////////////////////////////////////////////
     // validate credentials, prompt for correction in fail or open popup in success...
@@ -534,7 +512,11 @@ const DriverLogin = () => {
     }
     *//////////////////////////////////////////////////////////////////
 
-    async function handleUpdate() {
+    async function handleUpdate(e) {
+        // prevent default and reset popup window...
+        e.preventDefault();
+        //setMessage(null);
+
         // target date and powerunit fields...
         const deliver_field = document.getElementById("dlvdate");
         const power_field = document.getElementById("powerunit");
@@ -568,13 +550,14 @@ const DriverLogin = () => {
         }
 
         // request token from memory, refresh as needed...
-        const token = await requestAccess(driverCredentials.USERNAME);
+        /*  REPLACE THIS WITH COOKIE BASED TOKENIZATION */
+        /*const token = await requestAccess(driverCredentials.USERNAME);
 
         // handle invalid token on login...
         if (!token) {
             closePopup();
             return;
-        }
+        }*/
         
         // update driver credentials state...
         setDriverCredentials({
@@ -593,9 +576,10 @@ const DriverLogin = () => {
             body: JSON.stringify(body_data),
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${token}`,
+                //"Authorization": `Bearer ${token}`,
                 'Content-Type': 'application/json; charset=UTF-8'
-            }
+            },
+            credentials: 'include',
         })
 
         const data = await response.json();
@@ -610,7 +594,11 @@ const DriverLogin = () => {
                 company: currCompany,
                 valid: true
             };
-            navigate(`/driverlog`, {state: deliveryData});
+
+            sessionStorage.setItem("powerunit",updateData.POWERUNIT);
+            sessionStorage.setItem("delivery-date",updateData.MFSTDATE);
+
+            navigate(`/deliveries`, {state: deliveryData});
         }
         else {
             //setMessage("Invalid Delivery Information");
@@ -619,357 +607,72 @@ const DriverLogin = () => {
         }
     }
 
-    /*/////////////////////////////////////////////////////////////////
-    // open new user initialization menu...
-    [void] : handleNewUser() {
-        reset input field styling
-        set user credentials to default
-        set popup to new user prompt and open
-    }
-    *//////////////////////////////////////////////////////////////////
-
-    async function handleNewUser() {
-        // reset input field error styling if triggered...
-        if(document.getElementById("USERNAME").classList.contains("invalid_input")) {
-            document.getElementById("USERNAME").classList.remove("invalid_input");
-        }
-        if(document.getElementById("PASSWORD").classList.contains("invalid_input")) {
-            document.getElementById("PASSWORD").classList.remove("invalid_input");
-        }
-
-        // nullify driver credentials...
-        const user_data = {
-            USERNAME: "",
-            PASSWORD: "",
-            POWERUNIT: ""
-        }
-        setDriverCredentials(user_data);
-
-        // set to new user popup and open...
-        setMessage("New User Signin");
-        openPopup();
-    }
-
-    /*/////////////////////////////////////////////////////////////////
-    // collect password + powerunit to initialize new driver credentials...
-    [void] : updateDriver() {
-        handle input field error styling
-        package driver credentials
-        update new user in DB to have valid credentials
-        verify and render success status
-    }
-    *//////////////////////////////////////////////////////////////////
-
-    async function updateDriver() {
-        // target password and powerunit fields...
-        const pass_field = document.getElementById("password");
-        const pow_field = document.getElementById("powerunit");
-
-        // map empty field cases to messages...
-        let code = -1; // case -1...
-        let elementID;
-        const alerts = {
-            0: "Password is required!", // case 0...
-            1: "Powerunit is required!", // case 1...
-            2: "Password and Powerunit are required!" // case 2...
-        }
-
-        // flag empty password and powerunit fields...
-        if(!(pass_field.value)) {
-            pass_field.classList.add("invalid_input");
-            elementID = "ff_admin_enu_pw";
-            code += 1;
-        }
-        if (!(pow_field.value)) {
-            pow_field.classList.add("invalid_input");
-            elementID = "ff_admin_enu_pu";
-            code += 2;
-        }
-
-         // catch and alert user to incomplete fields...
-        if (code >= 0) {
-            showFailFlag(elementID, alerts[code]);
-            return;
-        }
-
-        // package credentials and attempt updating records...
-        const body_data = {
-            USERNAME: driverCredentials.USERNAME,
-            PASSWORD: driverCredentials.PASSWORD,
-            POWERUNIT: driverCredentials.POWERUNIT // this is the field that may change...
-        }
-        const response = await fetch(API_URL + "api/Registration/InitializeDriver", {
-            body: JSON.stringify(body_data),
-            method: "PUT",
-            headers: {
-                'Content-Type': 'application/json; charset=UTF-8'
-            }
-        })
-        const data = await response.json();
-        //console.log(data);
-
-        // signal update status on screen...
-        if (data.success) {
-            setMessage("Update Success");
-            setTimeout(() => {
-                closePopup();
-            },1000)
-        } else {
-            setMessage("Fail");
-            setTimeout(() => {
-                closePopup();
-            },1000)
-        }        
-    }
-
-    /*/////////////////////////////////////////////////////////////////
-    // fetch driver and ensure null password for new driver init...
-    [void] : pullDriver() {
-        reset input field styling
-        fetch driver credentials using curr username
-
-        if (!success) {
-            set error styling + render error flag
-            return (do nothing)
-        }
-        else {
-            cache tokens from request
-            if (data.PASSWORD):
-                trigger error styling + render error flag
-            else:
-                set credentials to username and powerunit
-                prompt for first password
-        }
-    }
-    *//////////////////////////////////////////////////////////////////
-
-    async function pullDriver() {
-        // handle and signal empty username field...
-        if (driverCredentials.USERNAME == "") {
-            //document.getElementById("username").className = "invalid_input";
-            document.getElementById("username").classList.add("invalid_input");
-            showFailFlag("ff_login_nu", "Username is required!");
-            return;
-        }
-
-        // package credentials and admin status and attempt driver query...
-        const body_data = {
-            USERNAME: driverCredentials.USERNAME,
-            PASSWORD: null,
-            POWERUNIT: null,
-            admin: false
-        }
-        const response = await fetch(API_URL + "api/Registration/PullDriver", {
-            body: JSON.stringify(body_data),
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json; charset=UTF-8'
-            }
-        })
-        const data = await response.json()
-        //console.log(data);
-
-        // catch failed request and prevent behavior...
-        if (!data.success) {
-            //document.getElementById("username").className = "invalid_input";
-            document.getElementById("username").classList.add("invalid_input");
-            showFailFlag("ff_login_nu", "Username not found!");
-        }
-        else {
-            // stash tokens in storage...
-            cacheToken(data.accessToken,data.refreshToken)
-
-            // if password exists, fail out...
-            if (data.password){
-                document.getElementById("username").classList.add("invalid_input");
-                showFailFlag("ff_login_nu", "Username already exists!");
-            } else {
-                // initialize new user fields and open popup to collect password...
-                setDriverCredentials({
-                    USERNAME: data.username,
-                    PASSWORD: "",
-                    POWERUNIT: data.powerunit
-                })
-                setMessage("Edit New User");
-            }
-        }
-    }
-
-    /*/////////////////////////////////////////////////////////////////
-    // reset driver credentials on popup close...
-    [void] : cancelDriver() {
-        reset driver credentials to null
-        close pop up
-    }
-    *//////////////////////////////////////////////////////////////////
-
-    async function cancelDriver() {
-        // nullify credentials and close popup...
-        setDriverCredentials({
-            USERNAME: "",
-            PASSWORD: "",
-            POWERUNIT: ""
-        })
-        closePopup();
-    }
-
-    /*/////////////////////////////////////////////////////////////////
-    // reset driver credentials on popup close...
-    [void] : submitNewUser(e) {
-        if (target == "edit new user"):
-            initialize new driver credentials (updateDriver)
-        handle popup button (login functions)
-            set_password: fetch username + powerunit for new user
-            submit_user: update user table with newly set password
-            cancel_user: exit/close popup
-    }
-    *//////////////////////////////////////////////////////////////////
-
-    async function submitNewUser(e) {
-        e.preventDefault();
-
-        /* this may be inactive... 
-        if (e.target.id == "edit_new_user") {
-            updateDriver();
-            return;
-        } */
-
-        // handle new user menu button clicks...
-        switch(e.target.parentElement.id){
-            case "set_password":
-                pullDriver();
-                break;
-            case "submit_user":
-                updateDriver();
-                break;
-            case "cancel_user":
-                closePopup();
-                break;
-            default:
-                break;
-        }
-    }
-
-    /*/////////////////////////////////////////////////////////////////
-    // handle updates to new user credentials...
-    [void] : updateNewUser(e) {
-        clear error styling (if present)
-        handle change for new user credentials
-    }
-    *//////////////////////////////////////////////////////////////////
-
-    async function updateNewUser(e) {
-        //if (document.getElementById(e.target.id).className == "invalid_input"){
-        if (document.getElementById(e.target.id).classList.contains("invalid_input")){
-            //document.getElementById("username").className = "";
-            //document.getElementById("password").className = "";
-            //document.getElementById("powerunit").className = "";
-
-            // reset styling to default...
-            document.getElementById("username").classList.remove("invalid_input");
-
-            // skip password + powerunit when username specific...
-            if (document.getElementById("password")){
-                document.getElementById("password").classList.remove("invalid_input");
-            }
-            if (document.getElementById("powerunit")){
-                document.getElementById("powerunit").classList.remove("invalid_input");
-            }
-        }
-
-        // update credentials state on change...
-        let val = e.target.value;
-        switch(e.target.id){
-            case 'username':
-                setDriverCredentials({
-                    ...driverCredentials,
-                    USERNAME: val
-                });
-                break;
-            case 'password':
-                setDriverCredentials({
-                    ...driverCredentials,
-                    PASSWORD: val
-                });
-                break;
-            case 'powerunit':
-                setDriverCredentials({
-                    ...driverCredentials,
-                    POWERUNIT: val
-                });
-                break;
-            default:
-                break;
-        }
-    }
-
-    // package helper functions to organize popup functions...
-    const onPress_functions = {
-        "pullDriver": pullDriver,
-        "updateDriver": updateDriver,
-        "cancelDriver": cancelDriver
-    };
-
     // render template...
     return(
         <div id="webpage">
-            <Header 
-                company={currCompany}
-                title="Driver Login"
-                alt="Enter your login credentials"
-                status="Off"
-                currUser="Sign In"
-                MFSTDATE={null} 
-                POWERUNIT={null}
-                STOP = {null}
-                PRONUMBER = {null}
-                MFSTKEY = {null}
-                toggle={header}
-                onClick={collapseHeader}
-            />
-            <div id="Delivery_Login_Div">
-                <form id="loginForm" onSubmit={handleSubmit}>
-                    <div className="input_wrapper">
-                        <label htmlFor="USERNAME">Username:</label>
-                        <input type="text" id="USERNAME" value={driverCredentials.USERNAME} onChange={handleLoginChange}/>
-                        <div className="fail_flag" id="ff_login_un">
-                            <p>Username is required!</p>
-                        </div>
-                    </div>        
-                    <div className="input_wrapper">
-                        <label htmlFor="PASSWORD">Password:</label>
-                        <input type="password" id="PASSWORD" value={driverCredentials.PASSWORD} onChange={handleLoginChange}/>
-                        <div className="fail_flag" id="ff_login_pw">
-                            <p>Password is required!</p>
-                        </div>
-                    </div>
-                    <h4 id="new_user" onClick={handleNewUser}>New User Sign-in</h4>
-                    <button type="submit">Login</button>
-                </form>
-            </div>
-            <button onClick={queryData}>Test Memory</button>
-            <div id="popupLoginWindow" className="overlay">
-                <div className="popupLogin">
-                    <div id="popupLoginExit" className="content">
-                        <h1 id="close" className="popupLoginWindow" onClick={closePopup}>&times;</h1>
-                    </div>
-                    <Popup 
-                        message={message}
-                        date={formData.deliveryDate}
-                        powerunit={updateData.POWERUNIT}
-                        closePopup={closePopup}
-                        handleDeliveryChange={handleDeliveryChange}
-                        handleUpdate={handleUpdate}
-                        updateData={updateData}
-                        driverCredentials={driverCredentials}
-                        credentials={driverCredentials}
-                        pressButton={submitNewUser}
-                        updateNew={updateNewUser}
-                        onPressFunc={onPress_functions}
-                    />
+            {loading ? (
+                <div className="loading-container">
+                    <p>Loading...</p>
                 </div>
-            </div>
-            <Footer id="footer" />
+            ) : (
+                <>
+                <Header 
+                    company={currCompany}
+                    title="Delivery Validation"
+                    alt="Confirm Delivery Info"
+                    status="Full"
+                    currUser={currUser}
+                    MFSTDATE={null} 
+                    POWERUNIT={null}
+                    STOP = {null}
+                    PRONUMBER = {null}
+                    MFSTKEY = {null}
+                    toggle={header}
+                    onClick={collapseHeader}
+                />
+                <div id="Delivery_Login_Div">
+                    <form id="loginForm" onSubmit={handleUpdate}>
+                        <div className="input_wrapper">
+                            <label htmlFor="dlvdate">Delivery Date:</label>
+                            <input type="date" id="dlvdate" value={formData.deliveryDate} onChange={handleDeliveryChange}/>
+                            <div className="fail_flag" id="ff_login_un">
+                                <p>Date is required!</p>
+                            </div>
+                        </div>        
+                        <div className="input_wrapper">
+                            <label htmlFor="powerunit">Power Unit:</label>
+                            <input type="text" id="powerunit" value={updateData.POWERUNIT} onChange={handleDeliveryChange}/>
+                            <div className="fail_flag" id="ff_login_pw">
+                                <p>Power unit is required!</p>
+                            </div>
+                        </div>
+                        <button type="submit">Validate</button>
+                    </form>
+                </div>
+                {/*<div id="popupLoginWindow" className="overlay">
+                    <div className="popupLogin">
+                        <div id="popupLoginExit" className="content">
+                            <h1 id="close" className="popupLoginWindow" onClick={closePopup}>&times;</h1>
+                        </div>
+                        <Popup 
+                            message={message}
+                            date={formData.deliveryDate}
+                            powerunit={updateData.POWERUNIT}
+                            closePopup={closePopup}
+                            handleDeliveryChange={handleDeliveryChange}
+                            handleUpdate={handleUpdate}
+                            updateData={updateData}
+                            driverCredentials={driverCredentials}
+                            credentials={driverCredentials}
+                            pressButton={submitNewUser}
+                            updateNew={updateNewUser}
+                            onPressFunc={onPress_functions}
+                        />
+                    </div>
+                </div>*/}
+                <Footer id="footer" />
+                </>
+            )}
         </div>
     )
 };
