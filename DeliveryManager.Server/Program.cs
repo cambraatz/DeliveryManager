@@ -28,15 +28,6 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddCors(options => {
     options.AddPolicy(name: MyAllowSpecificOrigins,
         policy => {
-            /*policy.WithOrigins("https://localhost:5173",
-                                "http://localhost:5113",
-                                "http://www.login.tcsservices.com",
-                                "http://www.login.tcsservices.com:40730",
-                                "https://www.deliverymanager.tcsservices.com",
-                                "https://deliverymanager.tcsservices.com")
-                                .AllowAnyHeader()
-                                .AllowAnyMethod()
-                                .AllowCredentials();*/
             policy.SetIsOriginAllowed(origin => new Uri(origin).Host.EndsWith("tcsservices.com"))
                 .AllowAnyHeader()
                 .AllowAnyMethod()
@@ -86,17 +77,12 @@ builder.Services.AddScoped<TokenService>();
 
 var app = builder.Build();
 
-//builder.WebHost.UseUrls("http://*:80");
-
-// Enable CORS (not suggested during production)
-//app.UseCors(c => c.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
-app.UseRouting();
-app.UseCors(MyAllowSpecificOrigins);
-
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
+
+app.UseRouting();
 
 app.UseCookiePolicy(new CookiePolicyOptions
 {
@@ -106,11 +92,10 @@ app.UseCookiePolicy(new CookiePolicyOptions
 });
 
 app.UseAuthentication();
+app.UseAuthorization();
 
-// new modification to CORS package...
-//app.UseCors(MyAllowSpecificOrigins);
+app.UseCors(MyAllowSpecificOrigins);
 
-// End of updated attempts...
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -118,16 +103,14 @@ app.UseStaticFiles();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseHttpsRedirection();
+    //app.UseHttpsRedirection();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 else
 {
-    app.UseHttpsRedirection();
+    //app.UseHttpsRedirection();
 }
-
-app.UseAuthorization();
 
 app.MapControllers();
 

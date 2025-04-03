@@ -69,17 +69,9 @@ namespace DeliveryManager.Server.Controllers
         [Route("Logout")]
         public IActionResult Logout()
         {
-            /*CookieOptions options = new CookieOptions
-            {
-                Expires = DateTime.UtcNow.AddDays(-1),
-                HttpOnly = true,
-                Secure = true,
-                Domain = ".tcsservices.com",
-            };*/
-
             foreach (var cookie in Request.Cookies)
             {
-                Response.Cookies.Append(cookie.Key, cookie.Value, CookieService.removeOptions);
+                Response.Cookies.Append(cookie.Key, cookie.Value, CookieService.RemoveOptions());
             }
 
             return Ok(new { message = "Logged out successfully" });
@@ -90,18 +82,7 @@ namespace DeliveryManager.Server.Controllers
         public IActionResult Return()
         {
             CookieService.ExtendCookies(HttpContext, 15);
-
-            /*CookieOptions options = new CookieOptions
-            {
-                Expires = DateTime.UtcNow.AddMinutes(15),
-                HttpOnly = true,
-                Secure = true,
-                Domain = ".tcsservices.com",
-                SameSite = SameSiteMode.None,
-                Path = "/"
-            };*/
-
-            Response.Cookies.Append("return", "true", CookieService.accessOptions);
+            Response.Cookies.Append("return", "true", CookieService.AccessOptions());
 
             return Ok(new { message = "Returning, cookies extended by 15 minutes." });
         }
@@ -162,6 +143,8 @@ namespace DeliveryManager.Server.Controllers
             {
                 return new JsonResult(new { success = false, message = "Username was not found in cookies." });
             }
+
+            string 
 
             string query = "select * from dbo.USERS where USERNAME COLLATE SQL_Latin1_General_CP1_CS_AS = @USERNAME";
 

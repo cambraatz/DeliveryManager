@@ -93,7 +93,8 @@ const DeliveryForm = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false); // NOTE: THIS MIGHT NOT BE NEEDED, NO API CALLS MADE TO RENDER?
+    // MAYBE WRAP ALL API CALLS FOR IMAGES INSIDE HERE
 
     // flag invalid navigation with null location.state...
     const VALID = location.state ? location.state.valid : false;
@@ -271,14 +272,13 @@ const DeliveryForm = () => {
             }
         }
 
+        //setLoading(false);
         // hide undeliver button if not delivered...
         if(DELIVERY.STATUS != 1) {
             document.getElementById('undeliver').style.display = "none";
             document.getElementById('button_div').style.justifyContent = "space-around";
             document.getElementById('button_div').style.padding = "0 10%";
         }
-
-        setLoading(false);
     }
 
     /*/////////////////////////////////////////////////////////////////
@@ -731,7 +731,7 @@ const DeliveryForm = () => {
     }
     *//////////////////////////////////////////////////////////////////
 
-    const handleReturn = () => {
+    /*const handleReturn = () => {
         // package delivery/driver information
         const deliveryData = {
             delivery: updateData,
@@ -742,7 +742,7 @@ const DeliveryForm = () => {
         };
         document.getElementById('Return').style.display = "flex";
         navigate(`/deliveries`, { state: deliveryData });
-    };
+    };*/
 
     /*/////////////////////////////////////////////////////////////////
     // process signature, save to state, and render thumbnail...
@@ -838,14 +838,14 @@ const DeliveryForm = () => {
                     <form id="form_data" onSubmit={handleSubmit}>
                         <div id="datetime_Div">
                             <div className="cont_left input_wrapper">
-                                <label>Date:</label>
+                                <label>Delivery Date:</label>
                                 <input type="date" id="dlvdate" value={formData.deliveryDate} className="input_form" onChange={handleChange} required/>
                                 <div className="fail_flag" id="ff_admin_df_d">
                                     <p>Date is required!</p>
                                 </div>
                             </div>
                             <div className="cont_right">
-                                <label>Time:</label>
+                                <label>Delivery Time:</label>
                                 <input type="time" id="dlvtime" value={formData.deliveryTime} className="input_form" onChange={handleChange} required/>
                             </div>
                         </div>

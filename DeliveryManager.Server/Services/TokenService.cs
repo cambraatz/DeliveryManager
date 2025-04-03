@@ -200,23 +200,15 @@ namespace DeliveryManager.Server.Services
 
             if (accessToken != null && refreshToken != null)
             {
-                CookieOptions options = new CookieOptions
-                {
-                    Expires = DateTime.UtcNow.AddMinutes(15),
-                    HttpOnly = true,
-                    Secure = true,
-                    Domain = ".tcsservices.com",
-                    SameSite = SameSiteMode.None,
-                    Path = "/"
-                };
-
-                response.Cookies.Append("access_token", accessToken, options);
-
-                options.Expires = DateTime.UtcNow.AddDays(1);
-
-                response.Cookies.Append("refresh_token", refreshToken, options);
+                response.Cookies.Append("access_token", accessToken, CookieService.AccessOptions());
+                response.Cookies.Append("refresh_token", refreshToken, CookieService.RefreshOptions());
+                return (true, "Token has been validated, fresh tokens generated and cached in cookies.");
+            } 
+            else 
+            {
+                return (true, "Token has been validated, existing tokens remain in cache.");
             }
-            return (true, "Token has been validated, authorization granted.");
+            
         }
     }
 
