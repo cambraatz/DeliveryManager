@@ -16,13 +16,6 @@ builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(5000);
 });
-/*if (!builder.Environment.IsDevelopment())
-{
-    builder.WebHost.ConfigureKestrel(options =>
-    {
-        options.ListenAnyIP(5000);
-    });
-}*/
 
 // new modification to CORS package...
 builder.Services.AddCors(options => {
@@ -37,6 +30,7 @@ builder.Services.AddCors(options => {
 
 // Add services to the container.
 builder.Services.AddControllers();
+//builder.Services.AddScoped<TokenService>();
 
 // token initialization...
 var jwtKey = Environment.GetEnvironmentVariable("Jwt__Key") ?? builder.Configuration["Jwt:Key"];

@@ -249,6 +249,13 @@ thead {
     opacity: 1;
     pointer-events: auto;
 }
+
+#popupWindow {
+    transition: all 0.75s ease-in-out;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
  
 #popupEditWindow, 
 #popupAddWindow {
@@ -258,7 +265,7 @@ thead {
     transition: all 0.75s ease-in-out;
 }
 
-.popupLogin {
+.popupLogin, .popup {
     margin: 25% auto;
     padding: 5px 20px;
     background: #fff;
@@ -520,7 +527,7 @@ td, th {
 #SPM_Row {
     display: flex;
     justify-content: space-between;
-    margin: 0 20%;
+    margin: 1em 20% 0;
     padding: 0.5em 5%;
     border-top: solid 1px black;
     border-left: solid 1px black;
@@ -1084,7 +1091,7 @@ input[type="file"] {
     }
 
     #SPM_Row {
-        margin: 0 2%;
+        margin: 1em 2% 0;
     }
 
     #Return {
@@ -1273,7 +1280,7 @@ input[type="file"] {
         margin-right: 0.5em;
     }
     #SPM_Row {
-        margin: 0 4%;
+        margin: 1em 4% 0;
     }
     #Delivery_Input_Div {
         margin: 0 4% 5%;
@@ -1286,7 +1293,7 @@ input[type="file"] {
         width: 25%;
     }
     #widgetHeader {
-        margin: 2% 20% 0;
+        margin: 4% 20% 0;
     }
 
     #sigDiv canvas {
@@ -1362,7 +1369,7 @@ input[type="file"] {
     }
 
     #SPM_Row {
-        margin: 0 10%;
+        margin: 1em 10% 0;
     }
     #Delivery_Input_Div {
         margin: 0 10% 5%;

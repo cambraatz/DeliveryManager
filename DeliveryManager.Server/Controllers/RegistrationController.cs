@@ -81,10 +81,10 @@ namespace DeliveryManager.Server.Controllers
         [Route("Return")]
         public IActionResult Return()
         {
-            CookieService.ExtendCookies(HttpContext, 15);
+            CookieService.ExtendCookies(HttpContext);
             Response.Cookies.Append("return", "true", CookieService.AccessOptions());
 
-            return Ok(new { message = "Returning, cookies extended by 15 minutes." });
+            return Ok(new { message = "Returning, cookies extension completed successfully." });
         }
 
         [HttpPost]
@@ -143,8 +143,6 @@ namespace DeliveryManager.Server.Controllers
             {
                 return new JsonResult(new { success = false, message = "Username was not found in cookies." });
             }
-
-            string 
 
             string query = "select * from dbo.USERS where USERNAME COLLATE SQL_Latin1_General_CP1_CS_AS = @USERNAME";
 

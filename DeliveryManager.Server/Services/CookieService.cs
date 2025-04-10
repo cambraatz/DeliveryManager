@@ -40,25 +40,21 @@ namespace DeliveryManager.Server.Services
                 Path = "/"
             };
         }
-        public static void ExtendCookies(HttpContext context, int extensionMinutes)
+        public static void ExtendCookies(HttpContext context)
         {
             var response = context.Response;
             var request = context.Request;
 
             foreach (var cookie in request.Cookies)
             {
-                response.Cookies.Append(
-                    cookie.Key,
-                    cookie.Value,
-                    new CookieOptions
-                    {
-                        Expires = DateTime.UtcNow.AddMinutes(extensionMinutes),
-                        HttpOnly = true,  // Keeps it secure from JavaScript access
-                        Secure = true,    // Ensures cookies are only sent over HTTPS
-                        SameSite = SameSiteMode.None, // Allows access across subdomains
-                        Domain = ".tcsservices.com"
-                    }
-                );
+                if (cookie.Key == "refresh_token")
+                {
+                    response.Cookies.Append(cookie.Key, cookie.Value, RefreshOptions());
+                } 
+                else
+                {
+                    response.Cookies.Append(cookie.Key, cookie.Value, AccessOptions());
+                }
             }
         }
     }

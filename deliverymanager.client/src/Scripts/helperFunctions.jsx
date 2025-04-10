@@ -262,11 +262,8 @@ export const clearMemory = () => {
     //sessionStorage.removeItem('refreshToken');
 };
 
-export const COMPANIES = {
-    BRAUNS: "Brauns Express Inc.",
-    NTS: "Normandin Trucking LLC.",
-    TCS: "Transportation Computer Support"
-}
+export const FAIL_WAIT = 1000;
+export const SUCCESS_WAIT = 1500;
 
 //export const API_URL = "http://www.tcsservices.com:40730/"
 //export const API_URL = "http://www.deliverymanager.tcsservices.com:40730/"

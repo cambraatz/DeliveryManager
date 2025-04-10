@@ -16,15 +16,19 @@ import { scrapeDate,
     getDate, 
     API_URL,
     //getCompany_target,
-    cacheToken,
-    requestAccess,
+    //cacheToken,
+    //requestAccess,
     //isCompanyValid, 
     showFailFlag,
     //getCookie,
     //scrapeURL,
-    clearMemory,
-    COMPANIES} from '../Scripts/helperFunctions';
+    //clearMemory
+    FAIL_WAIT,
+    SUCCESS_WAIT} from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
+
+import Success from '../assets/success.svg';
+import Fail from '../assets/error.svg';
 
 /*/////////////////////////////////////////////////////////////////////
 
@@ -120,36 +124,19 @@ const DriverLogin = () => {
     /* Site state & location processing functions... */
 
     // initialize company state to null, replace with company on file...
-    const [currCompany, setCurrCompany] = useState("");
+    const [company, setCompany] = useState("");
 
     const [loading,setLoading] = useState(true);
 
     // check delivery validity onLoad and after message state change...
     useEffect(() => {
-        //let username;
-        //let company;
-        /*[username,company] = scrapeURL();
-
-        if (username && company) {
-            console.log(`User: ${username}\nCompany: ${company} have been parsed from URL`)
-            localStorage.setItem('company',company);
-        } else {
-            clearMemory();
-            Logout();
-            window.location.href = `https://www.login.tcsservices.com`;
-        }
-        setCurrCompany(company);*/
-
-        // LEFT OFF HERE!!!!!!!!!!!!!!!!!
-        // how to get the username on this end??
         validateUser();
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     // set popup render status...
     //const [message, setMessage] = useState(null);
-    const [currUser,setCurrUser] = useState("Sign In");
+    const [user,setUser] = useState("Sign In");
 
     // state 'driverCredentials' to be passed to next page...
     const [driverCredentials, setDriverCredentials] = useState({
@@ -173,36 +160,12 @@ const DriverLogin = () => {
     // state 'header' to maintain collapsible header...
     const [header,setHeader] = useState("open");
 
+    // state for success/fail popups graphics...
+    const [popup,setPopup] = useState("Success");
+
+    //const [companies,setCompanies] = useState({});
+
     /* Page rendering helper functions... */
-
-    /*/////////////////////////////////////////////////////////////////
-    // retrieve company from database when not in memory...
-    [void] : renderCompany() {
-        fetch company name from database (if present)
-        if (company is valid):
-            setCompany(company)
-        else:
-            setCompany to placeholder
-    } 
-    
-    async function renderCompany(company) {
-        // getCompany() also caches company...
-        //const company = await getCompany_DB();
-        //const company = await getCompany_target("BRAUNS");
-        //const company = localStorage.getItem('company');
-
-        // set company state to value or placeholder... 
-        if(company) {
-            console.log(`renderCompany retrieved ${company}...`);
-            //localStorage.setItem('company', company);
-            setCurrCompany(company);
-        } else {
-            console.log(`renderCompany could not find company...`);
-            setCurrCompany("No Company Set");
-            //localStorage.removeItem('company');
-        }
-    }
-    *//////////////////////////////////////////////////////////////////
 
     /*/////////////////////////////////////////////////////////////////
     [void] : openPopup() {
@@ -211,11 +174,11 @@ const DriverLogin = () => {
     }
     *//////////////////////////////////////////////////////////////////
 
-    /*const openPopup = () => {
-        document.getElementById("popupLoginWindow").style.visibility = "visible";
-        document.getElementById("popupLoginWindow").style.opacity = 1;
-        document.getElementById("popupLoginWindow").style.pointerEvents = "auto";  
-    };*/
+    const openPopup = () => {
+        document.getElementById("popupWindow").style.visibility = "visible";
+        document.getElementById("popupWindow").style.opacity = 1;
+        document.getElementById("popupWindow").style.pointerEvents = "auto";  
+    };
 
     /*/////////////////////////////////////////////////////////////////
     [void] : closePopup() {
@@ -225,38 +188,12 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     const closePopup = () => {
-        document.getElementById("popupLoginWindow").style.visibility = "hidden";
-        document.getElementById("popupLoginWindow").style.opacity = 0;
-        document.getElementById("popupLoginWindow").style.pointerEvents = "none";
-        
-        // reset driver credentials to default...
-        // ********** HOW DOES THIS FIT WITH THE MODULE-ORIENTED APPROACH???
-        setDriverCredentials({
-            USERNAME: "",
-            PASSWORD: "",
-            POWERUNIT: ""
-        });
-
+        document.getElementById("popupWindow").style.visibility = "hidden";
+        document.getElementById("popupWindow").style.opacity = 0;
+        document.getElementById("popupWindow").style.pointerEvents = "none";
+    
         Logout();
     };
-
-    /*async function Logout() {
-        clearMemory();
-        const response = await fetch(`${API_URL}/api/Registration/Logout`, {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json; charset=UTF-8'
-            },
-        })
-        if (response.ok) {
-            console.log("Logout Successful!");
-            setTimeout(() => {
-                window.location.href = `https://www.login.tcsservices.com`;
-            },1500)
-        } else {
-            console.alert("Cookie removal failed, Logout failure.")
-        }
-    }*/
 
     /*/////////////////////////////////////////////////////////////////
     // initialize and manage collapsible header behavior...
@@ -335,96 +272,18 @@ const DriverLogin = () => {
     /* API Calls and Functionality... */
 
     /*/////////////////////////////////////////////////////////////////
-    // inactive but required...
+
     // validate credentials, prompt for correction in fail or open popup in success...
     [void] : validateCredentials(username, password) {
-        package snapshot of user credentials
-        post user data to database for validation
-        parse response to JSON
-
-        if (data.success):
-            cache tokens from preliminary API request
-            if (task = "driver"):
-                set POWERUNIT in states
-                reset and open input popup
-                reset input field styling
-            else if (task = "admin"):
-                package admin rendering data
-                navigate to /admin
-        else:
-            set username/password error styling
-            return
+        i.p.
     }
-    
 
-    async function validateCredentials(username, password){
-        // package credentials and attempt login...
-        const user_data = {
-            USERNAME: username,
-            PASSWORD: password,
-            POWERUNIT: null
-        }
-        const response = await fetch(API_URL + "api/Registration/Login", {
-            body: JSON.stringify(user_data),
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json; charset=UTF-8'
-            }
-        })
-        const data = await response.json();
-        //console.log(data);
-
-        if (data.success) {
-            // stash tokens in storage...
-            cacheToken(data.accessToken,data.refreshToken)
-
-            if (data.task === "driver") {
-                // update state variables with latest powerunit...
-                setDriverCredentials({
-                    ...driverCredentials,
-                    POWERUNIT: data.powerunit
-                });
-                setUpdateData({
-                    ...updateData,
-                    POWERUNIT: data.powerunit
-                });
-
-                // reset popup window and open...
-                setMessage(null);
-                openPopup();
-                //alert("Dev Reminder: Use 02/16/2024 for Delivery Date")
-
-                // reset styling to default...
-                document.getElementById("USERNAME").classList.remove("visible");
-                document.getElementById("PASSWORD").classList.remove("visible");
-                //document.getElementById("USERNAME").className = "";
-                //document.getElementById("PASSWORD").className = "";
-            }
-            else if (data.task === "admin") {
-                // package admin data and nav to admin page...
-                const adminData = {
-                    header: header,
-                    company: currCompany,
-                    valid: true
-                };
-                navigate('/admin', {state: adminData});
-            }
-        }
-        else {
-            // trigger red borders for errors...
-            document.getElementById("USERNAME").classList.add("invalid_input");
-            document.getElementById("PASSWORD").classList.add("invalid_input");
-            //document.getElementById("USERNAME").className = "invalid_input";
-            //document.getElementById("PASSWORD").className = "invalid_input";
-        }
-    }
     *//////////////////////////////////////////////////////////////////
 
     async function validateUser(){
-        //setLoading(true);
+        setLoading(true);
         // direct bypass to powerunit validation...
-        const response = await fetch(API_URL + "api/Registration/ValidateUser", {
-            //body: JSON.stringify(username),
+        const response = await fetch(API_URL + "api/Delivery/ValidateUser", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json; charset=UTF-8'
@@ -438,8 +297,16 @@ const DriverLogin = () => {
         console.log(data);
 
         if (data.success) {
-            // stash tokens in storage...
-            //cacheToken(data.accessToken,data.refreshToken)
+            sessionStorage.setItem("companies_map", data.mapping);
+            const company_map = JSON.parse(data.mapping);
+            //console.log("companies_map: ", company_map);
+
+            setCompany(company_map[data.user.ActiveCompany]);
+            sessionStorage.setItem("company", company_map[data.user.ActiveCompany]);
+            //console.log("company: ", company_map[data.user.ActiveCompany]);
+
+            setUser(data.user.Username);
+            sessionStorage.setItem("username",data.user.Username);
 
             // update state variables with latest powerunit...
             setDriverCredentials({
@@ -456,35 +323,17 @@ const DriverLogin = () => {
                 ...formData,
                 powerUnit: data.user.Powerunit
             });
-
-            setCurrCompany(COMPANIES[data.user.ActiveCompany]);
-            setCurrUser(data.user.Username);
-
-            sessionStorage.setItem("company",COMPANIES[data.user.ActiveCompany]);
-            sessionStorage.setItem("username",data.user.Username);
-
-            //console.log(`currCompany: ${currCompany}`);
-            //console.log(`data.user.Username: ${data.user.Username}`);
-            //console.log(`currUser: ${currUser}`);
-
-            // reset popup window and open...
-            //setMessage(null);
-            //openPopup();
-            //alert("Dev Reminder: Use 02/16/2024 for Delivery Date")
-
-            // reset styling to default...
-            //document.getElementById("dlvdate").classList.remove("visible");
-            //document.getElementById("powerunit").classList.remove("visible");
         }
         else {
-            // trigger red borders for errors...
-            //document.getElementById("USERNAME").classList.add("invalid_input");
-            //document.getElementById("PASSWORD").classList.add("invalid_input");
-            //document.getElementById("dlvdate").classList.add("invalid_input");
-            //document.getElementById("powerunit").classList.add("invalid_input");
-            
-            Logout();
-            return;
+            // set fail popup and open...
+            setPopup("Fail");
+            openPopup();
+
+            // set delay before logging out...
+            setTimeout(() => {
+                Logout();
+                return;
+            }, FAIL_WAIT);
         }
 
         setLoading(false);
@@ -591,7 +440,7 @@ const DriverLogin = () => {
                 delivery: updateData,
                 driver: driverCredentials,
                 header: header,
-                company: currCompany,
+                company: company,
                 valid: true
             };
 
@@ -607,6 +456,29 @@ const DriverLogin = () => {
         }
     }
 
+    const renderPopup = () => {
+        if(popup === "Success"){
+            return(
+                <>
+                    <div className="popupLoginContent">
+                        <img id="success" src={Success} alt="success"/>
+                        <p>Logged out success!</p>
+                    </div>
+                </>
+            )
+        }
+        else if(popup === "Fail"){
+            return(
+                <>
+                    <div className="popupLoginContent">
+                        <img id="fail" src={Fail} alt="fail"/>
+                        <p>Oops! Something went wrong, logging out.</p>
+                    </div>
+                </>
+            )
+        }
+    }
+
     // render template...
     return(
         <div id="webpage">
@@ -617,11 +489,11 @@ const DriverLogin = () => {
             ) : (
                 <>
                 <Header 
-                    company={currCompany}
+                    company={company}
                     title="Delivery Validation"
                     alt="Confirm Delivery Info"
                     status="Full"
-                    currUser={currUser}
+                    currUser={user}
                     MFSTDATE={null} 
                     POWERUNIT={null}
                     STOP = {null}
@@ -649,6 +521,15 @@ const DriverLogin = () => {
                         <button type="submit">Validate</button>
                     </form>
                 </div>
+                <div id="popupWindow" className="overlay">
+                    <div className="popup">
+                        <div id="popupExit" className="content">
+                            <h1 id="close" className="popupWindow" onClick={closePopup}>&times;</h1>
+                        </div>
+                        {renderPopup()}
+                    </div>
+                </div>
+
                 {/*<div id="popupLoginWindow" className="overlay">
                     <div className="popupLogin">
                         <div id="popupLoginExit" className="content">

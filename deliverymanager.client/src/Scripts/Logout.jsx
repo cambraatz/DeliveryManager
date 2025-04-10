@@ -10,10 +10,8 @@ export default async function Logout() {
         },
     })
     if (response.ok) {
-        console.log("Logout Successful!");
-        setTimeout(() => {
-            window.location.href = `https://login.tcsservices.com`;
-        },1500)
+        //console.log("Logout Successful!");
+        window.location.href = `https://login.tcsservices.com`;
     } else {
         console.alert("Cookie removal failed, Logout failure.")
     }
