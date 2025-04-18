@@ -28,6 +28,7 @@ import { scrapeDate,
     requestAccess, /*, scrapeFile*/
     showFailFlag } from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
+import LoadingSpinner from './LoadingSpinner.jsx';
 
 //////////////////////////////////////////////////////////////////////////////////////
 /* 
@@ -167,8 +168,8 @@ const DeliveryForm = () => {
         TTLPCS: DELIVERY ? DELIVERY.TTLPCS : null,
         TTLYDS: DELIVERY ? DELIVERY.TTLYDS : null,
         TTLWGT: DELIVERY ? DELIVERY.TTLWGT : null,
-        DLVDDATE: DELIVERY ? DELIVERY.DLVDDATE : scrapeDate(currDate),
-        DLVDTIME: DELIVERY ? DELIVERY.DLVDTIME : scrapeTime(currTime),
+        DLVDDATE: DELIVERY && DELIVERY.DLVDDATE != null ? DELIVERY.DLVDDATE : scrapeDate(currDate),
+        DLVDTIME: DELIVERY && DELIVERY.DLVDTIME != null ? DELIVERY.DLVDTIME : scrapeTime(currTime),
         DLVDPCS: delivery_pieces,
         DLVDSIGN: DELIVERY ? DELIVERY.DLVDSIGN : null,
         DLVDNOTE: DELIVERY ? DELIVERY.DLVDNOTE : null,
@@ -181,7 +182,6 @@ const DeliveryForm = () => {
         deliveryDate: delivery_date,
         deliveryTime: delivery_time,
         deliveredPieces: delivery.DLVDPCS == null ? delivery.TTLPCS : delivery.DLVDPCS,
-
         deliveryConsignee: delivery.CONSNAME,
         deliveryNotes: delivery.DLVDNOTE == null ? "" : delivery.DLVDNOTE,   
         deliveryImagePath: delivery.DLVDIMGFILELOCN,
@@ -430,6 +430,10 @@ const DeliveryForm = () => {
                 credentials: 'include'
             });
 
+            if (response.status === 401 || response.status == 403) {
+                Logout();
+            }
+
             if(!response.ok) { throw new Error('Failed to fetch image...'); }
 
             // convert image response to blob + blob to URL...
@@ -437,7 +441,8 @@ const DeliveryForm = () => {
             return URL.createObjectURL(blob);
         } catch (error) {
             console.error('Error retrieving image:', error);
-            return null;
+            Logout();
+            return;
         }
     }
 
@@ -526,6 +531,10 @@ const DeliveryForm = () => {
             },
             credentials: 'include'
         })
+
+        if (response.status === 401 || response.status == 403) {
+            Logout();
+        }
 
         const data = await response.json();
 
@@ -663,6 +672,10 @@ const DeliveryForm = () => {
             },
             credentials: 'include'
         })
+
+        if (response.status === 401 || response.status == 403) {
+            Logout();
+        }
 
         const data = await response.json();
 
@@ -815,7 +828,7 @@ const DeliveryForm = () => {
     return (
         <div id="webpage">
             {loading ? (
-                <h2>Loading...</h2>
+                <LoadingSpinner />
             ) : (
                 <>
                 <Header

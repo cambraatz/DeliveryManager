@@ -126,22 +126,17 @@ namespace DeliveryManager.Server.Controllers
         [Route("ValidateUser")]
         public async Task<JsonResult> ValidateUser()
         {
-            //var accessToken = Request.Cookies["access_token"];
-            //var refreshToken = Request.Cookies["refresh_token"];
-            //var username = Request.Cookies["username"];
-            //var company = Request.Cookies["company"];
-
             var tokenService = new TokenService(_configuration);
             (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message });
+                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var username = Request.Cookies["username"];
             if (username == null)
             {
-                return new JsonResult(new { success = false, message = "Username was not found in cookies." });
+                return new JsonResult(new { success = false, message = "Username was not found in cookies." }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             string query = "select * from dbo.USERS where USERNAME COLLATE SQL_Latin1_General_CP1_CS_AS = @USERNAME";
@@ -149,36 +144,44 @@ namespace DeliveryManager.Server.Controllers
             DataTable table = new DataTable();
             string sqlDatasource = connString;
             SqlDataReader myReader;
-            await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
-            {
-                myCon.Open();
-                using (SqlCommand myCommand = new SqlCommand(query, myCon))
-                {
-                    myCommand.Parameters.AddWithValue("@USERNAME", username);
 
-                    myReader = myCommand.ExecuteReader();
-                    table.Load(myReader);
-                    myReader.Close();
-                    myCon.Close();
+            try
+            {
+                await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
+                {
+                    myCon.Open();
+                    using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                    {
+                        myCommand.Parameters.AddWithValue("@USERNAME", username);
+
+                        myReader = myCommand.ExecuteReader();
+                        table.Load(myReader);
+                        myReader.Close();
+                        myCon.Close();
+                    }
+                }
+                if (table.Rows.Count > 0)
+                {
+                    User user = new User
+                    {
+                        Username = username,
+                        Permissions = table.Rows[0]["PERMISSIONS"] != DBNull.Value ? table.Rows[0]["PERMISSIONS"].ToString() : null,
+                        Powerunit = table.Rows[0]["POWERUNIT"].ToString(),
+                        ActiveCompany = table.Rows[0]["COMPANYKEY01"].ToString(),
+                        Companies = new List<string>(),
+                        Modules = new List<string>()
+                    };
+
+                    return new JsonResult(new { success = true, user = user });
+                }
+                else
+                {
+                    return new JsonResult(new { success = false, message = "Invalid Credentials" });
                 }
             }
-            if (table.Rows.Count > 0)
+            catch (Exception ex) 
             {
-                User user = new User
-                { 
-                    Username = username,
-                    Permissions = table.Rows[0]["PERMISSIONS"] != DBNull.Value ? table.Rows[0]["PERMISSIONS"].ToString() : null,
-                    Powerunit = table.Rows[0]["POWERUNIT"].ToString(),
-                    ActiveCompany = table.Rows[0]["COMPANYKEY01"].ToString(),
-                    Companies = new List<string>(),
-                    Modules = new List<string>()
-                };
-
-                return new JsonResult(new { success = true, user = user });
-            }
-            else
-            {
-                return new JsonResult(new { success = false, message = "Invalid Credentials" });
+                return new JsonResult(new { success = false, message = "Querying for valid delivery failed:" + ex });
             }
         }
 
@@ -200,7 +203,7 @@ namespace DeliveryManager.Server.Controllers
             (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message });
+                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             string updatequery = "update dbo.USERS set POWERUNIT=@POWERUNIT where USERNAME=@USERNAME";
@@ -237,7 +240,7 @@ namespace DeliveryManager.Server.Controllers
             var company = Request.Cookies["company"];
             if (string.IsNullOrEmpty(company))
             {
-                return new JsonResult(new { success = false, message = "Company key is missing." });
+                return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             sqlDatasource = _configuration.GetConnectionString(company);

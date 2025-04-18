@@ -63,8 +63,8 @@ namespace DeliveryManager.Server.Controllers
             if (!tokenAuth.success)
             {
                 UnauthorizedAccessException exception = new UnauthorizedAccessException($"Token authorization failed, {tokenAuth.message}; {logData()}");
-                _logger.LogError(exception, exception.Message);
-                return new JsonResult(new { success = false, message = exception.Message });
+                //_logger.LogError(exception, exception.Message);
+                return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var username = Request.Cookies["username"];
@@ -72,16 +72,15 @@ namespace DeliveryManager.Server.Controllers
             {
                 ArgumentNullException exception = new ArgumentNullException($"Failed to find 'username' from cookies; {logData()}");
                 _logger.LogError(exception, exception.Message);
-                return new JsonResult(new { success = false, message = exception.Message });
+                return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var company_mapping = Request.Cookies["company_mapping"];
-            //var module_mapping = Request.Cookies["module_mapping"];
             if (company_mapping == null) 
             {
                 ArgumentNullException exception = new ArgumentNullException($"Failed to find 'company_mapping' from cookies; {logData()}");
                 _logger.LogError(exception, exception.Message);
-                return new JsonResult(new { success = false, message = exception.Message });
+                return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
             };
 
             string query = "select * from dbo.USERS where USERNAME COLLATE SQL_Latin1_General_CP1_CS_AS = @USERNAME";
@@ -148,7 +147,7 @@ namespace DeliveryManager.Server.Controllers
             (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message });
+                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             string updatequery = "update dbo.USERS set POWERUNIT=@POWERUNIT where USERNAME=@USERNAME";
@@ -184,7 +183,7 @@ namespace DeliveryManager.Server.Controllers
             var company = Request.Cookies["company"];
             if (string.IsNullOrEmpty(company))
             {
-                return new JsonResult(new { success = false, message = "Company key is missing." });
+                return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             sqlDatasource = _configuration.GetConnectionString(company);
@@ -242,13 +241,13 @@ namespace DeliveryManager.Server.Controllers
             (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message });
+                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var company = Request.Cookies["company"];
             if (string.IsNullOrEmpty(company))
             {
-                return new JsonResult(new { success = false, message = "Company key is missing." });
+                return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             string undeliveredQuery = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=0 order by STOP";
@@ -328,14 +327,14 @@ namespace DeliveryManager.Server.Controllers
                 UnauthorizedAccessException exception = new UnauthorizedAccessException($"Token authorization failed (UpdateManifest(), DeliveryManagerController.cs); Verbose: {tokenAuth.message}");
                 _logger.LogError(exception,exception.Message);
 
-                return new JsonResult(new { success = false, message = exception.Message });
+                return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var company = Request.Cookies["company"];
             if (string.IsNullOrEmpty(company))
             {
                 ArgumentNullException exception = new ArgumentNullException("Failed to find 'company' from cookies (UpdateManifest(), DeliveryManagerController.cs)");
-                return new JsonResult(new { success = false, message = "Company key is missing." });
+                return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             try
@@ -370,7 +369,7 @@ namespace DeliveryManager.Server.Controllers
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error saving file: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Error saving delivery image file: {ex.Message}");
                     }
                 }
                 // omit saving, point back to image already on file...
@@ -396,7 +395,7 @@ namespace DeliveryManager.Server.Controllers
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error saving file: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Error saving delivery signature file: {ex.Message}");
                     }
                 }
                 // omit saving, point back to image already on file...
@@ -475,13 +474,13 @@ namespace DeliveryManager.Server.Controllers
             (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message });
+                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var company = Request.Cookies["company"];
             if (string.IsNullOrEmpty(company))
             {
-                return new JsonResult(new { success = false, message = "Company key is missing." });
+                return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=0 order by STOP";
@@ -526,13 +525,13 @@ namespace DeliveryManager.Server.Controllers
             (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message });
+                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var company = Request.Cookies["company"];
             if (string.IsNullOrEmpty(company))
             {
-                return new JsonResult(new { success = false, message = "Company key is missing." });
+                return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=1 order by STOP";

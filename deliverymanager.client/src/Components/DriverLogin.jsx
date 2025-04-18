@@ -26,6 +26,7 @@ import { scrapeDate,
     FAIL_WAIT,
     SUCCESS_WAIT} from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
+import LoadingSpinner from './LoadingSpinner.jsx';
 
 import Success from '../assets/success.svg';
 import Fail from '../assets/error.svg';
@@ -291,7 +292,9 @@ const DriverLogin = () => {
             credentials: 'include',
         })
 
-        if (!response.ok) {Logout()}
+        if (!response.ok || response.status === 401 || response.status === 403) { 
+            Logout(); 
+        }
 
         const data = await response.json();
         console.log(data);
@@ -431,6 +434,10 @@ const DriverLogin = () => {
             credentials: 'include',
         })
 
+        if (response.status === 401 || response.status === 403) { 
+            Logout(); 
+        }
+
         const data = await response.json();
 
         // set message state according to validity of delivery information...
@@ -483,9 +490,7 @@ const DriverLogin = () => {
     return(
         <div id="webpage">
             {loading ? (
-                <div className="loading-container">
-                    <p>Loading...</p>
-                </div>
+                <LoadingSpinner />
             ) : (
                 <>
                 <Header 
@@ -518,7 +523,7 @@ const DriverLogin = () => {
                                 <p>Power unit is required!</p>
                             </div>
                         </div>
-                        <button type="submit">Validate</button>
+                        <button type="submit">Continue</button>
                     </form>
                 </div>
                 <div id="popupWindow" className="overlay">

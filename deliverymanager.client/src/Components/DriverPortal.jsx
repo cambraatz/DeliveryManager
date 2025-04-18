@@ -21,6 +21,7 @@ import { API_URL,
     clearMemory,
     COMPANIES } from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
+import LoadingSpinner from './LoadingSpinner.jsx';
 
 /*/////////////////////////////////////////////////////////////////////
 
@@ -108,18 +109,7 @@ const DriverPortal = () => {
         if (!username || !delivery_date || !powerunit || !activeCompany) {
             Logout();
         }
-        /*Object.entries(user).forEach(([key,value]) => {
-            console.log(`key: ${key}, value: ${value}`);
-        });*/
 
-        // fetch company name...
-        //const company = isCompanyValid();
-        //setCompany(isCompanyValid());
-        /*if (!company) {
-            renderCompany();
-        } else {
-            setCompany(company);
-        }*/
         console.log(activeCompany);
         setCompany(activeCompany);
 
@@ -141,24 +131,6 @@ const DriverPortal = () => {
     },[]);
 
     /* Page rendering helper functions... */
-
-    /*async function Logout() {
-        clearMemory();
-        const response = await fetch(`${API_URL}/api/Registration/Logout`, {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json; charset=UTF-8'
-            },
-        })
-        if (response.ok) {
-            console.log("Logout Successful!");
-            setTimeout(() => {
-                window.location.href = `https://login.tcsservices.com`;
-            },1500)
-        } else {
-            console.alert("Cookie removal failed, Logout failure.")
-        }
-    }*/
 
     /*/////////////////////////////////////////////////////////////////
     // initialize and manage collapsible header behavior...
@@ -197,15 +169,6 @@ const DriverPortal = () => {
     
     /* REDO THIS FUNCTION, IT SEEMS VERY INEFFICIENT */
     async function getDeliveries(powerunit,mfstdate){
-        // request token from memory, refresh as needed...
-        /*const token = await requestAccess(driverCredentials.USERNAME);
-        
-        // handle invalid token on login...
-        if (!token) {
-            navigate('/');
-            return;
-        }*/
-
         // initialize delivered + undelivered responses...
         let responseD = null;
         let responseU = null;
@@ -228,6 +191,10 @@ const DriverPortal = () => {
                 },
                 credentials: 'include'
             });
+
+            if (responseD.status === 401 || responseD.status === 403 || responseU.status === 401 || responseU.status === 403) {
+                Logout();
+            }
 
             // parse delivery lists into JSON...
             const deliveredData = await responseD.json();
@@ -267,10 +234,20 @@ const DriverPortal = () => {
     *//////////////////////////////////////////////////////////////////
 
     const handleClick = (event) => {
+        console.log(`event.target: ${event.target}`);
         // cache row class name, row text + parse out the pronumber...
         const parentClass = event.target.parentNode.className;
-        const string = event.target.parentNode.innerText;
-        const proNum = string.match(/[\t]([A-Za-z0-9]{8})/)[1];
+        //const string = event.target.parentNode.innerText;
+        //const proNum = string.match(/[\t]([A-Za-z0-9]{8})/)[1];
+        //console.log(`proNum: ${proNum}`);
+
+        const row = event.target.parentNode;
+        const proNum = row.querySelector('.col2').textContent;
+        console.log(`proNumber: ${proNum}`);
+        
+        const address1 = row.querySelector('.col4').textContent;
+        const address2 = row.querySelector('.col5').textContent;
+        console.log(`address: ${[address1,address2]}`);
 
         var i = 0;
         if (parentClass.includes("undelivered")){
@@ -278,6 +255,7 @@ const DriverPortal = () => {
             while (i < undelivered.length) {
                 // clicked delivery found, nav to delivery page...
                 if (undelivered[i]["PRONUMBER"] === proNum) {
+                    console.log("delivery found!");
                     const deliveryData = {
                         delivery: undelivered[i],
                         driver: driverCredentials,
@@ -285,6 +263,7 @@ const DriverPortal = () => {
                         company: company,
                         valid: true
                     };
+                    console.log(`/deliveries/${undelivered[i].PRONUMBER}`);
                     navigate(`/deliveries/${undelivered[i].PRONUMBER}`, {state: deliveryData});
                     break;
                 }
@@ -387,9 +366,7 @@ const DriverPortal = () => {
     return(
         <div id="webpage">
             {loading ? (
-                <div className="loading-container">
-                    <p>Loading...</p>
-                </div>
+                <LoadingSpinner />
                 ) : (
                     <>
                     <Header 
