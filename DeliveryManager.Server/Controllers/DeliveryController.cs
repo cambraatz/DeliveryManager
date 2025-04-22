@@ -231,6 +231,24 @@ namespace DeliveryManager.Server.Controllers
 
         *//////////////////////////////////////////////////////////////////////////////
 
+        private string GetMessage(DataTable undelivered, DataTable delivered)
+        {
+            if (undelivered.Rows.Count > 0 && delivered.Rows.Count > 0)
+            {
+                return "Both tables returned non-null values";
+            }
+            if (undelivered.Rows.Count == 0 && delivered.Rows.Count > 0)
+            {
+                return "Delivered returned non-null values, no valid undelivered records.";
+            }
+            if (delivered.Rows.Count == 0 && undelivered.Rows.Count > 0)
+            {
+                return "Undelivered returned non-null values, no valid delivered records.";
+            }
+
+            return "No valid records were found.";
+        }
+
         [HttpGet]
         [Route("GetDeliveries")]
         public async Task<JsonResult> GetDeliveries(string powerunit, string mfstdate)
@@ -264,40 +282,32 @@ namespace DeliveryManager.Server.Controllers
                 using (SqlConnection myCon = new SqlConnection(sqlDatasource))
                 {
                     await myCon.OpenAsync();
-                    using (SqlCommand myCommand = new SqlCommand(undeliveredQuery, myCon))
+                    using (SqlCommand undeliveredCmd = new SqlCommand(undeliveredQuery, myCon))
                     {
-                        myCommand.Parameters.AddWithValue("@POWERUNIT", powerunit);
-                        myCommand.Parameters.AddWithValue("@MFSTDATE", mfstdate);
-                        myReader = myCommand.ExecuteReader();
+                        undeliveredCmd.Parameters.AddWithValue("@POWERUNIT", powerunit);
+                        undeliveredCmd.Parameters.AddWithValue("@MFSTDATE", mfstdate);
+                        myReader = await undeliveredCmd.ExecuteReaderAsync();
                         undeliveredTable.Load(myReader);
                         myReader.Close();
                     }
-                    using (SqlCommand myCommand = new SqlCommand(deliveredQuery, myCon))
+
+                    using (SqlCommand deliveredCmd = new SqlCommand(deliveredQuery, myCon))
                     {
-                        myCommand.Parameters.AddWithValue("@POWERUNIT", powerunit);
-                        myCommand.Parameters.AddWithValue("@MFSTDATE", mfstdate);
-                        myReader = myCommand.ExecuteReader();
+                        deliveredCmd.Parameters.AddWithValue("@POWERUNIT", powerunit);
+                        deliveredCmd.Parameters.AddWithValue("@MFSTDATE", mfstdate);
+                        myReader = await deliveredCmd.ExecuteReaderAsync();
                         deliveredTable.Load(myReader);
                         myReader.Close();
                     }
                     await myCon.CloseAsync();
 
-                    if (undeliveredTable.Rows.Count > 0 && deliveredTable.Rows.Count > 0)
+                    return new JsonResult(new
                     {
-                        return new JsonResult(new { success = true, delivered = deliveredTable, undelivered = undeliveredTable, message = "Both tables returned non-null values." });
-                    }
-                    else if (deliveredTable.Rows.Count <= 0) 
-                    {
-                        return new JsonResult(new { success = true, delivered = new List<string>(), undelivered = undeliveredTable, message = "Undelivered returned non-null values, no valid delivered records." });
-                    }
-                    else if (undeliveredTable.Rows.Count <= 0)
-                    {
-                        return new JsonResult(new { success = true, delivered = deliveredTable, undelivered = new List<string>(), message = "Delivered returned non-null values, no valid undelivered records." });
-                    }
-                    else
-                    {
-                        return new JsonResult(new { success = true, delivered = new List<string>(), undelivered = new List<string>(), message = "No valid records were found." });
-                    }
+                        success = true,
+                        delivered = deliveredTable,
+                        undelivered = undeliveredTable,
+                        message = GetMessage(undeliveredTable, deliveredTable)
+                    });
                 }
             } catch (Exception ex) 
             {

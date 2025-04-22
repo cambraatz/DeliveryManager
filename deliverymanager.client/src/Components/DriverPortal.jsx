@@ -170,12 +170,12 @@ const DriverPortal = () => {
     /* REDO THIS FUNCTION, IT SEEMS VERY INEFFICIENT */
     async function getDeliveries(powerunit,mfstdate){
         // initialize delivered + undelivered responses...
-        let responseD = null;
-        let responseU = null;
+        //let responseD = null;
+        //let responseU = null;
 
         // attempt to gather delivered + undelivered deliveries...
         try {
-            responseD = await fetch(API_URL + "api/DriverChecklist/GetDelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
+            /*responseD = await fetch(API_URL + "api/DriverChecklist/GetDelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json; charset=UTF-8',
@@ -203,17 +203,43 @@ const DriverPortal = () => {
             if (!deliveredData.success || !undeliveredData.success) {
                 console.error("Delivery data access failed, ensure valid auth token.");
                 Logout();
+            }*/
+
+            const response = await fetch(API_URL + "api/Delivery/GetDeliveries?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json; charset=UTF-8',
+                },
+                credentials: 'include'
+            });
+
+            if (!response.ok || response.status === 401 || response.status === 403) {
+                console.error("Unauthorized access credentials, logging out.");
+                Logout();
             }
 
+            const data = await response.json();
+            if (!data.success) {
+                console.error("Delivery data access failed, ensure valid auth token.");
+                Logout();
+            }
+            const deliveredData = data.delivered;
+            const undeliveredData = data.undelivered;
+
             // set delivered + undelivered states...
-            setDelivered(deliveredData.table);
-            setUndelivered(undeliveredData.table);  
+            setDelivered(deliveredData);
+            setUndelivered(undeliveredData);
             setLoading(false);
 
         // divert all errors to login page...
         } catch (error) {
             console.error(error);
-            Logout();
+            //Logout();
+            // set delay before logging out...
+            setTimeout(() => {
+                Logout();
+                return;
+            }, 10000);
         }
     }
 
@@ -237,17 +263,14 @@ const DriverPortal = () => {
         console.log(`event.target: ${event.target}`);
         // cache row class name, row text + parse out the pronumber...
         const parentClass = event.target.parentNode.className;
-        //const string = event.target.parentNode.innerText;
-        //const proNum = string.match(/[\t]([A-Za-z0-9]{8})/)[1];
-        //console.log(`proNum: ${proNum}`);
 
         const row = event.target.parentNode;
         const proNum = row.querySelector('.col2').textContent;
-        console.log(`proNumber: ${proNum}`);
+        //console.log(`proNumber: ${proNum}`);
         
         const address1 = row.querySelector('.col4').textContent;
         const address2 = row.querySelector('.col5').textContent;
-        console.log(`address: ${[address1,address2]}`);
+        //console.log(`address: ${[address1,address2]}`);
 
         var i = 0;
         if (parentClass.includes("undelivered")){
@@ -304,64 +327,52 @@ const DriverPortal = () => {
     *//////////////////////////////////////////////////////////////////
 
     const renderDeliveries = (status) => {        
-        /*if(loading) {
-            return (<tr><td align="center" colSpan="7">Loading Deliveries...</td></tr>)
-        }*/
-        if (!undelivered || !delivered) {
-            return (<tr><td align="center" colSpan="7">Loading Deliveries...</td></tr>)
-        }
-        else {
-            if(status === "delivered"){
-                try {
-                    if(delivered.length === 0){
-                        return(<tr><td align="center" colSpan="7">NO DELIVERIES COMPLETED</td></tr>);
-                    }
-                    return (
-                        delivered.map((delivery,i) => (
-                            <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body delivered" id={delivery["MFSTKEY"]}>
-                                <td className="col1">{delivery["STOP"]}</td>
-                                <td className="col2">{delivery["PRONUMBER"]}</td>
-                                <td className="col3">{delivery["CONSNAME"]}</td>
-                                <td className="col4">{delivery["CONSADD1"]}</td>
-                                <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
-                                <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
-                                <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
-                            </tr>
-                        ))
-                    )
-                } catch {
-                    console.error("Warning: delivered table rendering error");
+        if(status === "delivered"){
+            try {
+                if(delivered.length === 0){
+                    return(<tr><td align="center" colSpan="7">No deliveries completed...</td></tr>);
                 }
-                
+                return (
+                    delivered.map((delivery,i) => (
+                        <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body delivered" id={delivery["MFSTKEY"]}>
+                            <td className="col1">{delivery["STOP"]}</td>
+                            <td className="col2">{delivery["PRONUMBER"]}</td>
+                            <td className="col3">{delivery["CONSNAME"]}</td>
+                            <td className="col4">{delivery["CONSADD1"]}</td>
+                            <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
+                            <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
+                            <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
+                        </tr>
+                    ))
+                )
+            } catch {
+                console.error("Warning: delivered table rendering error");
             }
-            else if(status === "undelivered"){
-                try {
-                    if(undelivered.length === 0){
-                        return(<tr><td align="center" colSpan="7">NO DELIVERIES REMAINING</td></tr>);
-                    }
-                    return (
-                        undelivered.map((delivery,i) => (
-                            <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body undelivered" id={delivery["MFSTKEY"]}>
-                                <td className="col1">{delivery["STOP"]}</td>
-                                <td className="col2">{delivery["PRONUMBER"]}</td>
-                                <td className="col3">{delivery["CONSNAME"]}</td>
-                                <td className="col4">{delivery["CONSADD1"]}</td>
-                                <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
-                                <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
-                                <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
-                            </tr>
-                        ))
-                    )
-                } catch {
-                    console.error("Warning: undelivered table rendering error");
+            
+        }
+        else if(status === "undelivered"){
+            try {
+                if(undelivered.length === 0){
+                    return(<tr><td align="center" colSpan="7">No remaining deliveries...</td></tr>);
                 }
+                return (
+                    undelivered.map((delivery,i) => (
+                        <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body undelivered" id={delivery["MFSTKEY"]}>
+                            <td className="col1">{delivery["STOP"]}</td>
+                            <td className="col2">{delivery["PRONUMBER"]}</td>
+                            <td className="col3">{delivery["CONSNAME"]}</td>
+                            <td className="col4">{delivery["CONSADD1"]}</td>
+                            <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
+                            <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
+                            <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
+                        </tr>
+                    ))
+                )
+            } catch {
+                console.error("Warning: undelivered table rendering error");
             }
         }
     }
-
-    /*if(loading) {
-        return(<h3>Loading Driver Manifest...</h3>)
-    }*/
 
     return(
         <div id="webpage">
