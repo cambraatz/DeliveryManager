@@ -272,7 +272,7 @@ const DeliveryForm = () => {
             }
         }
 
-        //setLoading(false);
+        // setLoading(false);
         // hide undeliver button if not delivered...
         if(DELIVERY.STATUS != 1) {
             document.getElementById('undeliver').style.display = "none";

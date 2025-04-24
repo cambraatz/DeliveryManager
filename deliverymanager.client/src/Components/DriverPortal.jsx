@@ -175,36 +175,6 @@ const DriverPortal = () => {
 
         // attempt to gather delivered + undelivered deliveries...
         try {
-            /*responseD = await fetch(API_URL + "api/DriverChecklist/GetDelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json; charset=UTF-8',
-                    //"Authorization": `Bearer ${token}`
-                },
-                credentials: 'include'
-            });
-            responseU = await fetch(API_URL + "api/DriverChecklist/GetUndelivered?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json; charset=UTF-8',
-                    //"Authorization": `Bearer ${token}`
-                },
-                credentials: 'include'
-            });
-
-            if (responseD.status === 401 || responseD.status === 403 || responseU.status === 401 || responseU.status === 403) {
-                Logout();
-            }
-
-            // parse delivery lists into JSON...
-            const deliveredData = await responseD.json();
-            const undeliveredData = await responseU.json();
-
-            if (!deliveredData.success || !undeliveredData.success) {
-                console.error("Delivery data access failed, ensure valid auth token.");
-                Logout();
-            }*/
-
             const response = await fetch(API_URL + "api/Delivery/GetDeliveries?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
                 method: 'GET',
                 headers: {
@@ -270,7 +240,7 @@ const DriverPortal = () => {
         
         const address1 = row.querySelector('.col4').textContent;
         const address2 = row.querySelector('.col5').textContent;
-        //console.log(`address: ${[address1,address2]}`);
+        console.log(`address: ${[address1,address2]}`);
 
         var i = 0;
         if (parentClass.includes("undelivered")){
@@ -326,7 +296,7 @@ const DriverPortal = () => {
     }
     *//////////////////////////////////////////////////////////////////
 
-    const renderDeliveries = (status) => {        
+    const renderDeliveries = (status) => {    
         if(status === "delivered"){
             try {
                 if(delivered.length === 0){
@@ -371,6 +341,45 @@ const DriverPortal = () => {
             } catch {
                 console.error("Warning: undelivered table rendering error");
             }
+        }
+    }
+
+    const renderDeliveries2 = (status) => {
+        if (status === "delivered" && delivered.length === 0){
+            return(<tr><td align="center" colSpan="7">No deliveries completed...</td></tr>);
+        }
+        if (status === "undelivered" && undelivered.length === 0){
+            return(<tr><td align="center" colSpan="7">No remaining deliveries...</td></tr>);
+        }
+
+        const deliveries = status === "delivered" ? delivered : undelivered;
+        let currDelivery = null;
+        deliveries.map((delivery) => {
+            if (currDelivery && delivery.CONSADD1 === currDelivery.CONSADD1 && delivery.CONSADD2 === currDelivery.CONSADD2){
+                console.log(`Duplicate addresses found: ${delivery.CONSADD1}, ${delivery.CONSADD2}`);
+            }
+            else {
+                currDelivery = delivery;
+                console.log(`New delivery replaced as the current for reference: ${delivery}`);
+            }
+        });
+
+        try {
+            return (
+                deliveries.map((delivery,i) => (
+                    <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body delivered" id={delivery["MFSTKEY"]}>
+                        <td className="col1">{delivery["STOP"]}</td>
+                        <td className="col2">{delivery["PRONUMBER"]}</td>
+                        <td className="col3">{delivery["CONSNAME"]}</td>
+                        <td className="col4">{delivery["CONSADD1"]}</td>
+                        <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
+                        <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
+                        <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
+                    </tr>
+                ))
+            )
+        } catch {
+            console.error("Warning: delivered table rendering error");
         }
     }
 
@@ -419,7 +428,7 @@ const DriverPortal = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                { renderDeliveries("undelivered") }
+                                { renderDeliveries2("undelivered") }
                             </tbody>
                         </table>
                     </div>
@@ -440,7 +449,7 @@ const DriverPortal = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                { renderDeliveries("delivered") }
+                                { renderDeliveries2("delivered") }
                             </tbody>
                         </table>
                     </div>
