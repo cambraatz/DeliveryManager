@@ -26,7 +26,9 @@ import { scrapeDate,
     isTokenValid,
     logout,
     requestAccess, /*, scrapeFile*/
-    showFailFlag } from '../Scripts/helperFunctions';
+    showFailFlag, 
+    SUCCESS_WAIT,
+    FAIL_WAIT} from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
 import LoadingSpinner from './LoadingSpinner.jsx';
 
@@ -105,6 +107,8 @@ const DeliveryForm = () => {
     let DRIVER = location.state ? location.state.driver : null;
     let COMPANY = location.state ? location.state.company : null;
     let HEADER = location.state ? location.state.header : null;
+
+    let DELIVERIES = location.state && location.state.deliveries ? location.state.deliveries : [DELIVERY];
 
     // determine image render permutation...
     let img_loc = DELIVERY ? DELIVERY["DLVDIMGFILELOCN"] : null;
@@ -493,16 +497,7 @@ const DeliveryForm = () => {
     }
     *//////////////////////////////////////////////////////////////////
 
-    async function clearDelivery(navigateData) {
-        // request token from memory, refresh as needed...
-        /*const token = await requestAccess(driverCredentials.USERNAME);
-        
-        // handle invalid token on login...
-        if (!token) {
-            navigate('/');
-            return;
-        }*/
-        
+    /*async function clearDelivery(navigateData) {      
         // package default delivery information...
         const default_data = {...delivery,
             LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00",
@@ -555,6 +550,104 @@ const DeliveryForm = () => {
         }
 
         return response;
+    }*/
+
+    async function clearDelivery(navigateData) {
+        // define common data shared between selected deliveries...
+        const sharedEntries = {
+            USERNAME: currUser,
+            LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00",
+            STATUS: "0",
+            DLVDDATE: null,
+            DLVDTIME: null,
+            DLVDPCS: -1,
+            DLVDSIGN: null,
+            DLVDNOTE: null,
+            DLVDIMGFILELOCN: null,
+            DLVDIMGFILESIGN: null,
+            location_string: null,
+            signature_string: null
+        };
+
+        // iterate list of deliveries and initialize reverted delivery objects...
+        let deliveryList = DELIVERIES.map((currDelivery) => {
+            // initialize fresh FormData object for handling file upload...
+            let deliveryData = new FormData();
+
+            // iterate delivery entries to build FormData objects...
+            for (const [key,value] of Object.entries(currDelivery)) {
+                if (key in sharedEntries) {
+                    deliveryData.append(key, sharedEntries[key]);
+                // standard delivery data processing...
+                } else if (value !== undefined && value !== "") {
+                    deliveryData.append(key, value);
+                // null-data processing...
+                } else {
+                    deliveryData.append(key, null);
+                }
+            }
+
+            return deliveryData;
+        });
+
+        
+        let response;
+        if (DELIVERIES.length == 1) {
+            response = await fetch(API_URL + "api/Delivery/UpdateManifest", {
+                body: deliveryList[0],
+                method: "PUT",
+                credentials: 'include'
+            })
+
+            if (response.status === 401 || response.status == 403) {
+                Logout();
+            }
+        } else {
+            for (const deliveryData of deliveryList) {
+                const form = new FormData();
+                for(const [key,value] of deliveryData.entries()) {
+                    form.append(key,value);
+                }
+
+                response = await fetch(API_URL + "api/Delivery/UpdateManifest", {
+                    body: form,
+                    method: "PUT",
+                    credentials: 'include'
+                })
+
+                if (response.status === 401 || response.status == 403) {
+                    Logout();
+                }
+
+                if (!response.ok) {
+                    console.log(`Updating manifests failed on delivery ${deliveryData.MFSTNUMBER}.`);
+                    break;
+                }
+            }
+        }
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                setPopup("Success");
+                openPopup();
+                setTimeout(() => {
+                    closePopup();
+                    navigate(`/deliveries`, { state: navigateData });
+                }, SUCCESS_WAIT)
+            } else {
+                console.trace("update delivery failed");
+                setPopup("Fail");
+                openPopup();
+                setTimeout(() => {
+                    closePopup();
+                }, FAIL_WAIT)
+            }
+        } else {
+            console.error("")
+        }
+
+        return response;
     }
 
     /*/////////////////////////////////////////////////////////////////
@@ -582,6 +675,7 @@ const DeliveryForm = () => {
         const date_field = document.getElementById("dlvdate");
         const time_field = document.getElementById("dlvtime");
         const piece_field = document.getElementById("dlvdpcs");
+        const note_field = document.getElementById("dlvdnote");
 
         // map empty field cases to messages...
         let code = 0;
@@ -596,7 +690,7 @@ const DeliveryForm = () => {
             111: "Date, Time and Pieces Delivered are all required!"
         }
         // flag empty username...
-        if (!(date_field.value instanceof Date) && !isNaN(date_field.value)){
+        if (!date_field.value || isNaN(new Date(date_field.value).getTime())){
             date_field.classList.add("invalid_input");
             elementID = "ff_admin_df_d";
             code += 1;
@@ -613,86 +707,128 @@ const DeliveryForm = () => {
             piece_field.classList.add("invalid_input");
             elementID = "ff_admin_df_pd";
             code += 100;
+        } else if (piece_field.disabled) {
+            elementID = "ff_admin_df_pd";
+            showFailFlag(elementID, "Cannot edit pieces on batch delivery.");
         }
 
         // catch and alert user to incomplete fields...
         if (code > 0) {
-            //console.log(`code: ${code}`)
-            //alert(alerts[code]);
             showFailFlag(elementID, alerts[code]);
             return;
         }
 
-        // request token from memory, refresh as needed...
-        /*const token = await requestAccess(driverCredentials.USERNAME);
-        
-        // handle invalid token on login...
-        if (!token) {
-            navigate('/');
-            return;
-        }*/
+        // iterate list of deliveries and initialize delivery updates...
+        let deliveryList = DELIVERIES.map((currDelivery) => {
+            // define common data shared between selected deliveries...
+            const sharedEntries = {
+                USERNAME: currUser,
+                LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00", 
+                STATUS: "1", 
+                DLVDDATE: delivery.DLVDDATE, 
+                DLVDTIME: delivery.DLVDTIME, 
+                DLVDSIGN: delivery.DLVDSIGN, 
+                DLVDNOTE: delivery.DLVDNOTE, 
+                DLVDPCS: delivery.DLVDPCS
+            };
 
-        // package data into form object to support image files...
-        let deliveryData = new FormData();
-        for (const [key,value] of Object.entries(delivery)){
-            deliveryData.append(key,value)
-        }
+            // initialize fresh FormData object for handling file upload...
+            let deliveryData = new FormData();
 
-        // add function to resize image here...
-        //resizePhoto(delivery.DLVDIMGFILELOCN);
+            // iterate delivery entries to build FormData objects...
+            for (const [key,value] of Object.entries(currDelivery)) {
+                // handle file/blob processing...
+                if (key === "DLVDIMGFILELOCN" || key === "DLVDIMGFILESIGN") {
+                    // if file/blob exists, save file path and nullify file upload...
+                    if (typeof value === "string") {
+                        deliveryData.append(key === "DLVDIMGFILELOCN" ? "location_string" : "signature_string", value);
+                        deliveryData.append(key, null);
+                    // if image file uploaded, pull file from delivery state...
+                    } else if (key === "DLVDIMGFILELOCN" && delivery.DLVDIMGFILELOCN !== null && delivery.DLVDIMGFILELOCN instanceof File) {
+                        //console.log("New image file upload recieved...");
+                        deliveryData.append(key, delivery.DLVDIMGFILELOCN);
+                    // if image blob uploaded, pull blob from delivery state...
+                    } else if (key === "DLVDIMGFILESIGN" && delivery.DLVDIMGFILESIGN !== null && delivery.DLVDIMGFILESIGN instanceof Blob) {
+                        //console.log("New signature file upload recieved...");
+                        deliveryData.append(key, delivery.DLVDIMGFILESIGN);
+                    // else, set to null...
+                    } else {
+                        deliveryData.append(key, null);
+                    }
+                // handle commonly shared data on batch processing...
+                } else if (key in sharedEntries) {
+                    deliveryData.append(key, sharedEntries[key]);
+                // standard delivery data processing...
+                } else if (value !== undefined && value !== "") {
+                    deliveryData.append(key, value);
+                // null-data processing...
+                } else {
+                    deliveryData.append(key, null);
+                }
+            }
 
-        // if file location exists, nullify image and store file path...
-        if (typeof delivery.DLVDIMGFILELOCN === "string") {
-            deliveryData.append("location_string",delivery.DLVDIMGFILELOCN);
-            deliveryData.append("DLVDIMGFILELOCN", null);
-        }
-        if (typeof delivery.DLVDIMGFILESIGN === "string") {
-            deliveryData.append("signature_string",delivery.DLVDIMGFILESIGN);
-            deliveryData.append("DLVDIMGFILESIGN", null);
-        }
+            return deliveryData;
+        });
 
-        // nullify empty fields...
-        if (delivery.deliveryNotes === "") {
-            deliveryData.append("DLVDNOTE",null);
-        }
-        if (delivery.deliverySign === "") {
-            deliveryData.append("DLVDSIGN",null);
-        }
+        //console.log("deliveryList", deliveryList);
+        //console.log("formData", formData);
+        //console.log("delivery", delivery);
 
-        // set last update key-value pair to current date-time...
-        deliveryData.set("LASTUPDATE",currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00");
+        let response;
+        if (DELIVERIES.length == 1) {
+            response = await fetch(API_URL + "api/Delivery/UpdateManifest", {
+                body: deliveryList[0],
+                method: "PUT",
+                credentials: 'include'
+            })
 
-        // send request; returns ...
-        console.log("attempting update manifest...");
-        const response = await fetch(API_URL + "api/DriverChecklist/UpdateManifest", {
-            body: deliveryData,
-            method: "PUT",
-            headers: {
-                //"Authorization": `Bearer ${token}`
-            },
-            credentials: 'include'
-        })
-
-        if (response.status === 401 || response.status == 403) {
-            Logout();
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-            setPopup("Success");
-            openPopup();
-            setTimeout(() => {
-                closePopup();
-                navigate(`/deliveries`, { state: navigateData });
-            },1000)
+            if (response.status === 401 || response.status == 403) {
+                Logout();
+            }
         } else {
-            console.trace("update delivery failed");
-            setPopup("Fail");
-            openPopup();
-            setTimeout(() => {
-                closePopup();
-            },2000)
+            for (const deliveryData of deliveryList) {
+                const form = new FormData();
+                for(const [key,value] of deliveryData.entries()) {
+                    form.append(key,value);
+                }
+
+                response = await fetch(API_URL + "api/Delivery/UpdateManifest", {
+                    body: form,
+                    method: "PUT",
+                    credentials: 'include'
+                })
+
+                if (response.status === 401 || response.status == 403) {
+                    Logout();
+                }
+
+                if (!response.ok) {
+                    console.log(`Updating manifests failed on delivery ${deliveryData.MFSTNUMBER}.`);
+                    break;
+                }
+            }
+        }        
+
+        if (response.ok) {
+            const data = await response.json();
+
+            if (data.success) {
+                setPopup("Success");
+                openPopup();
+                setTimeout(() => {
+                    closePopup();
+                    navigate(`/deliveries`, { state: navigateData });
+                }, SUCCESS_WAIT)
+            } else {
+                console.trace("update delivery failed");
+                setPopup("Fail");
+                openPopup();
+                setTimeout(() => {
+                    closePopup();
+                }, FAIL_WAIT)
+            }
+        } else {
+            console.error("")
         }
     }
 
@@ -711,8 +847,6 @@ const DeliveryForm = () => {
     *//////////////////////////////////////////////////////////////////
 
     async function handleSubmit(e) {
-        //let response = null
-
         // package delivery/driver information
         const deliveryData = {
             delivery: updateData,
@@ -726,14 +860,9 @@ const DeliveryForm = () => {
             await clearDelivery(deliveryData);
         }
         else{
+            console.log("Calling handleUpdate on deliveryData: ", deliveryData);
             await handleUpdate(deliveryData);
-        }
-
-        // if request was successful, return to delivery manifest...
-        /*if(response && response.ok){
-            navigate(`/driverlog`, { state: deliveryData });
-        }*/
-        
+        }        
     }
 
     /*/////////////////////////////////////////////////////////////////
@@ -823,6 +952,13 @@ const DeliveryForm = () => {
     const handleImageClick = () => {
         hiddenFileInput.current.click();
     }
+
+    const flagDisabled = (elementID,flagID) => {
+        console.log(`flagging disabled: ${elementID}, ${flagID}`);
+        if (document.getElementById(elementID) && document.getElementById(elementID).readOnly) {
+            showFailFlag(flagID, elementID === "dlvdpcs" ? "Cannot edit pieces on batch delivery." : "Cannot edit note on batch delivery.");
+        }
+    }
     
     // render template...
     return (
@@ -867,17 +1003,22 @@ const DeliveryForm = () => {
                                 <label>Consignee Name:</label>
                                 <input type="text" id="dlvcons" value={formData.deliveryConsignee} className="input_form" disabled/>
                             </div>
-                            <div className="cont_right input_wrapper">
+                            <div className="cont_right input_wrapper" onClick={() => flagDisabled("dlvdpcs","ff_admin_df_pd")}>
                                 <label>Pieces Delivered:</label>
-                                <input type="number" id="dlvdpcs" value={formData.deliveredPieces} className="input_form" min="0" max="999" onChange={handleChange} required/>
+                                <input type="number" id="dlvdpcs" value={formData.deliveredPieces} className="input_form" min="0" max="999" onChange={handleChange} readOnly={DELIVERIES.length > 1} required />
                                 <div className="fail_flag" id="ff_admin_df_pd">
                                     <p>Pieces Delivered is required!</p>
                                 </div>
                             </div>
                         </div>
                         <div id="notes_Div">
-                            <label>Delivery Note: </label>
-                            <input type="text" id="dlvdnote" value={formData.deliveryNotes} className="input_form" onChange={handleChange} maxLength="30"/>
+                            <div className="cont_full input_wrapper" onClick={() => flagDisabled("dlvdnote","ff_admin_df_dn")}>
+                                <label>Delivery Note: </label>
+                                <input type="text" id="dlvdnote" value={formData.deliveryNotes} className="input_form" onChange={handleChange} maxLength="30" readOnly={DELIVERIES.length > 1}/>
+                                <div className="fail_flag" id="ff_admin_df_dn">
+                                    <p>Note is not allowed in batch editing!</p>
+                                </div>
+                            </div>
                         </div>
                         <div id="img_Div">
                             <div id="img_sig_div">

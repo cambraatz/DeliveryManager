@@ -9,8 +9,8 @@
   .loading-spinner {
     width: 48px;
     height: 48px;
-    border: 6px solid rgba(0, 0, 0, 0.1);
-    border-top-color: #3498db;
+    border: 6px solid rgba(90, 137, 187, 0.25);
+    border-top-color: #5A89BB;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }

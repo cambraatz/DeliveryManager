@@ -22,6 +22,7 @@ import { API_URL,
     COMPANIES } from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
 import LoadingSpinner from './LoadingSpinner.jsx';
+import DL_Popup from './DL_Popup.jsx';
 
 /*/////////////////////////////////////////////////////////////////////
 
@@ -196,9 +197,12 @@ const DriverPortal = () => {
             const deliveredData = data.delivered;
             const undeliveredData = data.undelivered;
 
+            //console.log(deliveredData);
+            //console.log(undeliveredData);
+
             // set delivered + undelivered states...
-            setDelivered(deliveredData);
-            setUndelivered(undeliveredData);
+            setDelivered( deliveredData ); // package delivered if allowing batch update/deletes...
+            setUndelivered( packageDeliveries(undeliveredData) );
             setLoading(false);
 
         // divert all errors to login page...
@@ -210,6 +214,96 @@ const DriverPortal = () => {
                 Logout();
                 return;
             }, 10000);
+        }
+    }
+
+    /*/////////////////////////////////////////////////////////////////
+    // generates dynamic HTML table for returned deliveries...
+    [void] : renderDeliveries(status) {
+        if loading in process:
+            render loading message
+        else:
+            determine status of delivery and direct to corresponding rendering path
+            if no more deliveries:
+                render empty table row w/ prompt
+            else:
+                map deliveries into HTML table rows and return
+    }
+    *//////////////////////////////////////////////////////////////////
+
+    const packageDeliveries = (deliveries) => {
+        const sharedAddress = (a,b) => {
+            if (a.CONSADD1 === b.CONSADD1 && a.CONSADD2 === b.CONSADD2) {
+                return true;
+            }
+            return false;
+        };
+    
+        let i = 0;
+        let currStop = null;
+        let packagedDeliveries = {};
+    
+        while (i < deliveries.length) {
+            if (currStop && sharedAddress(deliveries[i],currStop)){
+                console.log(`Duplicate addresses found: ${deliveries[i].CONSADD1}, ${deliveries[i].CONSADD2}`);
+                let sharedDeliveries = [currStop];
+                while (i < deliveries.length && sharedAddress(deliveries[i],currStop)) {
+                    sharedDeliveries.push(deliveries[i]);
+                    i += 1
+                }
+                packagedDeliveries[currStop.STOP] = sharedDeliveries;
+            }
+            else {
+                console.log(`New delivery added to dictionary: ${deliveries[i]}`);
+                currStop = deliveries[i];
+                packagedDeliveries[deliveries[i].STOP] = [ deliveries[i] ];
+                i += 1;
+            }
+        }
+    
+        return packagedDeliveries;
+    };
+
+    const renderDeliveries = (status) => {
+        if (status === "delivered" && Object.keys(delivered).length === 0){
+            return(<tr><td align="center" colSpan="7">No deliveries completed...</td></tr>);
+        }
+        if (status === "undelivered" && Object.keys(undelivered).length === 0){
+            return(<tr><td align="center" colSpan="7">No remaining deliveries...</td></tr>);
+        }
+
+        const deliveries = status === "delivered" ? delivered : undelivered;
+        if (!deliveries) console.log("no deliveries found...")
+        else console.log("deliveries found...")
+
+        try {
+            return Object.entries(deliveries).map(([stopNum,deliveryList]) => {
+                if (deliveryList.length > 1) {
+                    console.log(`stop: ${stopNum}, delivery(s):`);
+                    deliveryList.forEach((delivery) => {
+                        console.log(delivery.STOP);
+                    });
+                } else {
+                    console.log(`stop: ${stopNum}, delivery(s): ${deliveryList[0].STOP}`);
+                }
+
+                const dl = deliveryList;
+                return (
+                    <tr key={stopNum} value={dl[0].MFSTKEY} className={`Table_Body ${status}`} id={dl[0].MFSTKEY}>
+                        <td className="col1">
+                            {dl.length === 1 ? dl[0].STOP : `${dl[0].STOP}-${dl[dl.length - 1].STOP}`}
+                        </td>
+                        <td className="col2">{dl[0].PRONUMBER}</td>
+                        <td className="col3">{dl[0].CONSNAME}</td>
+                        <td className="col4">{dl[0].CONSADD1}</td>
+                        <td className="col5 desktop_table">{dl[0].CONSADD2 ? dl[0].CONSADD2 : "---"}</td>
+                        <td className="col6 desktop_table">{dl[0].CONSCITY}</td>
+                        <td className="col7 desktop_table">{dl[0].SHIPNAME}</td>
+                    </tr>
+                );
+            });
+        } catch {
+            console.error("Warning: delivered table rendering error");
         }
     }
 
@@ -229,6 +323,37 @@ const DriverPortal = () => {
     }
     *//////////////////////////////////////////////////////////////////
 
+    const [deliveryList,setDeliveryList] = useState([]);
+
+    const selectDelivery = (deliveries,proNum) => {
+        for (const [stopNum,list] of Object.entries(deliveries)) {
+            for (const delivery of list) {
+                console.log(`delivery.PRONUMBER: ${delivery.PRONUMBER}`);
+                if (delivery.PRONUMBER === proNum) {
+                    if (list.length == 1) {
+                        const deliveryData = {
+                            delivery: delivery,
+                            driver: driverCredentials,
+                            header: header,
+                            company: company,
+                            valid: true,
+                        };
+                        //console.log(`/deliveries/${delivery.PRONUMBER}`);
+                        navigate(`/deliveries/${delivery.PRONUMBER}`, {state: deliveryData});
+                        return;
+                    } else {
+                        //sessionStorage.setItem("deliveryList",JSON.stringify(deliveryList));
+                        setDeliveryList(list);
+                        openPopup();
+                        return;
+                    }
+                }
+            }
+            console.log(`delivery was not found at stop ${stopNum}...`);
+        }
+        console.log(`delivery ${proNum} was not found in delivery list...`)
+    };
+
     const handleClick = (event) => {
         console.log(`event.target: ${event.target}`);
         // cache row class name, row text + parse out the pronumber...
@@ -242,150 +367,83 @@ const DriverPortal = () => {
         const address2 = row.querySelector('.col5').textContent;
         console.log(`address: ${[address1,address2]}`);
 
-        var i = 0;
-        if (parentClass.includes("undelivered")){
-            // iterate all undelivered deliveries...
-            while (i < undelivered.length) {
-                // clicked delivery found, nav to delivery page...
-                if (undelivered[i]["PRONUMBER"] === proNum) {
-                    console.log("delivery found!");
-                    const deliveryData = {
-                        delivery: undelivered[i],
-                        driver: driverCredentials,
-                        header: header,
-                        company: company,
-                        valid: true
-                    };
-                    console.log(`/deliveries/${undelivered[i].PRONUMBER}`);
-                    navigate(`/deliveries/${undelivered[i].PRONUMBER}`, {state: deliveryData});
-                    break;
-                }
-                i = i + 1;
-            }
-        } else{
-            // iterate all delivered deliveries...
-            while (i < delivered.length) {
-                // clicked delivery found, nav to delivery page...
-                if (delivered[i]["PRONUMBER"] === proNum) {
-                    const deliveryData = {
-                        delivery: delivered[i],
-                        driver: driverCredentials,
-                        header: header,
-                        company: company,
-                        valid: true
-                    };
-                    navigate(`/deliveries/${delivered[i].PRONUMBER}`, {state: deliveryData});
-                    break;
-                }
-                i = i + 1;
-            }
-        }
+        const deliveries = parentClass.includes("undelivered") ? undelivered : delivered;
+        selectDelivery(deliveries,proNum);
     }
 
+    const handleRowClick = (index,delivery) => {
+        console.log("Row index clicked:", index);
+        console.log("Full delivery object:", delivery);
+
+        const deliveryData = {
+            delivery: delivery,
+            driver: driverCredentials,
+            header: header,
+            company: company,
+            valid: true,
+        };
+        //console.log(`/deliveries/${delivery.PRONUMBER}`);
+        navigate(`/deliveries/${delivery.PRONUMBER}`, {state: deliveryData});
+        return;
+    }
+
+    const handlePopupSubmit = (mfstkeys) => {
+        alert("Multi-selection logic is actively being developed!");
+        //const deliveries = status === "0" ? undelivered : delivered;
+        //const deliveries = deliveryList;
+        console.log("deliveryList",deliveryList);
+
+        const keySet = new Set(mfstkeys);
+        const activeDeliveries = deliveryList.filter(delivery => keySet.has(delivery.MFSTKEY));
+        if (activeDeliveries && activeDeliveries.length > 0) {
+            console.log('activeDeliveries',activeDeliveries);
+            const deliveryData = {
+                delivery: activeDeliveries[0],
+                deliveries: activeDeliveries,
+                driver: driverCredentials,
+                header: header,
+                company: company,
+                valid: true,
+            };
+            console.log(`/deliveries/${deliveryData.delivery.PRONUMBER}`);
+            console.log(deliveryData);
+            navigate(`/deliveries/${deliveryData.delivery.PRONUMBER}`, {state: deliveryData});
+        }
+        closePopup();
+        return;
+    };
+
     /*/////////////////////////////////////////////////////////////////
-    // generates dynamic HTML table for returned deliveries...
-    [void] : renderDeliveries(status) {
-        if loading in process:
-            render loading message
-        else:
-            determine status of delivery and direct to corresponding rendering path
-            if no more deliveries:
-                render empty table row w/ prompt
-            else:
-                map deliveries into HTML table rows and return
+    [void] : openPopup() {
+        make popup window visible on screen
+        enable on click behavior
     }
     *//////////////////////////////////////////////////////////////////
 
-    const renderDeliveries = (status) => {    
-        if(status === "delivered"){
-            try {
-                if(delivered.length === 0){
-                    return(<tr><td align="center" colSpan="7">No deliveries completed...</td></tr>);
-                }
-                return (
-                    delivered.map((delivery,i) => (
-                        <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body delivered" id={delivery["MFSTKEY"]}>
-                            <td className="col1">{delivery["STOP"]}</td>
-                            <td className="col2">{delivery["PRONUMBER"]}</td>
-                            <td className="col3">{delivery["CONSNAME"]}</td>
-                            <td className="col4">{delivery["CONSADD1"]}</td>
-                            <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
-                            <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
-                            <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
-                        </tr>
-                    ))
-                )
-            } catch {
-                console.error("Warning: delivered table rendering error");
-            }
-            
-        }
-        else if(status === "undelivered"){
-            try {
-                if(undelivered.length === 0){
-                    return(<tr><td align="center" colSpan="7">No remaining deliveries...</td></tr>);
-                }
-                return (
-                    undelivered.map((delivery,i) => (
-                        <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body undelivered" id={delivery["MFSTKEY"]}>
-                            <td className="col1">{delivery["STOP"]}</td>
-                            <td className="col2">{delivery["PRONUMBER"]}</td>
-                            <td className="col3">{delivery["CONSNAME"]}</td>
-                            <td className="col4">{delivery["CONSADD1"]}</td>
-                            <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
-                            <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
-                            <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
-                        </tr>
-                    ))
-                )
-            } catch {
-                console.error("Warning: undelivered table rendering error");
-            }
-        }
+    const openPopup = () => {
+        document.getElementById("popupWindow").style.visibility = "visible";
+        document.getElementById("popupWindow").style.opacity = 1;
+        document.getElementById("popupWindow").style.pointerEvents = "auto";  
+    };
+
+    /*/////////////////////////////////////////////////////////////////
+    [void] : closePopup() {
+        self explanatory closing of "popupLoginWindow"
+        setStatus("") and setMessage(null) - reset state data
     }
+    *//////////////////////////////////////////////////////////////////
 
-    const renderDeliveries2 = (status) => {
-        if (status === "delivered" && delivered.length === 0){
-            return(<tr><td align="center" colSpan="7">No deliveries completed...</td></tr>);
-        }
-        if (status === "undelivered" && undelivered.length === 0){
-            return(<tr><td align="center" colSpan="7">No remaining deliveries...</td></tr>);
-        }
-
-        const deliveries = status === "delivered" ? delivered : undelivered;
-        let currDelivery = null;
-        deliveries.map((delivery) => {
-            if (currDelivery && delivery.CONSADD1 === currDelivery.CONSADD1 && delivery.CONSADD2 === currDelivery.CONSADD2){
-                console.log(`Duplicate addresses found: ${delivery.CONSADD1}, ${delivery.CONSADD2}`);
-            }
-            else {
-                currDelivery = delivery;
-                console.log(`New delivery replaced as the current for reference: ${delivery}`);
-            }
-        });
-
-        try {
-            return (
-                deliveries.map((delivery,i) => (
-                    <tr key={i} value={delivery["MFSTKEY"]} className="Table_Body delivered" id={delivery["MFSTKEY"]}>
-                        <td className="col1">{delivery["STOP"]}</td>
-                        <td className="col2">{delivery["PRONUMBER"]}</td>
-                        <td className="col3">{delivery["CONSNAME"]}</td>
-                        <td className="col4">{delivery["CONSADD1"]}</td>
-                        <td className="col5 desktop_table">{delivery["CONSADD2"]}</td>
-                        <td className="col6 desktop_table">{delivery["CONSCITY"]}</td>
-                        <td className="col7 desktop_table">{delivery["SHIPNAME"]}</td>
-                    </tr>
-                ))
-            )
-        } catch {
-            console.error("Warning: delivered table rendering error");
-        }
-    }
+    const closePopup = () => {
+        document.getElementById("popupWindow").style.visibility = "hidden";
+        document.getElementById("popupWindow").style.opacity = 0;
+        document.getElementById("popupWindow").style.pointerEvents = "none";
+    
+        //Logout();
+    };
 
     return(
         <div id="webpage">
-            {loading ? (
+            {loading || delivered === null || undelivered === null ? (
                 <LoadingSpinner />
                 ) : (
                     <>
@@ -428,7 +486,7 @@ const DriverPortal = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                { renderDeliveries2("undelivered") }
+                                { renderDeliveries("undelivered") }
                             </tbody>
                         </table>
                     </div>
@@ -449,11 +507,15 @@ const DriverPortal = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                { renderDeliveries2("delivered") }
+                                { renderDeliveries("delivered") }
                             </tbody>
                         </table>
                     </div>
                     <Footer id="scroll_footer" />
+
+                    <div id="popupWindow" className="overlay">
+                        <DL_Popup deliveries={deliveryList} onClick={handlePopupSubmit} onClose={closePopup} />
+                    </div>
                     </>
                 )
             }

@@ -328,7 +328,7 @@ namespace DeliveryManager.Server.Controllers
         [Route("UpdateManifest")]
         public async Task<JsonResult> UpdateManifest([FromForm] DeliveryForm data)
         {
-            _logger.Log(LogLevel.Information,$"Attempting to update manifest ({data.MFSTKEY}), [DeliveryManagerController, UpdateManifest]");
+            //_logger.Log(LogLevel.Information,$"Attempting to update manifest ({data[0].MFSTKEY + (data.Count > 1 ? $"+ {data.Count} others" : "")}), [DeliveryManagerController, UpdateManifest]");
 
             var tokenService = new TokenService(_configuration);
             (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
@@ -345,6 +345,14 @@ namespace DeliveryManager.Server.Controllers
             {
                 ArgumentNullException exception = new ArgumentNullException("Failed to find 'company' from cookies (UpdateManifest(), DeliveryManagerController.cs)");
                 return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
+            }
+
+            var username = Request.Cookies["username"];
+            if (username == null)
+            {
+                ArgumentNullException exception = new ArgumentNullException($"Failed to find 'username' from cookies");
+                //_logger.LogError(exception, exception.Message);
+                return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             try
@@ -418,7 +426,7 @@ namespace DeliveryManager.Server.Controllers
                 "POWERUNIT = @POWERUNIT,STOP = @STOP,MFSTDATE = @MFSTDATE,PRONUMBER = @PRONUMBER,PRODATE = @PRODATE,SHIPNAME = @SHIPNAME," +
                 "CONSNAME = @CONSNAME,CONSADD1 = @CONSADD1,CONSADD2 = @CONSADD2,CONSCITY = @CONSCITY,CONSSTATE = @CONSSTATE,CONSZIP = @CONSZIP," +
                 "TTLPCS = @TTLPCS,TTLYDS = @TTLYDS,TTLWGT = @TTLWGT,DLVDDATE = @DLVDDATE,DLVDTIME = @DLVDTIME,DLVDPCS = @DLVDPCS,DLVDSIGN = @DLVDSIGN," +
-                "DLVDNOTE = @DLVDNOTE,DLVDIMGFILELOCN = @DLVDIMGFILELOCN,DLVDIMGFILESIGN = @DLVDIMGFILESIGN where MFSTKEY=@MFSTKEY";
+                "DLVDNOTE = @DLVDNOTE,DLVDIMGFILELOCN = @DLVDIMGFILELOCN,DLVDIMGFILESIGN = @DLVDIMGFILESIGN,USERNAME = @USERNAME where MFSTKEY=@MFSTKEY";
 
                 DataTable table = new DataTable();
                 string sqlDatasource = _configuration.GetConnectionString(company);
@@ -455,6 +463,7 @@ namespace DeliveryManager.Server.Controllers
                         myCommand.Parameters.AddWithValue("@DLVDNOTE", data.DLVDNOTE == null || data.DLVDNOTE == "null" ? DBNull.Value : data.DLVDNOTE);
                         myCommand.Parameters.AddWithValue("@DLVDIMGFILELOCN", loc_name == null || loc_name == "null" ? DBNull.Value : loc_name);
                         myCommand.Parameters.AddWithValue("@DLVDIMGFILESIGN", sign_name == null || sign_name == "null" ? DBNull.Value : sign_name);
+                        myCommand.Parameters.AddWithValue("@USERNAME", username);
 
                         myReader = myCommand.ExecuteReader();
                         table.Load(myReader);
@@ -463,6 +472,159 @@ namespace DeliveryManager.Server.Controllers
                     }
                     return new JsonResult(new { success = true, table = table });
                 }
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, error = "Error updating delivery: " + ex.Message });
+            }
+        }
+
+        [HttpPut]
+        [Route("UpdateManifests")]
+        public async Task<JsonResult> UpdateManifests([FromBody] List<DeliveryForm> data)
+        {
+            _logger.Log(LogLevel.Information,$"Attempting to update manifest ({data[0].MFSTKEY + (data.Count > 1 ? $"+ {data.Count} others" : "")}), [DeliveryManagerController, UpdateManifest]");
+
+            var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            if (!tokenAuth.success)
+            {
+                UnauthorizedAccessException exception = new UnauthorizedAccessException($"Token authorization failed (UpdateManifest(), DeliveryManagerController.cs); Verbose: {tokenAuth.message}");
+                _logger.LogError(exception, exception.Message);
+
+                return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
+            }
+
+            var company = Request.Cookies["company"];
+            if (string.IsNullOrEmpty(company))
+            {
+                ArgumentNullException exception = new ArgumentNullException("Failed to find 'company' from cookies (UpdateManifest(), DeliveryManagerController.cs)");
+                return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
+            }
+
+            string? location_path = null;
+            string? loc_name = null;
+
+            string? sign_path = null;
+            string? sign_name = null;
+
+            // define path where the image is to be saved...
+            string folderPath = Path.Combine("wwwroot", "uploads");
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            // save image locally when photo was uploaded...
+            DeliveryForm activeDelivery = data[0];
+            if (activeDelivery.DLVDIMGFILELOCN != null)
+            {
+                try
+                {
+                    // generate a unique file name...
+                    loc_name = Guid.NewGuid().ToString().Substring(16) + Path.GetExtension(path: activeDelivery.DLVDIMGFILELOCN.FileName);
+                    location_path = Path.Combine(folderPath, loc_name);
+
+                    // save the file to the server...
+                    using (var fileStream = new FileStream(location_path, FileMode.Create))
+                    {
+                        await activeDelivery.DLVDIMGFILELOCN.CopyToAsync(fileStream);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error saving delivery image file: {ex.Message}");
+                }
+            }
+            // omit saving, point back to image already on file...
+            else
+            {
+                loc_name = activeDelivery.location_string;
+            }
+
+            // save image locally when photo was uploaded...
+            if (activeDelivery.DLVDIMGFILESIGN != null)
+            {
+                try
+                {
+                    // generate a unique file name...
+                    sign_name = Guid.NewGuid().ToString().Substring(16) + Path.GetExtension(path: activeDelivery.DLVDIMGFILESIGN.FileName);
+                    sign_path = Path.Combine(folderPath, sign_name);
+
+                    // save the file to the server...
+                    using (var fileStream = new FileStream(sign_path, FileMode.Create))
+                    {
+                        await activeDelivery.DLVDIMGFILESIGN.CopyToAsync(fileStream);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error saving delivery signature file: {ex.Message}");
+                }
+            }
+            // omit saving, point back to image already on file...
+            else
+            {
+                sign_name = activeDelivery.signature_string;
+            }
+
+            try
+            {
+                string query = "update dbo.DMFSTDAT set MFSTKEY = @MFSTKEY,STATUS = @STATUS,LASTUPDATE = @LASTUPDATE,MFSTNUMBER = @MFSTNUMBER," +
+                    "POWERUNIT = @POWERUNIT,STOP = @STOP,MFSTDATE = @MFSTDATE,PRONUMBER = @PRONUMBER,PRODATE = @PRODATE,SHIPNAME = @SHIPNAME," +
+                    "CONSNAME = @CONSNAME,CONSADD1 = @CONSADD1,CONSADD2 = @CONSADD2,CONSCITY = @CONSCITY,CONSSTATE = @CONSSTATE,CONSZIP = @CONSZIP," +
+                    "TTLPCS = @TTLPCS,TTLYDS = @TTLYDS,TTLWGT = @TTLWGT,DLVDDATE = @DLVDDATE,DLVDTIME = @DLVDTIME,DLVDPCS = @DLVDPCS,DLVDSIGN = @DLVDSIGN," +
+                    "DLVDNOTE = @DLVDNOTE,DLVDIMGFILELOCN = @DLVDIMGFILELOCN,DLVDIMGFILESIGN = @DLVDIMGFILESIGN where MFSTKEY=@MFSTKEY";
+
+                DataTable table = new DataTable();
+                string sqlDatasource = _configuration.GetConnectionString(company);
+                SqlDataReader myReader;
+
+                await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
+                {
+                    myCon.Open();
+
+                    foreach (var delivery in data)
+                    {
+                        using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                        {
+                            myCommand.Parameters.AddWithValue("@MFSTKEY", delivery.MFSTKEY);
+                            myCommand.Parameters.AddWithValue("@STATUS", delivery.STATUS);
+                            myCommand.Parameters.AddWithValue("@LASTUPDATE", delivery.LASTUPDATE);
+                            myCommand.Parameters.AddWithValue("@MFSTNUMBER", delivery.MFSTNUMBER);
+                            myCommand.Parameters.AddWithValue("@POWERUNIT", delivery.POWERUNIT);
+                            myCommand.Parameters.AddWithValue("@STOP", delivery.STOP);
+                            myCommand.Parameters.AddWithValue("@MFSTDATE", delivery.MFSTDATE);
+                            myCommand.Parameters.AddWithValue("@PRONUMBER", delivery.PRONUMBER);
+                            myCommand.Parameters.AddWithValue("@PRODATE", delivery.PRODATE);
+                            myCommand.Parameters.AddWithValue("@SHIPNAME", delivery.SHIPNAME);
+                            myCommand.Parameters.AddWithValue("@CONSNAME", delivery.CONSNAME);
+                            myCommand.Parameters.AddWithValue("@CONSADD1", delivery.CONSADD1);
+                            myCommand.Parameters.AddWithValue("@CONSADD2", delivery.CONSADD2 == null || delivery.CONSADD2 == "null" ? DBNull.Value : delivery.CONSADD2);
+                            myCommand.Parameters.AddWithValue("@CONSCITY", delivery.CONSCITY);
+                            myCommand.Parameters.AddWithValue("@CONSSTATE", delivery.CONSSTATE);
+                            myCommand.Parameters.AddWithValue("@CONSZIP", delivery.CONSZIP);
+                            myCommand.Parameters.AddWithValue("@TTLPCS", delivery.TTLPCS);
+                            myCommand.Parameters.AddWithValue("@TTLYDS", delivery.TTLYDS);
+                            myCommand.Parameters.AddWithValue("@TTLWGT", delivery.TTLWGT);
+                            myCommand.Parameters.AddWithValue("@DLVDDATE", delivery.DLVDDATE == null || delivery.DLVDDATE == "null" ? DBNull.Value : delivery.DLVDDATE);
+                            myCommand.Parameters.AddWithValue("@DLVDTIME", delivery.DLVDTIME == null || delivery.DLVDTIME == "null" ? DBNull.Value : delivery.DLVDTIME);
+                            myCommand.Parameters.AddWithValue("@DLVDPCS", delivery.DLVDPCS == null || delivery.DLVDPCS == -1 ? DBNull.Value : delivery.DLVDPCS);
+                            myCommand.Parameters.AddWithValue("@DLVDSIGN", delivery.DLVDSIGN == null || delivery.DLVDSIGN == "null" ? DBNull.Value : delivery.DLVDSIGN);
+                            myCommand.Parameters.AddWithValue("@DLVDNOTE", delivery.DLVDNOTE == null || delivery.DLVDNOTE == "null" ? DBNull.Value : delivery.DLVDNOTE);
+                            myCommand.Parameters.AddWithValue("@DLVDIMGFILELOCN", loc_name == null || loc_name == "null" ? DBNull.Value : loc_name);
+                            myCommand.Parameters.AddWithValue("@DLVDIMGFILESIGN", sign_name == null || sign_name == "null" ? DBNull.Value : sign_name);
+
+                            myReader = myCommand.ExecuteReader();
+                            table.Load(myReader);
+                            myReader.Close();
+                        }
+                        // add key to list to send a confirmed list back...
+                    }
+
+                    myCon.Close();
+                }
+                return new JsonResult(new { success = true, message = "Updated deliveries." });
             }
             catch (Exception ex)
             {
