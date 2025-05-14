@@ -135,7 +135,8 @@ namespace DeliveryManager.Server.Controllers
         VerifyPowerunit(driverVerification driver)
 
         Token-protected verification of powerunit/delivery date combination existence
-        in database. Handling of success/fail is handled with frontend logic.
+        in database. Ensures powerunit is not already assigned to a driver before 
+        reassigning to new user. Handling of success/fail is handled with frontend logic.
 
         *//////////////////////////////////////////////////////////////////////////////
 
@@ -150,6 +151,7 @@ namespace DeliveryManager.Server.Controllers
                 return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
+            string checkQuery = "select COUNT(*) from dbo.USERS where POWERUNIT=@POWERUNIT and USERNAME != @USERNAME";
             string updatequery = "update dbo.USERS set POWERUNIT=@POWERUNIT where USERNAME=@USERNAME";
             string selectquery = "select * from dbo.DMFSTDAT where MFSTDATE=@MFSTDATE and POWERUNIT=@POWERUNIT";
 
@@ -162,6 +164,22 @@ namespace DeliveryManager.Server.Controllers
                 {
                     con.Open();
 
+                    // ensure powerunit is not already assigned to a driver...
+                    using (SqlCommand checkCommand = new SqlCommand(checkQuery, con))
+                    {
+                        checkCommand.Parameters.AddWithValue("@POWERUNIT", driver.POWERUNIT);
+                        checkCommand.Parameters.AddWithValue("@USERNAME", driver.USERNAME);
+
+                        int checkResult = (int)await checkCommand.ExecuteScalarAsync();
+                        if (checkResult > 0)
+                        {
+                            ArgumentException exception = new ArgumentException($"The provided powerunit is currently assigned to another driver, contact admin.");
+                            //_logger.LogError(exception, exception.Message);
+                            return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status409Conflict };
+                        }
+                    }
+
+                    // update user credentials in user table...
                     using (SqlCommand cmd = new SqlCommand(updatequery, con))
                     {
                         cmd.Parameters.AddWithValue("@USERNAME", driver.USERNAME);

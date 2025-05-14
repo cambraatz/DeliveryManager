@@ -201,7 +201,7 @@ const DriverPortal = () => {
             //console.log(undeliveredData);
 
             // set delivered + undelivered states...
-            setDelivered( deliveredData ); // package delivered if allowing batch update/deletes...
+            setDelivered( packageDeliveries(deliveredData) ); // package delivered if allowing batch update/deletes...
             setUndelivered( packageDeliveries(undeliveredData) );
             setLoading(false);
 
@@ -244,7 +244,8 @@ const DriverPortal = () => {
         let packagedDeliveries = {};
     
         while (i < deliveries.length) {
-            if (currStop && sharedAddress(deliveries[i],currStop)){
+            // if address matches previous stop and has yet to be delivered...
+            if (currStop && sharedAddress(deliveries[i],currStop) && deliveries[i].STATUS != "1"){
                 console.log(`Duplicate addresses found: ${deliveries[i].CONSADD1}, ${deliveries[i].CONSADD2}`);
                 let sharedDeliveries = [currStop];
                 while (i < deliveries.length && sharedAddress(deliveries[i],currStop)) {
@@ -253,6 +254,7 @@ const DriverPortal = () => {
                 }
                 packagedDeliveries[currStop.STOP] = sharedDeliveries;
             }
+            // catch non-matching deliveries and delivered ones...
             else {
                 console.log(`New delivery added to dictionary: ${deliveries[i]}`);
                 currStop = deliveries[i];

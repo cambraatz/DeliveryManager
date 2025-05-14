@@ -424,7 +424,7 @@ const DriverLogin = () => {
             POWERUNIT: updateData.POWERUNIT,
             MFSTDATE: updateData.MFSTDATE,
         }
-        const response = await fetch(API_URL + "api/Registration/VerifyPowerunit", {
+        const response = await fetch(API_URL + "api/Delivery/VerifyPowerunit", {
             body: JSON.stringify(body_data),
             method: "POST",
             headers: {
@@ -523,7 +523,7 @@ const DriverLogin = () => {
                                 <p>Power unit is required!</p>
                             </div>
                         </div>
-                        <button type="submit">Continue</button>
+                        <button type="submit" id="dm_confirm_button">Continue</button>
                     </form>
                 </div>
                 <div id="popupWindow" className="overlay">
@@ -535,27 +535,6 @@ const DriverLogin = () => {
                     </div>
                 </div>
 
-                {/*<div id="popupLoginWindow" className="overlay">
-                    <div className="popupLogin">
-                        <div id="popupLoginExit" className="content">
-                            <h1 id="close" className="popupLoginWindow" onClick={closePopup}>&times;</h1>
-                        </div>
-                        <Popup 
-                            message={message}
-                            date={formData.deliveryDate}
-                            powerunit={updateData.POWERUNIT}
-                            closePopup={closePopup}
-                            handleDeliveryChange={handleDeliveryChange}
-                            handleUpdate={handleUpdate}
-                            updateData={updateData}
-                            driverCredentials={driverCredentials}
-                            credentials={driverCredentials}
-                            pressButton={submitNewUser}
-                            updateNew={updateNewUser}
-                            onPressFunc={onPress_functions}
-                        />
-                    </div>
-                </div>*/}
                 <Footer id="footer" />
                 </>
             )}
