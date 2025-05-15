@@ -84,9 +84,9 @@ const DL_Popup = (props) => {
                                         </th>
                                         <td className="cb_col2">{delivery.STOP}</td>
                                         <td className="cb_col3">{delivery.PRONUMBER}</td>
-                                        <td className="cb_col4">{delivery.MFSTKEY}</td>
-                                        <td className="cb_col5 desktop_table">{delivery.TTLPCS}</td>
-                                        <td className="cb_col6 desktop_table">{delivery.TTLYDS}</td>
+                                        <td className="cb_col4">{delivery.TTLPCS}</td>
+                                        <td className="cb_col5 desktop_table">{delivery.TTLYDS}</td>
+                                        <td className="cb_col6 desktop_table">{delivery.TTLWGT}</td>
                                     </tr>
                                 )
                             })}
