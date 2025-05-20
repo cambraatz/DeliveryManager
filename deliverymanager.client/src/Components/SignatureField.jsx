@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
-import React, { useRef,useState } from 'react';
-import ReactDOM from 'react-dom';
+import { useRef,useState } from 'react';
+//import ReactDOM from 'react-dom';
 import SignatureCanvas from 'react-signature-canvas';
 
 const SignatureField = (props) => {
@@ -43,14 +43,6 @@ const SignatureField = (props) => {
                 <button onClick={clearSignature} type="button">Clear Signature</button>
                 <button onClick={acceptSignature} type="button">Submit Signature</button>
             </div>
-            {/*
-            {image && (
-                <div>
-                    <h4>Saved Signature:</h4>
-                    <img src={image} alt="Saved signature" style={{ border: '1px solid black' }} />
-                </div>
-            )}
-            */}
         </div>
     );
 };

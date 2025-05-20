@@ -68,14 +68,6 @@ const DriverPortal = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // state 'driverCredentials' to be passed to next page...
-    /*const [driverCredentials, setDriverCredentials] = useState({
-        USERNAME: location.state ? location.state.driver["USERNAME"] : null,
-        POWERUNIT: location.state ? location.state.driver["POWERUNIT"] : null,
-    });*/
-
-    
-
     // set delivery json data for table rendering...
     const [undelivered, setUndelivered] = useState([]);
     const [delivered, setDelivered] = useState([]);
@@ -102,7 +94,7 @@ const DriverPortal = () => {
             Logout();
         }
 
-        console.log(activeCompany);
+        //console.log(activeCompany);
         setCompany(activeCompany);
 
         setDriverCredentials({
@@ -134,11 +126,6 @@ const DriverPortal = () => {
 
     const collapseHeader = (e) => {
         if (e.target.id === "collapseToggle" || e.target.id === "toggle_dots") {
-            /*if (header === "open") {
-                setHeader("close");
-            } else {
-                setHeader("open");
-            }*/
             setHeader(prev => (prev === "open" ? "close" : "open"));
         }
     }
@@ -161,10 +148,6 @@ const DriverPortal = () => {
     
     /* REDO THIS FUNCTION, IT SEEMS VERY INEFFICIENT */
     async function getDeliveries(powerunit,mfstdate){
-        // initialize delivered + undelivered responses...
-        //let responseD = null;
-        //let responseU = null;
-
         // attempt to gather delivered + undelivered deliveries...
         try {
             const response = await fetch(API_URL + "api/Delivery/GetDeliveries?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
@@ -188,9 +171,6 @@ const DriverPortal = () => {
             const deliveredData = data.delivered;
             const undeliveredData = data.undelivered;
 
-            //console.log(deliveredData);
-            //console.log(undeliveredData);
-
             // set delivered + undelivered states...
             setDelivered( packageDeliveries(deliveredData) ); // package delivered if allowing batch update/deletes...
             setUndelivered( packageDeliveries(undeliveredData) );
@@ -199,7 +179,6 @@ const DriverPortal = () => {
         // divert all errors to login page...
         } catch (error) {
             console.error(error);
-            //Logout();
             // set delay before logging out...
             setTimeout(() => {
                 Logout();
@@ -237,7 +216,6 @@ const DriverPortal = () => {
         while (i < deliveries.length) {
             // if address matches previous stop and has yet to be delivered...
             if (currStop && sharedAddress(deliveries[i],currStop) && deliveries[i].STATUS != "1"){
-                console.log(`Duplicate addresses found: ${deliveries[i].CONSADD1}, ${deliveries[i].CONSADD2}`);
                 let sharedDeliveries = [currStop];
                 while (i < deliveries.length && sharedAddress(deliveries[i],currStop)) {
                     sharedDeliveries.push(deliveries[i]);
@@ -247,7 +225,6 @@ const DriverPortal = () => {
             }
             // catch non-matching deliveries and delivered ones...
             else {
-                console.log(`New delivery added to dictionary: ${deliveries[i]}`);
                 currStop = deliveries[i];
                 packagedDeliveries[deliveries[i].STOP] = [ deliveries[i] ];
                 i += 1;
@@ -266,7 +243,7 @@ const DriverPortal = () => {
         }
 
         const deliveries = status === "delivered" ? delivered : undelivered;
-        console.log(deliveries);
+        //console.log(deliveries);
         try {
             // eslint-disable-next-line no-unused-vars
             return Object.entries(deliveries).flatMap(([stopNum,deliveryList]) => {
@@ -306,9 +283,10 @@ const DriverPortal = () => {
     const [deliveryList,setDeliveryList] = useState([]);
 
     const selectDelivery = (deliveries,proNum) => {
+        // eslint-disable-next-line no-unused-vars
         for (const [stopNum,list] of Object.entries(deliveries)) {
             for (const delivery of list) {
-                console.log(`delivery.PRONUMBER: ${delivery.PRONUMBER}`);
+                //console.log(`delivery.PRONUMBER: ${delivery.PRONUMBER}`);
                 if (delivery.PRONUMBER === proNum) {
                     if (list.length == 1) {
                         const deliveryData = {
@@ -318,61 +296,34 @@ const DriverPortal = () => {
                             company: company,
                             valid: true,
                         };
-                        //console.log(`/deliveries/${delivery.PRONUMBER}`);
                         navigate(`/deliveries/${delivery.PRONUMBER}`, {state: deliveryData});
                         return;
                     } else {
-                        //sessionStorage.setItem("deliveryList",JSON.stringify(deliveryList));
                         setDeliveryList(list);
                         openPopup();
                         return;
                     }
                 }
             }
-            console.log(`delivery was not found at stop ${stopNum}...`);
         }
-        console.log(`delivery ${proNum} was not found in delivery list...`)
+        console.error(`delivery ${proNum} was not found in delivery list...`);
     };
 
     const handleClick = (event) => {
-        console.log(`event.target: ${event.target}`);
         // cache row class name, row text + parse out the pronumber...
         const parentClass = event.target.parentNode.className;
 
         const row = event.target.parentNode;
         const proNum = row.querySelector('.col2').textContent;
-        //console.log(`proNumber: ${proNum}`);
         
-        const address1 = row.querySelector('.col4').textContent;
-        const address2 = row.querySelector('.col5').textContent;
-        console.log(`address: ${[address1,address2]}`);
+        //const address1 = row.querySelector('.col4').textContent;
+        //const address2 = row.querySelector('.col5').textContent;
 
         const deliveries = parentClass.includes("undelivered") ? undelivered : delivered;
         selectDelivery(deliveries,proNum);
     }
 
-    /*const handleRowClick = (index,delivery) => {
-        console.log("Row index clicked:", index);
-        console.log("Full delivery object:", delivery);
-
-        const deliveryData = {
-            delivery: delivery,
-            driver: driverCredentials,
-            header: header,
-            company: company,
-            valid: true,
-        };
-        //console.log(`/deliveries/${delivery.PRONUMBER}`);
-        navigate(`/deliveries/${delivery.PRONUMBER}`, {state: deliveryData});
-        return;
-    }*/
-
     const handlePopupSubmit = (mfstkeys) => {
-        alert("Multi-selection logic is actively being developed!");
-        //const deliveries = status === "0" ? undelivered : delivered;
-        //const deliveries = deliveryList;
-        console.log("deliveryList",deliveryList);
-
         const keySet = new Set(mfstkeys);
         const activeDeliveries = deliveryList.filter(delivery => keySet.has(delivery.MFSTKEY));
         if (activeDeliveries && activeDeliveries.length > 0) {

@@ -22,10 +22,6 @@ import { scrapeDate,
     getTime, 
     translateDate, 
     API_URL, 
-    getToken, 
-    isTokenValid,
-    logout,
-    requestAccess, /*, scrapeFile*/
     showFailFlag, 
     SUCCESS_WAIT,
     FAIL_WAIT} from '../Scripts/helperFunctions';
@@ -96,11 +92,8 @@ const DeliveryForm = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(false); // NOTE: THIS MIGHT NOT BE NEEDED, NO API CALLS MADE TO RENDER?
+    const [loading, setLoading] = useState(true); // NOTE: THIS MIGHT NOT BE NEEDED, NO API CALLS MADE TO RENDER?
     // MAYBE WRAP ALL API CALLS FOR IMAGES INSIDE HERE
-
-    // flag invalid navigation with null location.state...
-    const VALID = location.state ? location.state.valid : false;
 
     // simplify access to location.state...
     let DELIVERY = location.state ? location.state.delivery : null;
@@ -217,7 +210,7 @@ const DeliveryForm = () => {
         if (!username || !activeCompany) {
             Logout();
         }
-        console.log(activeCompany);
+        //console.log(activeCompany);
         setCompany(activeCompany);
 
         // pre-render initialization...
@@ -283,6 +276,8 @@ const DeliveryForm = () => {
             document.getElementById('button_div').style.justifyContent = "space-around";
             document.getElementById('button_div').style.padding = "0 10%";
         }
+
+        setLoading(false);
     }
 
     /*/////////////////////////////////////////////////////////////////
@@ -415,15 +410,6 @@ const DeliveryForm = () => {
     
     // pull image from server...
     async function retrieveImage(image) {
-        // request token from memory, refresh as needed...
-        /*const token = await requestAccess(driverCredentials.USERNAME);
-        
-        // handle invalid token on login...
-        if (!token) {
-            navigate('/');
-            return;
-        }*/
-
         try {
             // fetch image from server using stored file paths...
             const response = await fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE=" + image, {
@@ -555,7 +541,7 @@ const DeliveryForm = () => {
                 }
 
                 if (!response.ok) {
-                    console.log(`Updating manifests failed on delivery ${deliveryData.MFSTNUMBER}.`);
+                    console.error(`Updating manifests failed on delivery ${deliveryData.MFSTNUMBER}.`);
                     break;
                 }
             }
@@ -571,7 +557,7 @@ const DeliveryForm = () => {
                     navigate(`/deliveries`, { state: navigateData });
                 }, SUCCESS_WAIT)
             } else {
-                console.trace("update delivery failed");
+                console.error("update delivery failed");
                 setPopup("Fail");
                 openPopup();
                 setTimeout(() => {
@@ -610,7 +596,7 @@ const DeliveryForm = () => {
         const date_field = document.getElementById("dlvdate");
         const time_field = document.getElementById("dlvtime");
         const piece_field = document.getElementById("dlvdpcs");
-        const note_field = document.getElementById("dlvdnote");
+        //const note_field = document.getElementById("dlvdnote");
 
         // map empty field cases to messages...
         let code = 0;
@@ -755,7 +741,7 @@ const DeliveryForm = () => {
                     navigate(`/deliveries`, { state: navigateData });
                 }, SUCCESS_WAIT)
             } else {
-                console.trace("update delivery failed");
+                console.error("update delivery failed");
                 setPopup("Fail");
                 openPopup();
                 setTimeout(() => {
@@ -795,7 +781,7 @@ const DeliveryForm = () => {
             await clearDelivery(deliveryData);
         }
         else{
-            console.log("Calling handleUpdate on deliveryData: ", deliveryData);
+            //console.log("Calling handleUpdate on deliveryData: ", deliveryData);
             await handleUpdate(deliveryData);
         }        
     }
@@ -889,7 +875,7 @@ const DeliveryForm = () => {
     }
 
     const flagDisabled = (elementID,flagID) => {
-        console.log(`flagging disabled: ${elementID}, ${flagID}`);
+        //console.log(`flagging disabled: ${elementID}, ${flagID}`);
         if (document.getElementById(elementID) && document.getElementById(elementID).readOnly) {
             showFailFlag(flagID, elementID === "dlvdpcs" ? "Cannot edit pieces on batch delivery." : "Cannot edit note on batch delivery.");
         }

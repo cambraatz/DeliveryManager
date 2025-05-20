@@ -17,7 +17,7 @@ const Header = (props) => {
         setUser(props.currUser);
     }, [props.company, props.currUser]);
 
-    const deliveryHeader = () => {
+    /*const deliveryHeader = () => {
         let header = (
             <>
                 <div id="title_div">
@@ -42,7 +42,7 @@ const Header = (props) => {
         );
         
         return header;
-    }
+    }*/
 
     const deliveryCondition = () => {
         let condition = (

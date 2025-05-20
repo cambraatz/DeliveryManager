@@ -9,22 +9,13 @@ Update Date: 1/7/2025
 import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import Header from './Header';
-//import Popup from './Popup';
 import Footer from './Footer';
 import { scrapeDate, 
     renderDate, 
     getDate, 
     API_URL,
-    //getCompany_target,
-    //cacheToken,
-    //requestAccess,
-    //isCompanyValid, 
     showFailFlag,
-    //getCookie,
-    //scrapeURL,
-    //clearMemory
-    FAIL_WAIT,
-    SUCCESS_WAIT} from '../Scripts/helperFunctions';
+    FAIL_WAIT} from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
 import LoadingSpinner from './LoadingSpinner.jsx';
 
@@ -99,25 +90,7 @@ BASIC STRUCTURE:
 
 *//////////////////////////////////////////////////////////////////////
 
-/*function getCookie(name){
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    if(ca != ""){
-        for (let i=0; i,ca.length; i++){
-            let c = ca[i].trim();
-            if (c.indexOf(nameEQ) === 0){
-                return c.substring(nameEQ.length, c.length);
-            }
-        }
-    }
-    
-    return null;
-}*/
-
 const DriverLogin = () => {
-    //const API_URL = import.meta.env.VITE_API_URL;
-    //console.log("API URL:", API_URL);
-
     // Date processing functions ...
     const currDate = getDate();
     const navigate = useNavigate();
@@ -164,8 +137,6 @@ const DriverLogin = () => {
     // state for success/fail popups graphics...
     const [popup,setPopup] = useState("Success");
 
-    //const [companies,setCompanies] = useState({});
-
     /* Page rendering helper functions... */
 
     /*/////////////////////////////////////////////////////////////////
@@ -208,11 +179,7 @@ const DriverLogin = () => {
     const collapseHeader = (e) => {
         // toggle header only if toggle or dots symbol are clicked...
         if (e.target.id === "collapseToggle" || e.target.id === "toggle_dots") {
-            if (header === "open") {
-                setHeader("close");
-            } else {
-                setHeader("open");
-            }
+            setHeader(prev => (prev === "open" ? "close" : "open"));
         }
     }
 
@@ -297,8 +264,6 @@ const DriverLogin = () => {
         }
 
         const data = await response.json();
-        console.log(data);
-
         if (data.success) {
             sessionStorage.setItem("companies_map", data.mapping);
             const company_map = JSON.parse(data.mapping);
@@ -367,7 +332,6 @@ const DriverLogin = () => {
     async function handleUpdate(e) {
         // prevent default and reset popup window...
         e.preventDefault();
-        //setMessage(null);
 
         // target date and powerunit fields...
         const deliver_field = document.getElementById("dlvdate");
@@ -396,21 +360,10 @@ const DriverLogin = () => {
 
         // catch and alert user to incomplete fields...
         if (code >= 0) {
-            //alert(alerts[code]);
             showFailFlag(elementID, alerts[code]);
             return;
         }
 
-        // request token from memory, refresh as needed...
-        /*  REPLACE THIS WITH COOKIE BASED TOKENIZATION */
-        /*const token = await requestAccess(driverCredentials.USERNAME);
-
-        // handle invalid token on login...
-        if (!token) {
-            closePopup();
-            return;
-        }*/
-        
         // update driver credentials state...
         setDriverCredentials({
             ...driverCredentials,

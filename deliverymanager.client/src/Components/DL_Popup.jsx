@@ -54,7 +54,7 @@ const DL_Popup = (props) => {
                     <div className="fixed_tbody">
                         <table className="Delivery_Table cb_table">
                             <thead className="dl_table_header">
-                                <tr className="title_row title_primary">
+                                {/*<tr className="title_row title_primary">
                                     <th className="title" colSpan="6">{dl[0].MFSTNUMBER}</th>
                                 </tr>
                                 <tr className="title_row title_secondary">
@@ -62,6 +62,13 @@ const DL_Popup = (props) => {
                                 </tr>
                                 <tr className="title_row title_secondary">
                                     <th className="title" colSpan="6">{`${dl[0].CONSADD2 ? (dl[0].CONSADD1 + `, ${dl[0].CONSADD2}`) : dl[0].CONSADD1}`}</th>
+                                </tr>*/}
+                                <tr className="title_row title_primary">
+                                    <th className="title" colSpan="6">
+                                        {dl[0].MFSTNUMBER}<br />
+                                        {dl[0].CONSNAME}<br />
+                                        {dl[0].CONSADD2 ? `${dl[0].CONSADD1}, ${dl[0].CONSADD2}` : dl[0].CONSADD1}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>

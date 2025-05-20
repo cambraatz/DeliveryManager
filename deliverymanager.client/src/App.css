@@ -135,30 +135,35 @@ label {
     display: flex;
     align-items: center;
     /*padding: 2.5% 4%;*/
-    padding: 1% 4%;
+    padding: 0.5em 4%;
     justify-content: space-between;
     border-top: 1px solid #353535;
     border-bottom: 1px solid #353535;
     box-shadow: 0px 3px 4px #00000020;
-    /*background-color: #e0eaf3;*/
 }
 
 #sticky_MDPU {
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
+    align-items: center;
     width: 60%;
-    gap: 1%;
+    gap: 5%;
+    /*flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5%;*/
 }
+#sticky_MDPU div {
+    justify-content: flex-start;
+    gap: 1%;
+    flex-direction: column;
+}
+
 #sticky_MDPU .weak {
     margin-right: 3%;
 }
 #sticky_MDPU h4 {
-    margin: 0 0% 0 0 ;
-}
-#sticky_MDPU div {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 1%;
+    margin: 0;
 }
 
 #sticky_creds {
@@ -166,6 +171,7 @@ label {
     flex-direction: row;
     justify-content: space-between;
     width: 100%;
+    align-items: center;
 }
 
 #MDPU_Row {
@@ -195,6 +201,7 @@ label {
     transition: opacity 500ms;
     visibility: hidden;
     opacity: 0;
+    z-index: 1000;
 }
 
     .overlay:target {
@@ -203,14 +210,29 @@ label {
     }
 
 .popupSignature {
-    margin: 12.5% 25% 0;
+    /*margin: 12.5% 25% 0;
     padding: 5px 20px;
     background: #fff;
     border-radius: 5px;
     width: auto;
     position: relative;
+    transition: all 1s ease-in-out;*/
+    padding: 5px 20px;
+    background: #fff;
+    border-radius: 8px;
     transition: all 1s ease-in-out;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+    max-width: 90vw;
+    max-height: 90vh;
+    width: 80%;
+    overflow: auto;
 }
+/* Not sure if this is necessary anymore */
 .popupSignature .close {
     position: absolute;
     top: 20px;
@@ -561,16 +583,18 @@ td, th {
 }
 
 #Delivery_Input_Div {
-    /*margin: 0 1em;*/
-    margin: 0 20% 5%;
+    /*margin: 0 1em;
+    margin: 0 20% 5%;*/
+    margin: 0 2% 2%;
     border: solid 1px black;
     border-radius: 0 0 5px 5px;
     background-color: #e0eaf3;
 }
 
     #Delivery_Input_Div button {
-        margin: 0 0 1.5em 0;
-        padding: 0.75em 0;
+        /*margin: 0 0 1.5em 0;*/
+        margin: 0 2%;
+        padding: 0;
         width: 40%;
         height: 3em;
     }
@@ -846,14 +870,15 @@ input:read-only:hover {
 }
 
 #Header {
-    margin: 0 0 1%;
+    margin: 0 0 2%;
     position: sticky;
     top: 0;
     background-color: white;
+    z-index: 998;
 }
 
 #buffer {
-    height: 20px;
+    height: 60px;
     background-color: white;
 }
 
@@ -903,14 +928,14 @@ input:read-only:hover {
 }
 #sigDiv button {
     margin: 3% 0 2%;
-    padding: 0.75em 0;
-    width: 27%;
+    width: 30%;
+    min-height: 3em;
 }
 #sigDiv div {
     width: 100%;
     display: flex;
     justify-content: center;
-    gap: 15%;
+    gap: 10%;
 }
 
 #signature_Div {
@@ -977,8 +1002,8 @@ input[type="file"] {
 }
 
 #fileUploadLogo {
-    height: 5em;
-    width: 5em;
+    height: 3em;
+    width: 3em;
 }
 
 .sticky_header {
@@ -987,15 +1012,19 @@ input[type="file"] {
 
 .sticky_header div {
     display: flex;
-    flex-direction: row;
-    align-items: center;
+    /*flex-direction: row;
+    align-items: center;*/
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .sticky_header div h1 {
-    margin: 0 0 1% 4%;
+    /*margin: 0 0 1% 4%;*/
+    margin: 0 0 2% 4%;
 }
 .sticky_header div h2 {
-    margin: 0 0 1% 1%;
+    /*margin: 0 0 1% 1%;*/
+    margin: 0 0 2% 4%;
 }
 
 #title_div {
@@ -1080,8 +1109,8 @@ input[type="file"] {
 }
 
 .popup_button {
-    min-height: 2em;
-    width: 40%;
+    min-height: 3em;
+    width: 60%;
     max-width: 300px;
 }
 
@@ -1157,10 +1186,9 @@ input[type="file"] {
 }
 
 .dl_popup_button {
-    min-height: 2em;
-    width: 30% !important;
+    min-height: 3em;
     max-width: 300px;
-    margin: 1em 0;
+    margin: 3% 0 2%;
 }
 
 #dm_confirm_button {
@@ -1171,7 +1199,7 @@ input[type="file"] {
 
 .title_primary .title {
     font-size: small;
-    padding: 0.5em 0 0;
+    padding: 0.5em 0;
 }
 
 .title_secondary .title {
@@ -1268,9 +1296,9 @@ input[type="file"] {
     background-color: #e0eaf3;
 }
 
-.Delivery_Table {
+/*.Delivery_Table {
     border-collapse: collapse;
-}
+}*/
 
 .dl_table_header th {
     border: none;
@@ -1278,14 +1306,20 @@ input[type="file"] {
     background: transparent;
 }
 
-#Delivery_Input_Div {
-    margin: 0 2% 2%;
+#title_dash {
+    display: none;
 }
 
-#Delivery_Input_Div button {
-    padding: 0;
-    height: 3em;
-    margin: 0 2%;
+.popupSignatureWindow {
+    width: 100%;
+}
+
+#main_title {
+    text-align: left;
+}
+
+#popupPrompt p {
+    margin-block: 0 1em;
 }
 
 @media only screen and (max-width:400px) {
@@ -1302,10 +1336,6 @@ input[type="file"] {
         font-size: 0.675em;
     }
 
-    #sticky_creds {
-        width: auto;
-    }
-
     #UserWidget p {
         font-size: 0.75em;
     }
@@ -1318,237 +1348,6 @@ input[type="file"] {
     #img_Div {
         flex-direction: column;
         text-align: left;
-    }
-
-    #title_dash {
-        display: none;
-    }
-}
-
-/*@media only screen and (max-width:900px) {*/
-@media only screen and (max-width:630px) {
-    /*#collapseToggle {
-        width: 15%;
-        left: 42.5%;
-    }
-    
-    h1 {
-        font-size: 1.5em;
-    }
-
-    h2 {
-        font-size: 1.1em;
-    }
-
-    h3 {
-        font-size: 0.9em;
-    }
-
-    h4 {
-        font-size: 0.75em;
-    }
-
-    h5 {
-        font-size: 0.75em;
-        display: block;
-        margin-block-start: 1.33em;
-        margin-block-end: 1.33em;
-        margin-inline-start: 0px;
-        margin-inline-end: 0px;
-        font-weight: bold;
-    }
-
-    label {
-        font-size: 0.75em;
-    }
-
-    thead {
-        font-size: 0.75em;
-        *//*color: #5A89BB;*//*
-        border-bottom: 1px solid black;
-    }
-
-    tbody {
-        border-top: 1px solid #5A89BB;
-        font-size: 0.75em;
-    }
-
-    td, th {
-        padding: 2% 1%;
-        overflow: hidden;
-    }
-
-    .col1 {
-        width: 12%;
-        min-width: 38px;
-        overflow: visible;
-    }
-    .col2 {
-        width: 18%;
-    }
-    .col3 {
-        width: 30%;
-    }
-    .col4 {
-        width: 32%;
-    }
-
-    .desktop_table {
-        display: none;
-    }
-
-    #MDPU_Row {
-        padding: 0;
-        margin: 0 4% 1em;
-    }
-
-    #SPM_Row {
-        margin: 1em 2% 0;
-    }
-
-    #Return {
-        margin-right: 0;
-    }
-
-    #nav-buttons {
-        gap: 5%;
-    }
-
-    #UserWidget {
-        height: 20px;
-        flex-direction: row;
-        margin-right: 0.5em;
-    }
-
-    #UserWidget p {
-        font-size: 0.85em;
-    }
-
-    #UserIcon {
-        height: 20px;
-        width: 20px;
-        margin-right: 5px;
-    }
-
-    .popupLogout {
-        width: 50%;
-    }
-
-    .popupLogin {
-        margin: 50% auto;
-        width: 50%;
-    }
-    .popupLogin label {
-        font-size: medium;
-    }
-
-    .cont_left {
-        width: 60%;
-    }
-
-    #button_div {
-        margin: 10% 0 6%;
-    }
-
-    #Delivery_Input_Div {
-        margin: 0 2% 2%;
-    }
-
-    #Delivery_Input_Div button {
-        padding: 0;
-        height: 3em;
-        margin: 0 2%;
-    }
-
-    #loginForm div {
-        padding: 0 25% 1em 25%;
-    }*/
-
-    /*#img_Div {
-        align-items: center;
-    }*/
-
-    /*.Table_Separator {
-        font-size: medium;
-    }
-
-    #print_div {
-        padding: 0 10% 0 10%;
-    }
-
-    #title_div {
-        margin: 0 0 2% 4%;
-    }
-    #title_dash {
-        display: none;
-    }*/
-    
-    .sticky_header div{
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .sticky_header div h1 {
-        margin: 0 0 2% 4%;
-    }
-    .sticky_header div h2 {
-        margin: 0 0 2% 4%;
-    }
-
-    #AccountTab {
-        flex-direction: row;
-    }
-
-    #sticky_MDPU {
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 5%;
-    }
-    #sticky_MDPU div {
-        flex-direction: column;
-    }
-
-    #sticky_creds {
-        width: 100%;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    #Header {
-        margin: 0 0 2%;
-    }
-
-    #buffer {
-        height: 60px;
-    }
-
-    .popupSignatureWindow {
-        width: 100%;
-    }
-    .popupSignature {
-        width: 90%;
-        margin: 50% 3% 0;
-        padding: 0 2%;
-    }
-    .popupSignature .close {
-        padding: 0 2%;
-    }
-    #sigDiv button {
-        padding: 0;
-        width: 30%;
-        height: 3em;
-    }
-
-    #fileUploadLogo {
-        height: 3em;
-        width: 3em;
-    }
-
-    .popup_button {
-        min-height: 2em;
-        width: 60%;
-        max-width: 300px;
     }
 }
 
@@ -1571,13 +1370,6 @@ input[type="file"] {
 
     h5 {
         font-size: 0.83em;
-    }
-
-    .desktop_table {
-        display: table-cell;
-    }
-    .desktop_span {
-        display: inline;
     }
 
     #sticky_MDPU {
@@ -1607,9 +1399,9 @@ input[type="file"] {
     #Delivery_Input_Div {
         margin: 0 4% 5%;
     }
-    .popupSignature {
+    /*.popupSignature {
         margin: 5% 10% 0;
-    }
+    }*/
     .popupLogin {
         margin: 20% auto;
         width: 25%;
@@ -1711,6 +1503,64 @@ input[type="file"] {
     #title_dash {
         display: flex;
     }
+
+    .sticky_header div {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .sticky_header div h1 {
+        margin: 0 0 1% 4%;
+    }
+    .sticky_header div h2 {
+        margin: 0 0 1% 1%;
+    }
+
+    #sticky_MDPU {
+        gap: 1%;
+        align-items: stretch;
+        /*flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 5%;*/
+    }
+    #sticky_MDPU div {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 1%;
+        /*flex-direction: column;*/
+    }
+
+    #sticky_creds {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    #Header {
+        margin: 0 0 2%;
+    }
+
+    #buffer {
+        height: 20px;
+    }
+
+    #fileUploadLogo {
+        height: 5em;
+        width: 5em;
+    }
+
+    .popup_button {
+        width: 40%;
+    }
+}
+
+@media only screen and (min-width: 900px) {
+    .desktop_table {
+        display: table-cell;
+    }
+    .desktop_span {
+        display: inline;
+    }
 }
 
 @media only screen and (min-width: 1200px) {        
@@ -1728,7 +1578,8 @@ input[type="file"] {
     }
 
     .popupSignature {
-        margin: 15% 3% 0;
+        /*margin: 15% 3% 0;*/
+        width: 70%;
     }
 
     /*.popupLogin {
