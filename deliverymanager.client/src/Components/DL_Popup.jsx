@@ -47,30 +47,43 @@ const DL_Popup = (props) => {
                 <div id="popupExit" className="content">
                     <h1 id="close" className="popupWindow" onClick={props.onClose}>&times;</h1>
                 </div>
-                <div className="table_div">
-                    <table className="Delivery_Table cb_table">
-                        <thead className="dl_table_header">
-                            <tr className="title_row">
-                                <th className="title" colSpan="6">{dl[0].CONSNAME}</th>
-                            </tr>
-                            <tr className="title_row title_secondary">
-                                <td className="title" colSpan="6">{`${dl[0].CONSADD2 ? (dl[0].CONSADD1 + `, ${dl[0].CONSADD2}`) : dl[0].CONSADD1}`}</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <th id="cb_select_all" className="cb_col1">
-                                    <label className="checkbox-container">
-                                        <input type="checkbox" checked={selected.length === dl.length} onChange={handleSelectAll} />
-                                        <span className="select_all_box custom-checkmark"></span>
-                                    </label>
-                                </th>
-                                <th className="cb_col2">Stop</th>
-                                <th className="cb_col3">Pro No</th>
-                                <th className="cb_col4">Manifest Key</th>
-                                <th className="cb_col5 desktop_table">Pieces</th>
-                                <th className="cb_col6 desktop_table">Yards</th>
-                            </tr>
+                <div id="popupPrompt" className="content">
+                    <p>Select Deliveries</p>
+                </div>
+                <div className="table_div dl_table_div">
+                    <div className="fixed_tbody">
+                        <table className="Delivery_Table cb_table">
+                            <thead className="dl_table_header">
+                                <tr className="title_row title_primary">
+                                    <th className="title" colSpan="6">{dl[0].MFSTNUMBER}</th>
+                                </tr>
+                                <tr className="title_row title_secondary">
+                                    <th className="title" colSpan="6">{dl[0].CONSNAME}</th>
+                                </tr>
+                                <tr className="title_row title_secondary">
+                                    <th className="title" colSpan="6">{`${dl[0].CONSADD2 ? (dl[0].CONSADD1 + `, ${dl[0].CONSADD2}`) : dl[0].CONSADD1}`}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="column_headers">
+                                    <th id="cb_select_all" className="cb_col1">
+                                        <label className="checkbox-container">
+                                            <input type="checkbox" checked={selected.length === dl.length} onChange={handleSelectAll} />
+                                            <span className="select_all_box custom-checkmark"></span>
+                                        </label>
+                                    </th>
+                                    <th className="cb_col2">Stop</th>
+                                    <th className="cb_col3">Pro No</th>
+                                    <th className="cb_col4">Pieces</th>
+                                    <th className="cb_col5 desktop_table">Yards</th>
+                                    <th className="cb_col6 desktop_table">Weight</th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="scrollable_tbody">
+                        <table className="Delivery_Table cb_table">
+                            <tbody>
                             {dl.map((delivery,i) => {
                                 return (
                                     <tr id={`dl_${i}`} key={`dl_${i}`} className="Table_Body"> {/*onClick={() => props.onClick(i,delivery)}>*/}
@@ -90,8 +103,9 @@ const DL_Popup = (props) => {
                                     </tr>
                                 )
                             })}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div id="dl_button_div">
                     <button id="dl_cancel_button" className="dl_popup_button popup_button" onClick={props.onClose}>Cancel</button>

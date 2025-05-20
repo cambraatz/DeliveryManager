@@ -10,16 +10,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
-import { API_URL, 
-    getToken, 
-    requestAccess, 
-    isTokenValid,
-    isCompanyValid,
-    getCompany_DB, 
-    logout,
-    translateDate,
-    clearMemory,
-    COMPANIES } from '../Scripts/helperFunctions';
+import { API_URL, translateDate} from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
 import LoadingSpinner from './LoadingSpinner.jsx';
 import DL_Popup from './DL_Popup.jsx';
@@ -275,34 +266,21 @@ const DriverPortal = () => {
         }
 
         const deliveries = status === "delivered" ? delivered : undelivered;
-        if (!deliveries) console.log("no deliveries found...")
-        else console.log("deliveries found...")
-
+        console.log(deliveries);
         try {
-            return Object.entries(deliveries).map(([stopNum,deliveryList]) => {
-                if (deliveryList.length > 1) {
-                    console.log(`stop: ${stopNum}, delivery(s):`);
-                    deliveryList.forEach((delivery) => {
-                        console.log(delivery.STOP);
-                    });
-                } else {
-                    console.log(`stop: ${stopNum}, delivery(s): ${deliveryList[0].STOP}`);
-                }
-
-                const dl = deliveryList;
-                return (
-                    <tr key={stopNum} value={dl[0].MFSTKEY} className={`Table_Body ${status}`} id={dl[0].MFSTKEY}>
-                        <td className="col1">
-                            {dl.length === 1 ? dl[0].STOP : `${dl[0].STOP}-${dl[dl.length - 1].STOP}`}
-                        </td>
-                        <td className="col2">{dl[0].PRONUMBER}</td>
-                        <td className="col3">{dl[0].CONSNAME}</td>
-                        <td className="col4">{dl[0].CONSADD1}</td>
-                        <td className="col5 desktop_table">{dl[0].CONSADD2 ? dl[0].CONSADD2 : "---"}</td>
-                        <td className="col6 desktop_table">{dl[0].CONSCITY}</td>
-                        <td className="col7 desktop_table">{dl[0].SHIPNAME}</td>
+            // eslint-disable-next-line no-unused-vars
+            return Object.entries(deliveries).flatMap(([stopNum,deliveryList]) => {
+                return deliveryList.map((delivery) => (
+                    <tr key={`${delivery.MFSTKEY}`} value={delivery.MFSTKEY} className={`Table_Body ${status}`} id={delivery.MFSTKEY}>
+                        <td className="col1">{delivery.STOP}</td>
+                        <td className="col2">{delivery.PRONUMBER}</td>
+                        <td className="col3">{delivery.CONSNAME}</td>
+                        <td className="col4">{delivery.CONSADD1}</td>
+                        <td className="col5 desktop_table">{delivery.CONSADD2 ? delivery.CONSADD2 : "---"}</td>
+                        <td className="col6 desktop_table">{delivery.CONSCITY}</td>
+                        <td className="col7 desktop_table">{delivery.SHIPNAME}</td>
                     </tr>
-                );
+                ))
             });
         } catch {
             console.error("Warning: delivered table rendering error");
@@ -373,7 +351,7 @@ const DriverPortal = () => {
         selectDelivery(deliveries,proNum);
     }
 
-    const handleRowClick = (index,delivery) => {
+    /*const handleRowClick = (index,delivery) => {
         console.log("Row index clicked:", index);
         console.log("Full delivery object:", delivery);
 
@@ -387,7 +365,7 @@ const DriverPortal = () => {
         //console.log(`/deliveries/${delivery.PRONUMBER}`);
         navigate(`/deliveries/${delivery.PRONUMBER}`, {state: deliveryData});
         return;
-    }
+    }*/
 
     const handlePopupSubmit = (mfstkeys) => {
         alert("Multi-selection logic is actively being developed!");
@@ -477,11 +455,11 @@ const DriverPortal = () => {
                                 <tr className="title_row">
                                     <th className="title" colSpan="7">Undelivered</th>
                                 </tr>
-                                <tr>
+                                <tr className="column_headers">
                                     <th className="col1">Stop</th>
                                     <th className="col2">Pro No</th>
                                     <th className="col3">Consignee</th>
-                                    <th className="col4">Address<span className="desktop_table"> 1</span></th>
+                                    <th className="col4">Address<span className="desktop_span"> 1</span></th>
                                     <th className="col5 desktop_table">Address 2</th>
                                     <th className="col6 desktop_table">City</th>
                                     <th className="col7 desktop_table">Shipper</th>
@@ -498,11 +476,11 @@ const DriverPortal = () => {
                                 <tr className="title_row">
                                     <th className="title" colSpan="7">Delivered</th>
                                 </tr>
-                                <tr className="delivered_items">
+                                <tr className="delivered_items column_headers">
                                     <th className="col1">Stop</th>
                                     <th className="col2">Pro No</th>
                                     <th className="col3">Consignee</th>
-                                    <th className="col4">Address<span className="desktop_table"> 1</span></th>
+                                    <th className="col4">Address<span className="desktop_span"> 1</span></th>
                                     <th className="col5 desktop_table">Address 2</th>
                                     <th className="col6 desktop_table">City</th>
                                     <th className="col7 desktop_table">Shipper</th>

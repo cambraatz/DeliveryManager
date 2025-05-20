@@ -21,16 +21,33 @@
 }
 */
 
+h1 {
+    font-size: 1.5em;
+}
+
 h2 {
+    font-size: 1.1em;
     margin: 1em 0;
 }
 
 h3 {
+    font-size: 0.9em;
     margin: 0.75em 0;
 }
 
 h4 {
+    font-size: 0.75em;
     margin: 0.75em 0;
+}
+
+h5 {
+    font-size: 0.75em;
+    display: block;
+    margin-block-start: 1.33em;
+    margin-block-end: 1.33em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
 }
 
 hr {
@@ -56,10 +73,20 @@ img {
 }*/
 
 thead {
-    font-size: 0.85em;
+    font-size: 0.75em;
     /*border-bottom: 1px solid black;*/
 }
 
+.desktop_table,
+.desktop_span {
+    display: none;
+}
+
+label {
+    font-size: 0.75em;
+}
+
+/*
 .col1 {
     width: 8%;
 }
@@ -71,7 +98,23 @@ thead {
 }
 .col4 {
     width: 20%;
+}*/
+
+.col1 {
+    width: 12%;
+    min-width: 38px;
+    overflow: visible;
 }
+.col2 {
+    width: 18%;
+}
+.col3 {
+    width: 30%;
+}
+.col4 {
+    width: 32%;
+}
+
 .col5 {
     width: 20%;
 }
@@ -128,7 +171,9 @@ thead {
 #MDPU_Row {
     display: flex;
     justify-content: space-between;
-    padding: 0 4%;
+    /*padding: 0 4%; add this to 630+ */
+    padding: 0;
+    margin: 0 4% 1em;
 }
 
 #MDPU_Row h3 span {
@@ -195,7 +240,8 @@ thead {
     padding: 5px 20px;
     background: #fff;
     border-radius: 5px;
-    width: 300px;
+    width: 50%;
+    max-width: 300px;
     position: relative;
     transition: all 5s ease-in-out;
 }
@@ -297,11 +343,13 @@ thead {
 }
 
 .popupLogin, .popup {
-    margin: 25% auto;
+    /*margin: 25% auto;
+    width: 25%;*/
+    margin: 50% auto;
+    width: 50%;
     padding: 5px 20px;
     background: #fff;
     border-radius: 8px;
-    width: 25%;
     position: relative;
     transition: all 1s ease-in-out;
 }
@@ -341,7 +389,8 @@ thead {
     }
 
     .popupLogin label {
-        font-size: smaller;
+        /*font-size: smaller;*/
+        font-size: medium;
     }
 
 #popupLoginPrompt {
@@ -416,20 +465,27 @@ thead {
 
 #UserWidget {
     display: flex;
+    flex-direction: row;
     justify-content: flex-end;
     align-items: center;
-    margin-right: 1em;
-    height: 30px;
+    /*margin-right: 1em;*/
+    height: 20px;
+    /*flex-direction: row; this shouldnt be active */
+    margin-right: 0.5em;
 }
 
 #UserWidget p {
     margin-bottom: 1.2em;
+    font-size: 0.85em;
 }
 
 #UserIcon {
-    height: 30px;
+    /*height: 30px;
     width: 30px;
-    margin-right: 10px;
+    margin-right: 10px;*/
+    height: 20px;
+    width: 20px;
+    margin-right: 5px;
 }
 
 .separator_top {
@@ -478,7 +534,7 @@ table {
 tbody {
     font-size: 0.75em;
 }
-tbody tr:nth-child(odd) {
+tbody tr:nth-child(even) {
     background-color: #e0eaf3;
 }
 
@@ -526,12 +582,14 @@ td, th {
 }
 
 #Return {
-    margin-right: 0.5em;
+    margin-right: 0;
 }
 
 #nav-buttons {
     display: flex;
     flex-direction: row;
+    /* make sure this does not mess things up - added from max-width 630px */
+    gap: 5%;
 }
 
 #admin_div {
@@ -569,7 +627,7 @@ td, th {
     #loginForm div {
         display: flex;
         flex-direction: column;
-        padding: 0 30% 1em 30%;
+        padding: 0 25% 1em 25%;
     }
 
     #loginForm label {
@@ -580,7 +638,8 @@ td, th {
 #SPM_Row {
     display: flex;
     justify-content: space-between;
-    margin: 1em 20% 0;
+    /*margin: 1em 20% 0;*/
+    margin: 1em 2% 0;
     padding: 0.5em 5%;
     border-top: solid 1px black;
     border-left: solid 1px black;
@@ -664,11 +723,12 @@ td, th {
     }
 
 #print_div {
-    padding: 0 10% 1.5em 10%;
+    padding: 0 10% 0 10%;
 }
 
 #button_div {
-    margin: 0.5em 0;
+    /*margin: 0.5em 0;*/
+    margin: 6% 0 6%;
     padding: 0 10%;
     display: flex;
     justify-content: space-around;
@@ -732,7 +792,7 @@ input:read-only:hover {
 }
 
 .cont_left {
-    width: 54%;
+    width: 60%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -802,6 +862,9 @@ input:read-only:hover {
     display: flex;
     justify-content: center;
 }
+.dl_table_div {
+    flex-direction: column;
+}
 
 .title_row {
     display: table-row;
@@ -814,7 +877,7 @@ input:read-only:hover {
 }
 
 .Table_Separator {
-    font-size: large;
+    font-size: medium;
 }
 
 .Table_Body:hover {
@@ -939,14 +1002,15 @@ input[type="file"] {
     display: flex;
     flex-direction: row;
     justify-content: start;
-    margin: 0 0 1% 4%;
+    margin: 0 0 2% 4%;
 }
 #title_div h4 {
     margin: 0 8px 0 0;
 }
 
 #collapseToggle {
-    width: 10%;
+    width: 15%;
+    /*width: 10%;*/
     height: 10px;
     padding-bottom: 2px;
     font-size: x-small;
@@ -958,7 +1022,8 @@ input[type="file"] {
     justify-content: center;
     align-items: center;
     position: relative;
-    left: 45%;
+    left: 42.5%;
+    /*left: 45%;*/
     bottom: 0;
     z-index: 10;
     transition: all 2s ease-in-out;
@@ -1104,13 +1169,18 @@ input[type="file"] {
     height: 2em;
 }
 
+.title_primary .title {
+    font-size: small;
+    padding: 0.5em 0 0;
+}
+
 .title_secondary .title {
     font-size: small;
     padding: 0 0 0.5em;
 }
 
-.dl_table_header .title_row th {
-    padding: 0.5em 0 0;
+.title_row th {
+    padding: 0.5em 0;
 }
 
 #dl_button_div {
@@ -1160,11 +1230,104 @@ input[type="file"] {
     border-width: 0 3px 3px 0;
     transform: rotate(45deg);
   }
-  
+
+.scrollable_tbody {
+    max-height: 60vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.scrollable_tbody table {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid black;
+    border-top: none;
+    border-right: 1px solid black;
+    border-left: 1px solid black;
+    border-radius: 0 0 5px 5px;
+}
+
+.fixed_tbody table {
+    width: 100%;
+    border: none;
+    border-bottom: none;
+    border-top: 1px solid black;
+    border-right: 1px solid black;
+    border-left: 1px solid black;
+    border-radius: 5px 5px 0 0;
+}
+
+.dl_table_header {
+    border: none;
+}
+
+/*.scrollable_tbody tbody tr:nth-child(odd) {
+    background-color: #e0eaf3;
+}*/
+
+.column_headers {
+    background-color: #e0eaf3;
+}
+
+.Delivery_Table {
+    border-collapse: collapse;
+}
+
+.dl_table_header th {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+#Delivery_Input_Div {
+    margin: 0 2% 2%;
+}
+
+#Delivery_Input_Div button {
+    padding: 0;
+    height: 3em;
+    margin: 0 2%;
+}
+
+@media only screen and (max-width:400px) {
+    #collapseToggle {
+        width: 10%;
+        left: 45%;
+    }
+
+    #sticky_MDPU {
+        text-wrap: wrap;
+    }
+    
+    #sticky_MDPU h4 {
+        font-size: 0.675em;
+    }
+
+    #sticky_creds {
+        width: auto;
+    }
+
+    #UserWidget p {
+        font-size: 0.75em;
+    }
+
+    #Logout button,
+    #Return button {
+        height: auto;
+    }
+
+    #img_Div {
+        flex-direction: column;
+        text-align: left;
+    }
+
+    #title_dash {
+        display: none;
+    }
+}
 
 /*@media only screen and (max-width:900px) {*/
 @media only screen and (max-width:630px) {
-    #collapseToggle {
+    /*#collapseToggle {
         width: 15%;
         left: 42.5%;
     }
@@ -1201,7 +1364,7 @@ input[type="file"] {
 
     thead {
         font-size: 0.75em;
-        /*color: #5A89BB;*/
+        *//*color: #5A89BB;*//*
         border-bottom: 1px solid black;
     }
 
@@ -1270,6 +1433,7 @@ input[type="file"] {
     .popupLogout {
         width: 50%;
     }
+
     .popupLogin {
         margin: 50% auto;
         width: 50%;
@@ -1284,7 +1448,6 @@ input[type="file"] {
 
     #button_div {
         margin: 10% 0 6%;
-        align-items: center;
     }
 
     #Delivery_Input_Div {
@@ -1299,13 +1462,13 @@ input[type="file"] {
 
     #loginForm div {
         padding: 0 25% 1em 25%;
-    }
+    }*/
 
     /*#img_Div {
         align-items: center;
     }*/
 
-    .Table_Separator {
+    /*.Table_Separator {
         font-size: medium;
     }
 
@@ -1314,12 +1477,11 @@ input[type="file"] {
     }
 
     #title_div {
-        flex-direction: row;
         margin: 0 0 2% 4%;
     }
     #title_dash {
         display: none;
-    }
+    }*/
     
     .sticky_header div{
         flex-direction: column;
@@ -1394,18 +1556,28 @@ input[type="file"] {
     .fail_flag p {
         font-size: smaller;
     }      
-    thead {
-        font-size: 0.75em;
-    }
-    tbody {
-        font-size: 0.75em;
-    }
-    
-    h1 {
-        font-size: 1.5em;
-    }
+
     h2 {
         font-size: 1.25em;
+    }
+    
+    h3 {
+        font-size: 1.17em;
+    }
+
+    h4 {
+        font-size: 1em;;
+    }
+
+    h5 {
+        font-size: 0.83em;
+    }
+
+    .desktop_table {
+        display: table-cell;
+    }
+    .desktop_span {
+        display: inline;
     }
 
     #sticky_MDPU {
@@ -1427,6 +1599,7 @@ input[type="file"] {
     }
     #UserWidget {
         margin-right: 0.5em;
+        height: 30px;
     }
     #SPM_Row {
         margin: 1em 4% 0;
@@ -1453,6 +1626,10 @@ input[type="file"] {
         width: 8%;
         left: 46%;
     }
+    /*#collapseToggle {
+        width: 10%;
+        left: 45%;
+    }*/
     
     #collapseToggle img {
         width: 25%;
@@ -1460,6 +1637,19 @@ input[type="file"] {
 
     .mdpu-subheader-div h4 {
         font-size: small;
+    }
+
+    .col1 {
+        width: 8%;
+    }
+    .col2 {
+        width: 12%;
+    }
+    .col3 {
+        width: 15%;
+    }
+    .col4 {
+        width: 20%;
     }
 
     .cb_col1 {
@@ -1480,6 +1670,47 @@ input[type="file"] {
     .cb_col6 {
         width: 12%;
     }
+
+    #Return {
+        margin-right: 0.5em;
+    }
+
+    .popupLogin/*, .popup*/ {
+        margin: 25% auto;
+        width: 25%;
+    }
+
+    .popupLogin label {
+        font-size: smaller;
+    }
+
+    .cont_left {
+        width: 54%;
+    }
+
+    #button_div {
+        margin: 0.5em 0 2em;
+    }
+
+    #loginForm div {
+        padding: 0 30% 1em 30%;
+    }
+
+    .Table_Separator {
+        font-size: large;
+    }
+
+    #print_div {
+        padding: 0 10% 1.5em 10%;
+    }
+
+    #title_div {
+        margin: 0 0 1% 4%;
+    }
+
+    #title_dash {
+        display: flex;
+    }
 }
 
 @media only screen and (min-width: 1200px) {        
@@ -1495,23 +1726,16 @@ input[type="file"] {
     label {
         font-size: 0.8em;
     }
-    
-    thead {
-        font-size: 0.75em;
-    }
-    tbody {
-        font-size: 0.75em;
-    }
 
     .popupSignature {
         margin: 15% 3% 0;
     }
 
-    .popupLogin {
+    /*.popupLogin {
         margin: 18% auto;
         
         width: 25%;
-    }
+    }*/
 
     #widgetHeader {
         margin: 5% 20% 0 20%;
@@ -1546,9 +1770,18 @@ input[type="file"] {
     .popup_DL {
         width: 50%;
     }
+
+    #UserIcon {
+        height: 30px;
+        width: 30px;
+        margin-right: 10px;
+    }
 }
 
-@media only screen and (min-width: 1600px) {        
+@media only screen and (min-width: 1600px) {    
+    thead {
+        font-size: 0.85em;
+    }    
     .popupLogin {
         margin: 20% auto;
         width: 25%;
@@ -1563,31 +1796,8 @@ input[type="file"] {
         margin: 0 auto;
         max-width: 1380px;
     }
-}
 
-@media only screen and (max-width:400px) {
-    #sticky_MDPU {
-        text-wrap: wrap;
-    }
-    
-    #sticky_MDPU h4 {
-        font-size: 0.675em;
-    }
-
-    #sticky_creds {
-        width: auto;
-    }
-
-    #UserWidget p {
-        font-size: 0.75em;
-    }
-
-    #Logout button {
-        height: auto;
-    }
-
-    #img_Div {
-        flex-direction: column;
-        text-align: left;
+    #SPM_Row {
+        margin: 1em 20% 0;
     }
 }
