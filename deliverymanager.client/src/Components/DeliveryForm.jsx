@@ -92,7 +92,7 @@ const DeliveryForm = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(true); // NOTE: THIS MIGHT NOT BE NEEDED, NO API CALLS MADE TO RENDER?
+    const [loading, setLoading] = useState(false); // NOTE: THIS MIGHT NOT BE NEEDED, NO API CALLS MADE TO RENDER?
     // MAYBE WRAP ALL API CALLS FOR IMAGES INSIDE HERE
 
     // simplify access to location.state...
@@ -277,7 +277,7 @@ const DeliveryForm = () => {
             document.getElementById('button_div').style.padding = "0 10%";
         }
 
-        setLoading(false);
+        //setLoading(false);
     }
 
     /*/////////////////////////////////////////////////////////////////

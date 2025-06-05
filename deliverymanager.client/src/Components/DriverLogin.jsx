@@ -259,8 +259,15 @@ const DriverLogin = () => {
             credentials: 'include',
         })
 
+        alert(`stopping the app from loading with status: ${response.status} and ok: ${response.ok}`);
+
         if (!response.ok || response.status === 401 || response.status === 403) { 
-            Logout(); 
+            console.error("User validation failed, redirecting the login page.")
+            alert("User validation failed, redirecting the login page. Contact administrator if issue persists.");
+            setTimeout(() => {
+                Logout();
+                return;
+            }, FAIL_WAIT); 
         }
 
         const data = await response.json();
@@ -298,6 +305,8 @@ const DriverLogin = () => {
             openPopup();
 
             // set delay before logging out...
+            console.error("User validation failed with valid API response, redirecting the login page.");
+            alert("User validation failed, redirecting the login page. Contact administrator if issue persists.");
             setTimeout(() => {
                 Logout();
                 return;
