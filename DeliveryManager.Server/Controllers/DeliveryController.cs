@@ -8,6 +8,7 @@ Update: -/-/2025
 
 using DeliveryManager.Server.Models;
 using DeliveryManager.Server.Services;
+using DeliveryManager.Server.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Data;
@@ -21,20 +22,23 @@ namespace DeliveryManager.Server.Controllers
     [Route("api/[controller]")]
     public class DeliveryController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
-        private readonly IHostEnvironment _environment;
+        private readonly IConfiguration _config;
+        //private readonly IHostEnvironment _environment;
         private readonly ILogger<DeliveryController> _logger;
-        private readonly LoggingService _loggingService;
-        //private readonly TokenService _tokenService;
-        private readonly string connString;
+        private readonly ITokenService _tokenService;
+        private readonly ICookieService _cookieService;
+        private readonly string _connString;
 
-        public DeliveryController(IConfiguration configuration, TokenService tokenService, ILogger<DeliveryController> logger)
+        public DeliveryController(IConfiguration config, 
+            ITokenService tokenService,
+            ICookieService cookieService,
+            ILogger<DeliveryController> logger)
         {
-            _configuration = configuration;
-            //_tokenService = tokenService;
-            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            _config = config;
+            _tokenService = tokenService;
+            _cookieService = cookieService;
+            _connString = _config.GetConnectionString("TCS")!;
             _logger = logger;
-            _loggingService = new LoggingService(_logger);
         }
 
         /*/////////////////////////////////////////////////////////////////////////////
@@ -45,32 +49,24 @@ namespace DeliveryManager.Server.Controllers
 
         *//////////////////////////////////////////////////////////////////////////////
 
-        [HttpPost]
+        /*[HttpPost]
         [Route("ValidateUser")]
         public async Task<JsonResult> ValidateUser()
-        {
-            string logData()
-            {
-                CallerData caller = _loggingService.CallerLocation();
-                string tag = $"{caller.filePath}: line {caller.lineNumber}";
-                return tag;
-            } 
-            
-            _logger.Log(LogLevel.Information, $"Attempting to validate user credentials; {logData()}");
+        {            
+            //_logger.LogError($"Attempting to validate user credentials;");
 
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
-            if (!tokenAuth.success)
+            //var tokenService = new TokenService(_configuration);
+            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            if (!success)
             {
-                UnauthorizedAccessException exception = new UnauthorizedAccessException($"Token authorization failed, {tokenAuth.message}; {logData()}");
-                //_logger.LogError(exception, exception.Message);
-                return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
+                _logger.LogError(message);
+                return new JsonResult(new { success = false, message = message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var username = Request.Cookies["username"];
             if (username == null)
             {
-                ArgumentNullException exception = new ArgumentNullException($"Failed to find 'username' from cookies; {logData()}");
+                ArgumentNullException exception = new ArgumentNullException($"Failed to find 'username' from cookies");
                 _logger.LogError(exception, exception.Message);
                 return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
@@ -78,7 +74,7 @@ namespace DeliveryManager.Server.Controllers
             var company_mapping = Request.Cookies["company_mapping"];
             if (company_mapping == null) 
             {
-                ArgumentNullException exception = new ArgumentNullException($"Failed to find 'company_mapping' from cookies; {logData()}");
+                ArgumentNullException exception = new ArgumentNullException($"Failed to find 'company_mapping' from cookies");
                 _logger.LogError(exception, exception.Message);
                 return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
             };
@@ -89,7 +85,7 @@ namespace DeliveryManager.Server.Controllers
 
             try
             {
-                await using (SqlConnection myCon = new SqlConnection(connString))
+                await using (SqlConnection myCon = new SqlConnection(_connString))
                 {
                     await myCon.OpenAsync();
                     using (SqlCommand myCommand = new SqlCommand(query, myCon))
@@ -118,7 +114,7 @@ namespace DeliveryManager.Server.Controllers
                 }
                 else
                 {
-                    ArgumentNullException exception = new ArgumentNullException($"Failed to find valid credentials for the current user, contact administrator; {logData()}");
+                    ArgumentNullException exception = new ArgumentNullException($"Failed to find valid credentials for the current user, contact administrator");
                     _logger.LogError(exception, exception.Message);
                     return new JsonResult(new { success = false, message = exception.Message });
                 }
@@ -128,7 +124,7 @@ namespace DeliveryManager.Server.Controllers
                 _logger.LogError(ex, ex.Message);
                 return new JsonResult(new { success = false, message = ex.Message });
             }
-        }
+        }*/
 
         /*/////////////////////////////////////////////////////////////////////////////
  
@@ -140,15 +136,15 @@ namespace DeliveryManager.Server.Controllers
 
         *//////////////////////////////////////////////////////////////////////////////
 
-        [HttpPost]
+        /*[HttpPost]
         [Route("VerifyPowerunit")]
         public async Task<JsonResult> VerifyPowerunit([FromBody] driverVerification driver)
         {
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
-            if (!tokenAuth.success)
+            //var tokenService = new TokenService(_configuration);
+            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            if (!success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
+                return new JsonResult(new { success = false, message = message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             string checkQuery = "select COUNT(*) from dbo.USERS where POWERUNIT=@POWERUNIT and USERNAME != @USERNAME";
@@ -156,7 +152,7 @@ namespace DeliveryManager.Server.Controllers
             string selectquery = "select * from dbo.DMFSTDAT where MFSTDATE=@MFSTDATE and POWERUNIT=@POWERUNIT";
 
             DataTable table = new DataTable();
-            string sqlDatasource = connString;
+            string sqlDatasource = _connString;
             SqlDataReader myReader;
             try
             {
@@ -174,7 +170,7 @@ namespace DeliveryManager.Server.Controllers
                         if (checkResult > 0)
                         {
                             ArgumentException exception = new ArgumentException($"The provided powerunit is currently assigned to another driver, contact admin.");
-                            //_logger.LogError(exception, exception.Message);
+                            _logger.LogError(exception, exception.Message);
                             return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status409Conflict };
                         }
                     }
@@ -204,7 +200,7 @@ namespace DeliveryManager.Server.Controllers
                 return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
-            sqlDatasource = _configuration.GetConnectionString(company);
+            sqlDatasource = _config.GetConnectionString(company)!;
 
             try
             {
@@ -239,7 +235,7 @@ namespace DeliveryManager.Server.Controllers
             {
                 return new JsonResult(new { success = false, message = "Querying for valid delivery failed:" + ex });
             }
-        }
+        }*/
 
         /*/////////////////////////////////////////////////////////////////////////////
  
@@ -273,11 +269,11 @@ namespace DeliveryManager.Server.Controllers
         {
             _logger.Log(LogLevel.Information, $"Attempting to retrieve deliveries ({powerunit}, {mfstdate})");
 
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
-            if (!tokenAuth.success)
+            //var tokenService = new TokenService(_config);
+            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            if (!success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
+                return new JsonResult(new { success = false, message = message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var company = Request.Cookies["company"];
@@ -292,7 +288,7 @@ namespace DeliveryManager.Server.Controllers
             string deliveredQuery = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=1 order by STOP";
             DataTable deliveredTable = new DataTable();
 
-            string sqlDatasource = _configuration.GetConnectionString(company);
+            string sqlDatasource = _config.GetConnectionString(company)!;
             SqlDataReader myReader;
 
             try 
@@ -348,11 +344,11 @@ namespace DeliveryManager.Server.Controllers
         {
             //_logger.Log(LogLevel.Information,$"Attempting to update manifest ({data[0].MFSTKEY + (data.Count > 1 ? $"+ {data.Count} others" : "")}), [DeliveryManagerController, UpdateManifest]");
 
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
-            if (!tokenAuth.success)
+            //var tokenService = new TokenService(_config);
+            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            if (!success)
             {
-                UnauthorizedAccessException exception = new UnauthorizedAccessException($"Token authorization failed (UpdateManifest(), DeliveryManagerController.cs); Verbose: {tokenAuth.message}");
+                UnauthorizedAccessException exception = new UnauthorizedAccessException($"Token authorization failed (UpdateManifest(), DeliveryManagerController.cs); Verbose: {message}");
                 _logger.LogError(exception,exception.Message);
 
                 return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
@@ -447,7 +443,7 @@ namespace DeliveryManager.Server.Controllers
                 "DLVDNOTE = @DLVDNOTE,DLVDIMGFILELOCN = @DLVDIMGFILELOCN,DLVDIMGFILESIGN = @DLVDIMGFILESIGN,USERNAME = @USERNAME where MFSTKEY=@MFSTKEY";
 
                 DataTable table = new DataTable();
-                string sqlDatasource = _configuration.GetConnectionString(company);
+                string sqlDatasource = _config.GetConnectionString(company)!;
                 SqlDataReader myReader;
 
                 await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
@@ -503,11 +499,11 @@ namespace DeliveryManager.Server.Controllers
         {
             _logger.Log(LogLevel.Information,$"Attempting to update manifest ({data[0].MFSTKEY + (data.Count > 1 ? $"+ {data.Count} others" : "")}), [DeliveryManagerController, UpdateManifest]");
 
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
-            if (!tokenAuth.success)
+            //var tokenService = new TokenService(_config);
+            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            if (!success)
             {
-                UnauthorizedAccessException exception = new UnauthorizedAccessException($"Token authorization failed (UpdateManifest(), DeliveryManagerController.cs); Verbose: {tokenAuth.message}");
+                UnauthorizedAccessException exception = new UnauthorizedAccessException($"Token authorization failed (UpdateManifest(), DeliveryManagerController.cs); Verbose: {message}");
                 _logger.LogError(exception, exception.Message);
 
                 return new JsonResult(new { success = false, message = exception.Message }) { StatusCode = StatusCodes.Status401Unauthorized };
@@ -595,7 +591,7 @@ namespace DeliveryManager.Server.Controllers
                     "DLVDNOTE = @DLVDNOTE,DLVDIMGFILELOCN = @DLVDIMGFILELOCN,DLVDIMGFILESIGN = @DLVDIMGFILESIGN where MFSTKEY=@MFSTKEY";
 
                 DataTable table = new DataTable();
-                string sqlDatasource = _configuration.GetConnectionString(company);
+                string sqlDatasource = _config.GetConnectionString(company)!;
                 SqlDataReader myReader;
 
                 await using (SqlConnection myCon = new SqlConnection(sqlDatasource))
@@ -660,8 +656,8 @@ namespace DeliveryManager.Server.Controllers
         [Route("GetUndelivered")]
         public JsonResult GetUndelivered(string POWERUNIT, string MFSTDATE)
         {
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            //var tokenService = new TokenService(_config);
+            (bool success, string message) tokenAuth = _tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
                 return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
@@ -675,7 +671,7 @@ namespace DeliveryManager.Server.Controllers
 
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=0 order by STOP";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString(company);
+            string sqlDatasource = _config.GetConnectionString(company);
             SqlDataReader myReader;
 
             try
@@ -711,8 +707,8 @@ namespace DeliveryManager.Server.Controllers
         [Route("GetDelivered")]
         public JsonResult GetDelivered(string POWERUNIT, string MFSTDATE)
         {
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            //var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = _tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
                 return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
@@ -726,7 +722,7 @@ namespace DeliveryManager.Server.Controllers
 
             string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=1 order by STOP";
             DataTable table = new DataTable();
-            string sqlDatasource = _configuration.GetConnectionString(company);
+            string sqlDatasource = _config.GetConnectionString(company);
             SqlDataReader myReader;
 
             try

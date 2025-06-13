@@ -21,12 +21,14 @@ import { scrapeDate,
     getDate, 
     getTime, 
     translateDate, 
-    API_URL, 
+    //API_URL, 
     showFailFlag, 
     SUCCESS_WAIT,
     FAIL_WAIT} from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
 import LoadingSpinner from './LoadingSpinner.jsx';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 //////////////////////////////////////////////////////////////////////////////////////
 /* 

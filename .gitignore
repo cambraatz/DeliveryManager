@@ -48,3 +48,6 @@ README_Assets/DeliveryManager_UI_02.png
 README_Assets/DeliveryManager_UI_01.png
 #server_files
 Deployment_Resources/server_files
+
+deliverymanager.client/localhost+2-key.pem
+deliverymanager.client/localhost+2.pem

@@ -16,8 +16,13 @@ var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
 
+var logPath = builder.Environment.IsProduction()
+    ? Path.Combine(builder.Environment.ContentRootPath, "Logs", "logs.log")
+    : "logs.log";
+
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.File("/var/www/deliverymanager/log/logs.log", rollingInterval: RollingInterval.Day)
+    .WriteTo.File(logPath, rollingInterval: RollingInterval.Day)
+    //.WriteTo.File("/var/www/deliverymanager/log/logs.log", rollingInterval: RollingInterval.Day)
     .Enrich.FromLogContext()
     .CreateLogger();
 
@@ -26,9 +31,9 @@ builder.Host.UseSerilog();
 if (builder.Environment.IsProduction())
 {
     builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenAnyIP(5000);
-});
+    {
+        options.ListenAnyIP(5000);
+    });
 
     // new modification to CORS package...
     builder.Services.AddCors(options =>
@@ -50,8 +55,7 @@ else
         options.AddPolicy(name: MyAllowSpecificOrigins,
             policy =>
             {
-                policy.WithOrigins("https://localhost:5173", "http://localhost:5173",
-                                    "https://localhost:7097", "http://localhost:5171")
+                policy.WithOrigins("https://localhost:5173")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
@@ -60,8 +64,14 @@ else
 }
 
 // Add services to the container.
-builder.Services.AddControllers();
-//builder.Services.AddScoped<TokenService>();
+//builder.Services.AddControllers();
+
+// Adding Serializers, this is a new attempt...
+// JSON Serializer
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore).AddNewtonsoftJson(
+    options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+
 
 // token initialization...
 //var jwtKey = Environment.GetEnvironmentVariable("Jwt__Key") ?? builder.Configuration["Jwt:Key"];
@@ -90,15 +100,14 @@ builder.Services.AddSwaggerGen();
 
 // var app = builder.Build();
 
-// Adding Serializers, this is a new attempt...
-// JSON Serializer
-builder.Services.AddControllers().AddNewtonsoftJson(options =>
-options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore).AddNewtonsoftJson(
-    options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ICookieService, CookieService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMappingService, MappingService>();
+builder.Services.AddScoped<IDeliveryService, DeliveryService>();
+builder.Services.AddScoped<IDeliveryListService, DeliveryListService>();
 
-builder.Services.AddScoped<TokenService>();
-
-var app = builder.Build();
+/*var app = builder.Build();
 
 app.UseRouting();
 
@@ -142,6 +151,66 @@ else
 
 app.UseHttpsRedirection();
 app.MapControllers();
+app.MapFallbackToFile("/index.html");
+
+app.Run();*/
+
+var app = builder.Build();
+
+// Error Handling (very early)
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage(); // Only in Dev
+}
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+// Forwarded Headers (if behind a proxy like Nginx in Production)
+if (app.Environment.IsProduction())
+{
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    });
+}
+
+app.UseHttpsRedirection(); // Redirects HTTP to HTTPS
+
+// Swagger UI (typically before Routing in Development)
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseRouting(); // Identifies endpoints
+
+// CORS (after UseRouting, before Auth/AuthZ)
+app.UseCors(MyAllowSpecificOrigins);
+
+// Cookie Policy (usually before Auth)
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    MinimumSameSitePolicy = SameSiteMode.None,
+    HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always,
+    Secure = app.Environment.IsProduction() || (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Kestrel:Certificates:Default:Password:IsTrusted", false))
+        ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest
+});
+
+// Authentication and Authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Static Files for the SPA
+app.UseDefaultFiles(); // Serves default.html, index.html etc. for the SPA
+app.UseStaticFiles(); // Serves JS, CSS, images etc. for the SPA
+
+app.MapControllers(); // Maps your API controller endpoints
+
+// Fallback for SPA routing (must be last)
 app.MapFallbackToFile("/index.html");
 
 app.Run();

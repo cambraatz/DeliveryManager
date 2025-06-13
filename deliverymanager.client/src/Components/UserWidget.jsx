@@ -3,8 +3,10 @@ import PropTypes from 'prop-types';
 import { useNavigate } from "react-router-dom";
 
 import userIcon from "../images/userIcon.png";
-import { API_URL, clearMemory } from '../Scripts/helperFunctions';
+import { clearMemory } from '../Scripts/helperFunctions';
 import toggleDots from '../images/Toggle_Dots.svg';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const UserWidget = (props) => {
     const [user, setUser] = useState(props.driver);

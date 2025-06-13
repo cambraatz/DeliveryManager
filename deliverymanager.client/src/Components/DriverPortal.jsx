@@ -10,10 +10,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
-import { API_URL, translateDate} from '../Scripts/helperFunctions';
+import { translateDate} from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
 import LoadingSpinner from './LoadingSpinner.jsx';
 import DL_Popup from './DL_Popup.jsx';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 /*/////////////////////////////////////////////////////////////////////
 
@@ -150,7 +152,8 @@ const DriverPortal = () => {
     async function getDeliveries(powerunit,mfstdate){
         // attempt to gather delivered + undelivered deliveries...
         try {
-            const response = await fetch(API_URL + "api/Delivery/GetDeliveries?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
+            //const response = await fetch(API_URL + "api/Delivery/GetDeliveries?POWERUNIT=" + powerunit + "&MFSTDATE=" + mfstdate, {
+            const response = await fetch(API_URL + "v1/deliveries?powerunit=" + powerunit + "&mfstdate=" + mfstdate, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json; charset=UTF-8',
@@ -158,18 +161,14 @@ const DriverPortal = () => {
                 credentials: 'include'
             });
 
-            if (!response.ok || response.status === 401 || response.status === 403) {
-                console.error("Unauthorized access credentials, logging out.");
+            if (!response.ok) {
+                console.error("Fetching delivery manifests failed on server, logging out.");
                 Logout();
             }
 
             const data = await response.json();
-            if (!data.success) {
-                console.error("Delivery data access failed, ensure valid auth token.");
-                Logout();
-            }
-            const deliveredData = data.delivered;
-            const undeliveredData = data.undelivered;
+            const deliveredData = data.Delivered;
+            const undeliveredData = data.Undelivered;
 
             // set delivered + undelivered states...
             setDelivered( packageDeliveries(deliveredData) ); // package delivered if allowing batch update/deletes...

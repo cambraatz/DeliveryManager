@@ -1,7 +1,9 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL, requestAccess } from '../Scripts/helperFunctions';
+import { requestAccess } from '../Scripts/helperFunctions';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const ImageRenderer = (props) => {
     const navigate = useNavigate();

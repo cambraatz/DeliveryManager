@@ -8,6 +8,8 @@ Update: 1/9/2025
 
 using DeliveryManager.Server.Models;
 using DeliveryManager.Server.Services;
+using DeliveryManager.Server.Services.Interfaces;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,10 +22,10 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
+
 
 public class CompanyRequest
 {
@@ -51,18 +53,23 @@ namespace DeliveryManager.Server.Controllers
     [Route("api/[controller]")]
     public class RegistrationController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
-        private readonly IHostEnvironment _environment;
+        private readonly IConfiguration _config;
+        //private readonly IHostEnvironment _environment;
         private readonly ILogger<RegistrationController> _logger;
-        //private readonly TokenService _tokenService;
-        private readonly string connString;
+        private readonly ITokenService _tokenService;
+        private readonly ICookieService _cookieService;
+        private readonly string _connString;
 
-        public RegistrationController(IConfiguration configuration, TokenService tokenService)
+        public RegistrationController(IConfiguration config,
+            ILogger<RegistrationController> logger,
+            ITokenService tokenService, 
+            ICookieService cookieService)
         {
-            _configuration = configuration;
-            //_tokenService = tokenService;
-            //connString = _configuration.GetConnectionString("LOCAL");
-            connString = _configuration.GetConnectionString("DriverChecklistDBCon");
+            _config = config;
+            _logger = logger;
+            _tokenService = tokenService;
+            _cookieService = cookieService;
+            _connString = _config.GetConnectionString("TCS")!;
         }
 
         [HttpPost]
@@ -71,7 +78,7 @@ namespace DeliveryManager.Server.Controllers
         {
             foreach (var cookie in Request.Cookies)
             {
-                Response.Cookies.Append(cookie.Key, cookie.Value, CookieService.RemoveOptions());
+                Response.Cookies.Append(cookie.Key, cookie.Value, _cookieService.RemoveOptions());
             }
 
             return Ok(new { message = "Logged out successfully" });
@@ -81,34 +88,34 @@ namespace DeliveryManager.Server.Controllers
         [Route("Return")]
         public IActionResult Return()
         {
-            CookieService.ExtendCookies(HttpContext);
-            Response.Cookies.Append("return", "true", CookieService.AccessOptions());
+            _cookieService.ExtendCookies(HttpContext, 15);
+            Response.Cookies.Append("return", "true", _cookieService.AccessOptions());
 
             return Ok(new { message = "Returning, cookies extension completed successfully." });
         }
 
         [HttpPost]
         [Route("RefreshToken")]
-        public IActionResult RefreshToken([FromBody] RefreshRequest request)
+        public IActionResult RefreshToken([FromBody] (string username, string refresh) request)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var principal = tokenHandler.ValidateToken(request.RefreshToken, new TokenValidationParameters
+            var principal = tokenHandler.ValidateToken(request.refresh, new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])),
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)),
                 ValidateIssuer = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
+                ValidIssuer = _config["Jwt:Issuer"],
                 ValidateAudience = true,
-                ValidAudience = _configuration["Jwt:Audience"],
+                ValidAudience = _config["Jwt:Audience"],
                 ValidateLifetime = false
             }, out SecurityToken validatedToken);
 
             if (validatedToken is JwtSecurityToken jwtToken &&
                 jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
             {
-                var tokenService = new TokenService(_configuration);
-                var tokens = tokenService.GenerateToken(request.Username);
-                return Ok(new { AccessToken = tokens.AccessToken, RefreshToken = tokens.RefreshToken });
+                //var tokenService = new TokenService(_config);
+                (string access, string refresh) = _tokenService.GenerateToken(request.username);
+                return Ok(new { AccessToken = access, RefreshToken = refresh });
             }
             return Unauthorized("Invalid Token.");
         }
@@ -126,11 +133,11 @@ namespace DeliveryManager.Server.Controllers
         [Route("ValidateUser")]
         public async Task<JsonResult> ValidateUser()
         {
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
-            if (!tokenAuth.success)
+            //var tokenService = new TokenService(_config);
+            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            if (!success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
+                return new JsonResult(new { success = false, message = message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             var username = Request.Cookies["username"];
@@ -142,7 +149,7 @@ namespace DeliveryManager.Server.Controllers
             string query = "select * from dbo.USERS where USERNAME COLLATE SQL_Latin1_General_CP1_CS_AS = @USERNAME";
 
             DataTable table = new DataTable();
-            string sqlDatasource = connString;
+            string sqlDatasource = _connString;
             SqlDataReader myReader;
 
             try
@@ -199,18 +206,18 @@ namespace DeliveryManager.Server.Controllers
         [Route("VerifyPowerunit")]
         public async Task<JsonResult> VerifyPowerunit([FromBody] driverVerification driver)
         {
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
-            if (!tokenAuth.success)
+            //var tokenService = new _tokenService(_config);
+            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            if (!success)
             {
-                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
+                return new JsonResult(new { success = false, message = message }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
             string updatequery = "update dbo.USERS set POWERUNIT=@POWERUNIT where USERNAME=@USERNAME";
             string selectquery = "select * from dbo.DMFSTDAT where MFSTDATE=@MFSTDATE and POWERUNIT=@POWERUNIT";
 
             DataTable table = new DataTable();
-            string sqlDatasource = connString;
+            string sqlDatasource = _connString;
             SqlDataReader myReader;
 
             try
@@ -243,11 +250,15 @@ namespace DeliveryManager.Server.Controllers
                 return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
             }
 
-            sqlDatasource = _configuration.GetConnectionString(company);
+            string? newConn = _config.GetConnectionString(company);
+            if (string.IsNullOrWhiteSpace(newConn))
+            {
+                throw new InvalidOperationException($"Connection string for '{company}' is not defined.");
+            }
 
             try
             {
-                await using (SqlConnection con = new SqlConnection(sqlDatasource))
+                await using (SqlConnection con = new SqlConnection(newConn))
                 {
                     con.Open();
 

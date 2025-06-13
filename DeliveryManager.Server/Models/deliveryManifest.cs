@@ -1,16 +1,13 @@
-﻿using Newtonsoft.Json;
-
-namespace DeliveryManager.Server.Models
+﻿namespace DeliveryManager.Server.Models
 {
-    [JsonObject(ItemRequired = Required.AllowNull)]
-    public class DeliveryForm
+    public class DeliveryManifest
     {
         public string MFSTKEY { get; set; } = string.Empty;
-        public string STATUS {  get; set; } = string.Empty;
+        public string STATUS { get; set; } = string.Empty;
         public string LASTUPDATE { get; set; } = string.Empty;
         public string MFSTNUMBER { get; set; } = string.Empty;
         public string POWERUNIT { get; set; } = string.Empty;
-        public int STOP { get; set; } = 0;
+        public short STOP { get; set; } = 0;
         public string MFSTDATE { get; set; } = string.Empty;
         public string PRONUMBER { get; set; } = string.Empty;
         public string PRODATE { get; set; } = string.Empty;
@@ -21,17 +18,15 @@ namespace DeliveryManager.Server.Models
         public string CONSCITY { get; set; } = string.Empty;
         public string CONSSTATE { get; set; } = string.Empty;
         public string CONSZIP { get; set; } = string.Empty;
-        public int TTLPCS { get; set; } = 0;
-        public int TTLYDS { get; set; } = 0;
-        public int TTLWGT { get; set; } = 0;
+        public short TTLPCS { get; set; } = 0;
+        public short TTLYDS { get; set; } = 0;
+        public short TTLWGT { get; set; } = 0;
         public string? DLVDDATE { get; set; }
         public string? DLVDTIME { get; set; }
-        public int? DLVDPCS { get; set; }
+        public short? DLVDPCS { get; set; }
         public string? DLVDSIGN { get; set; }
         public string? DLVDNOTE { get; set; }
-        public IFormFile? DLVDIMGFILELOCN { get; set; }
-        public IFormFile? DLVDIMGFILESIGN { get; set; }
-        public string? signature_string { get; set; }
-        public string? location_string { get; set; }
+        public string? DLVDIMGFILELOCN { get; set; }
+        public string? DLVDIMGFILESIGN { get; set; }
     }
 }

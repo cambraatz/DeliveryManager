@@ -4,7 +4,8 @@ import { defineConfig } from 'vite';
 import plugin from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
-import child_process from 'child_process';
+import { env } from 'process';
+/*import child_process from 'child_process';
 import { env } from 'process';
 
 const baseFolder =
@@ -13,8 +14,10 @@ const baseFolder =
         : `${env.HOME}/.aspnet/https`;
 
 const certificateName = "deliverymanager.client";
-const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
-const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
+const certFilePath = path.join(baseFolder, 'localhost+2.pem');
+const keyFilePath = path.join(baseFolder, 'localhost+2-key.pem');
+//const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
+//const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
 
 if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
     if (0 !== child_process.spawnSync('dotnet', [
@@ -28,11 +31,14 @@ if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
     ], { stdio: 'inherit', }).status) {
         throw new Error("Could not create certificate.");
     }
-}
+}*/
 
 const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
     env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:7200';
 //const target = 'https://localhost:7200';
+
+const __filename = fileURLToPath(import.meta.url);
+const currDir = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -51,8 +57,8 @@ export default defineConfig({
         },
         port: 5173,
         https: {
-            key: fs.readFileSync(keyFilePath),
-            cert: fs.readFileSync(certFilePath),
+            key: fs.readFileSync(path.join(currDir, 'localhost+2-key.pem')),
+            cert: fs.readFileSync(path.join(currDir, 'localhost+2.pem')),
         }
     }
 })

@@ -1,5 +1,6 @@
 ﻿using DeliveryManager.Server.Models;
 using DeliveryManager.Server.Services;
+using DeliveryManager.Server.Services.Interfaces;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +13,6 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace DeliveryManager.Server.Controllers
 {
@@ -21,14 +21,21 @@ namespace DeliveryManager.Server.Controllers
     public class DriverChecklistController : ControllerBase
     {
         private IConfiguration _configuration;
-        private readonly string connString;
+        private ITokenService _tokenService;
+        private ICookieService _cookieService;
+        private readonly string _connString;
         private readonly IWebHostEnvironment _env;
 
-        public DriverChecklistController(IConfiguration configuration, IWebHostEnvironment env)
+        public DriverChecklistController(IConfiguration configuration, 
+            ITokenService tokenService,
+            ICookieService cookieService,
+            IWebHostEnvironment env)
         {
             _configuration = configuration;
+            _tokenService = tokenService;
             _env = env;
-            connString = _configuration.GetConnectionString("TCSWEB");
+            _connString = _configuration.GetConnectionString("TCS")!;
+            _env = env;
             //connString = _configuration.GetConnectionString("DriverChecklistDBCon");
         }
 
@@ -36,8 +43,8 @@ namespace DeliveryManager.Server.Controllers
         [Route("GetUndelivered")]
         public JsonResult GetUndelivered(string POWERUNIT, string MFSTDATE)
         {
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            //var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = _tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
                 return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
@@ -88,8 +95,8 @@ namespace DeliveryManager.Server.Controllers
         [Route("GetDelivered")]
         public JsonResult GetDelivered(string POWERUNIT, string MFSTDATE)
         {
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            //var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = _tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
                 return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized }; 
@@ -140,8 +147,8 @@ namespace DeliveryManager.Server.Controllers
         [Route("UpdateManifest")]
         public async Task<JsonResult> UpdateManifest([FromForm] DeliveryForm data)
         {
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            //var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = _tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
                 return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
@@ -290,8 +297,8 @@ namespace DeliveryManager.Server.Controllers
         [Route("GetImage")]
         public IActionResult GetImage(string IMAGE)
         {
-            var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = tokenService.AuthorizeRequest(HttpContext);
+            //var tokenService = new TokenService(_configuration);
+            (bool success, string message) tokenAuth = _tokenService.AuthorizeRequest(HttpContext);
             if (!tokenAuth.success)
             {
                 return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };

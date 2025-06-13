@@ -13,7 +13,7 @@ import Footer from './Footer';
 import { scrapeDate, 
     renderDate, 
     getDate, 
-    API_URL,
+    //API_URL,
     showFailFlag,
     FAIL_WAIT} from '../Scripts/helperFunctions';
 import Logout from '../Scripts/Logout.jsx';
@@ -21,6 +21,8 @@ import LoadingSpinner from './LoadingSpinner.jsx';
 
 import Success from '../assets/success.svg';
 import Fail from '../assets/error.svg';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 /*/////////////////////////////////////////////////////////////////////
 
@@ -251,8 +253,9 @@ const DriverLogin = () => {
     async function validateUser(){
         setLoading(true);
         // direct bypass to powerunit validation...
-        const response = await fetch(API_URL + "api/Delivery/ValidateUser", {
-            method: "POST",
+        //const response = await fetch(API_URL + "api/Delivery/ValidateUser", {
+        const response = await fetch(API_URL + "v1/sessions/me", {
+            method: "GET",
             headers: {
                 'Content-Type': 'application/json; charset=UTF-8'
             },
@@ -270,8 +273,8 @@ const DriverLogin = () => {
             }, FAIL_WAIT); 
         }
 
-        const data = await response.json();
-        if (data.success) {
+        if (response.ok) {
+            const data = await response.json();
             sessionStorage.setItem("companies_map", data.mapping);
             const company_map = JSON.parse(data.mapping);
             //console.log("companies_map: ", company_map);
@@ -382,11 +385,12 @@ const DriverLogin = () => {
         // package driver/delivery credentials and validate...
         const body_data = {
             USERNAME: driverCredentials.USERNAME,
-            PASSWORD: driverCredentials.PASSWORD,
+            //PASSWORD: driverCredentials.PASSWORD,
             POWERUNIT: updateData.POWERUNIT,
             MFSTDATE: updateData.MFSTDATE,
         }
-        const response = await fetch(API_URL + "api/Delivery/VerifyPowerunit", {
+        //const response = await fetch(API_URL + "api/Delivery/VerifyPowerunit", {
+        const response = await fetch(API_URL + "v1/deliveries/validate-and-assign", {
             body: JSON.stringify(body_data),
             method: "POST",
             headers: {
@@ -400,10 +404,8 @@ const DriverLogin = () => {
             Logout(); 
         }
 
-        const data = await response.json();
-
         // set message state according to validity of delivery information...
-        if(data.success){           
+        if(response.ok){           
             // package delivery/driver information and nav to /driverlog...
             const deliveryData = {
                 delivery: updateData,

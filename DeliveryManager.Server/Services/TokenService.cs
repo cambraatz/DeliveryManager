@@ -1,4 +1,4 @@
-﻿using DeliveryManager.Server.Models;
+﻿using DeliveryManager.Server.Services.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,166 +6,109 @@ using System.Text;
 
 namespace DeliveryManager.Server.Services
 {
-    // add utility to generate JWTs...
-    public class TokenService
+    public class TokenService : ITokenService
     {
-        private readonly IConfiguration _configuration;
-        public TokenService(IConfiguration configuration)
+        private readonly IConfiguration _config;
+        private readonly JwtSecurityTokenHandler _handler = new();
+        private readonly ILogger<TokenService> _logger;
+        private readonly ICookieService _cookieService;
+        public TokenService(IConfiguration config, ILogger<TokenService> logger, ICookieService cookieService)
         {
-            _configuration = configuration;
+            _config = config;
+            _logger = logger;
+            _cookieService = cookieService;
         }
-        public (string AccessToken, string RefreshToken) GenerateToken(string username, string companyDbName = null)
+
+        /* Token Generation
+         *  creates Jwt Security Tokens to maintain 
+         *  authorization throughout the session...
+         */
+        public (string accessToken, string refreshToken) GenerateToken(string username)
         {
-            var accessClaims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, username),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+            var now = DateTimeOffset.UtcNow;
 
-            if (!string.IsNullOrEmpty(companyDbName))
+            Claim[] BaseClaims(string jti) => new[]
             {
-                accessClaims.Add(new Claim("company_db_name", companyDbName));
-            }
-
-            var refreshClaims = new[]
-            {
-            new Claim(ClaimTypes.Name, username),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+                new Claim(ClaimTypes.Name, username),
+                new Claim(JwtRegisteredClaimNames.Jti,jti)
+            };
+            Console.WriteLine(_config["Jwt:Key"]);
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            Console.WriteLine($"token debug: key: {key}, creds: {creds}");
 
-            var accessToken = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: accessClaims,
-                expires: DateTime.UtcNow.AddMinutes(15),
+            var access = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: BaseClaims(Guid.NewGuid().ToString()),
+                expires: now.AddMinutes(15).UtcDateTime,
                 signingCredentials: creds);
 
-            var refreshToken = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: refreshClaims,
-                expires: DateTime.UtcNow.AddDays(1),
+            var refresh = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: BaseClaims(Guid.NewGuid().ToString()),
+                expires: now.AddDays(1).UtcDateTime,
                 signingCredentials: creds);
 
-            return (new JwtSecurityTokenHandler().WriteToken(accessToken), new JwtSecurityTokenHandler().WriteToken(refreshToken));
+            return (_handler.WriteToken(access), _handler.WriteToken(refresh));
         }
 
-        // validates and refreshes tokens (as needed)
-        /*public (bool IsValid, string? accessToken, string? refreshToken) ValidateAndRefreshTokens(HttpContext context)
+        /* Token Validation
+         *  validates Jwt Security Token 
+         */
+        public TokenValidation ValidateTokens(string accessToken, string refreshToken, string username, bool tryRefresh = true)
         {
-            var accessToken = context.Request.Cookies["access_token"];
-            var refreshToken = context.Request.Cookies["refresh_token"];
-            var username = context.Request.Cookies["username"];
-
-            if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+            var tokenParams = new TokenValidationParameters
             {
-                return (false, null, null);
-            }
-            if (string.IsNullOrEmpty(username)) 
-            {
-                return (false, null, null);
-            }
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            try
-            {
-                var validationParams = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])),
-                    ValidateIssuer = true,
-                    ValidIssuer = _configuration["Jwt:Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = _configuration["Jwt:Audience"],
-                    ValidateLifetime = true
-                };
-
-                tokenHandler.ValidateToken(accessToken, validationParams, out _);
-
-                return (true, null, null);
-            } catch (SecurityTokenExpiredException)
-            {
-                // access token expired, attempt to refresh
-                var newTokens = RefreshAccessToken(refreshToken, username);
-                if (newTokens.accessToken != null && newTokens.refreshToken != null)
-                {
-                    SetAuthCookies(context)
-                }
-            }
-        }*/
-
-        // Token validation result structure
-        // Helper method to validate the access token
-        public class TokenValidation
-        {
-            public bool IsValid { get; set; }
-            public string? Message { get; set; }
-            public ClaimsPrincipal? Principal { get; set; }
-            public string? accessToken { get; set; }
-            public string? refreshToken { get; set; }
-        }
-
-        public TokenValidation ValidateTokens(string accessToken, string refreshToken, string username)
-        {
-            TokenValidationParameters tokenParams = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])),
                 ValidateIssuer = true,
-                ValidIssuer = _configuration["Jwt:Issuer"],
                 ValidateAudience = true,
-                ValidAudience = _configuration["Jwt:Audience"],
-                ValidateLifetime = true,  // ensure token is not expired
+                ValidIssuer = _config["Jwt:Issuer"],
+                ValidAudience = _config["Jwt:Audience"],
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)),
+                ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
             };
 
-            var tokenHandler = new JwtSecurityTokenHandler();
             try
             {
-                var principal = tokenHandler.ValidateToken(accessToken, tokenParams, out SecurityToken validatedToken);
-                var jwtToken = validatedToken as JwtSecurityToken;
-                var exp = jwtToken?.Payload.Exp ?? 0;
-                var expirationTime = DateTimeOffset.FromUnixTimeSeconds(exp);
-                var currentTime = DateTimeOffset.UtcNow;
+                var principal = _handler.ValidateToken(accessToken, tokenParams, out var validated);
 
-
-
-                // check if token is close to expiring
-                if (expirationTime - currentTime < TimeSpan.FromMinutes(5))
+                // token is still valid + not expiring soon...
+                var exp = DateTimeOffset.FromUnixTimeSeconds(((JwtSecurityToken)validated).Payload.Expiration!.Value);
+                if (exp - DateTimeOffset.UtcNow > TimeSpan.FromMinutes(5))
                 {
-                    try
-                    {
-                        var refreshPrincipal = tokenHandler.ValidateToken(refreshToken, tokenParams, out SecurityToken validatedRefresh);
-                        var refreshJwtToken = validatedRefresh as JwtSecurityToken;
-                        var refreshExp = refreshJwtToken?.Payload.Exp ?? 0;
-                        var refreshExpTime = DateTimeOffset.FromUnixTimeSeconds(exp);
-
-                        if (refreshExpTime > currentTime)
-                        {
-                            var newTokens = GenerateToken(username);
-                            return new TokenValidation { IsValid = true, Principal = principal, accessToken = newTokens.AccessToken, refreshToken = newTokens.RefreshToken };
-                        }
-                        else
-                        {
-                            return new TokenValidation { IsValid = false, Message = "Refresh token has expired." };
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        return new TokenValidation { IsValid = false, Message = $"Refresh token validation failed: {ex.Message}" };
-                    }
-                    
+                    //return new TokenValidation { IsValid = true, Principal = principal };
+                    return new(true, Principal: principal);
                 }
 
-                return new TokenValidation { IsValid = true, Principal = principal };
+                if (!tryRefresh)
+                {
+                    //return new TokenValidation { IsValid = false, Message = "Access token is expiring soon, refreshing is disabled. Start new session to continue access." };
+                    return new(false, "Access token is expiring soon, refreshing is disabled. Start new session to continue access.");
+
+                }
+                // token is expired, attempt to refresh...
+                var refreshPrincipal = _handler.ValidateToken(refreshToken, tokenParams, out var valRef);
+                var refreshExp = DateTimeOffset.FromUnixTimeSeconds(((JwtSecurityToken)valRef).Payload.Expiration!.Value);
+
+                if (refreshExp <= DateTimeOffset.UtcNow)
+                {
+                    //return new TokenValidation { IsValid = false, Message = "Refresh token has expired, refresh access is denied. Start new session to continue access." };
+                    return new(false, "Refresh token has expired, refresh access is denied. Start new session to continue access.");
+                }
+                else
+                {
+                    var (newAccess, newRefresh) = GenerateToken(username);
+                    //return new TokenValidation { IsValid = true, Principal = principal, accessToken = newAccess, refreshToken = newRefresh };
+                    return new(true, Principal: principal, AccessToken: newAccess, RefreshToken: newRefresh);
+                }
             }
-            catch (Exception ex)
+            catch (SecurityTokenException ex)
             {
-                return new TokenValidation { IsValid = false, Message = ex.Message };
+                //return new TokenValidation { IsValid = false, Message = ex.Message };
+                return new(false, ex.Message);
             }
         }
 
@@ -174,47 +117,41 @@ namespace DeliveryManager.Server.Services
             var request = context.Request;
             var response = context.Response;
 
-            var accessToken = request.Cookies["access_token"];
-            var refreshToken = request.Cookies["refresh_token"];
+            // fetch username from cookies before interacting with tokens...
             var username = request.Cookies["username"];
-            //var company = Request.Cookies["company"];
-
-            if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
-            {
-                return (false, "Access token is missing");
-            }
             if (string.IsNullOrEmpty(username))
             {
                 return (false, "Username is missing");
             }
 
-            var tokenService = new TokenService(_configuration);
-            var result = tokenService.ValidateTokens(accessToken, refreshToken, username);
+            // fetch tokens from cookies to validate session...
+            var accessToken = request.Cookies["access_token"];
+            var refreshToken = request.Cookies["refresh_token"];
+            if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+            {
+                return (false, "Access token is missing");
+            }
+
+            // validate tokens + refresh if allowed...
+            //var tokenService = new TokenService(_config);
+            var result = ValidateTokens(accessToken, refreshToken, username);
             if (!result.IsValid)
             {
                 return (false, "Invalid access token, authorization failed.");
             }
 
-            accessToken = result.accessToken;
-            refreshToken = result.refreshToken;
+            // valid tokens are returned, regardless of refresh status...
+            accessToken = result.AccessToken;
+            refreshToken = result.RefreshToken;
 
+            // if non-null, replace tokens in cookies with fresh set...
             if (accessToken != null && refreshToken != null)
             {
-                response.Cookies.Append("access_token", accessToken, CookieService.AccessOptions());
-                response.Cookies.Append("refresh_token", refreshToken, CookieService.RefreshOptions());
-                return (true, "Token has been validated, fresh tokens generated and cached in cookies.");
-            } 
-            else 
-            {
-                return (true, "Token has been validated, existing tokens remain in cache.");
+                response.Cookies.Append("access_token", accessToken, _cookieService.AccessOptions());
+                response.Cookies.Append("refresh_token", refreshToken, _cookieService.RefreshOptions());
             }
-            
-        }
-    }
 
-    public class RefreshRequest
-    {
-        public string Username { get; set; }
-        public string RefreshToken { get; set; }
+            return (true, "Token has been validated, authorization granted.");
+        }
     }
 }
