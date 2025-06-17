@@ -126,7 +126,7 @@ const DeliveryForm = () => {
 
     // handle both existing deliveries and new ones...
     let delivery_time = DELIVERY ? DELIVERY.DLVDTIME : null;
-    if (delivery_time === null){
+    if (delivery_time === null || delivery_time === ""){
         delivery_time = currTime
     } else {
         delivery_time = renderTime(delivery_time)
@@ -134,7 +134,7 @@ const DeliveryForm = () => {
 
     // handle both existing deliveries and new ones...
     let delivery_date = DELIVERY ? DELIVERY.DLVDDATE : null;
-    if (delivery_date === null){
+    if (delivery_date === null || delivery_date === ""){
         delivery_date = currDate
     } else {
         delivery_date = translateDate(delivery_date)
@@ -142,7 +142,7 @@ const DeliveryForm = () => {
 
     // handle both existing deliveries and new ones...
     let delivery_pieces = DELIVERY ? DELIVERY.DLVDPCS : null;
-    if (DELIVERY && delivery_pieces === null){
+    if (DELIVERY && (delivery_pieces === null || delivery_pieces === 0)){
         delivery_pieces = DELIVERY.TTLPCS;
     }
 
@@ -514,63 +514,46 @@ const DeliveryForm = () => {
         });
 
         
-        let response;
-        if (DELIVERIES.length == 1) {
-            response = await fetch(API_URL + "api/Delivery/UpdateManifest", {
-                body: deliveryList[0],
+        let lastResponse;
+        for (const deliveryData of deliveryList) {
+            const mfstKey = deliveryData.get("MFSTKEY");
+            if (!mfstKey) {
+                console.error(`Updating manifests failed to pull MFSTKEY on delivery ${deliveryData.MFSTNUMBER}.`);
+            }
+
+            lastResponse = await fetch(API_URL + "v1/deliveries/" + mfstKey, {
+                body: deliveryData,
                 method: "PUT",
                 credentials: 'include'
-            })
+            });
 
-            if (response.status === 401 || response.status == 403) {
+            if (lastResponse.status === 401 || lastResponse.status == 403) {
                 Logout();
             }
-        } else {
-            for (const deliveryData of deliveryList) {
-                const form = new FormData();
-                for(const [key,value] of deliveryData.entries()) {
-                    form.append(key,value);
-                }
 
-                response = await fetch(API_URL + "api/Delivery/UpdateManifest", {
-                    body: form,
-                    method: "PUT",
-                    credentials: 'include'
-                })
-
-                if (response.status === 401 || response.status == 403) {
-                    Logout();
-                }
-
-                if (!response.ok) {
-                    console.error(`Updating manifests failed on delivery ${deliveryData.MFSTNUMBER}.`);
-                    break;
-                }
+            if (!lastResponse.ok) {
+                console.error(`Updating manifests failed on delivery ${deliveryData.MFSTNUMBER}.`);
+                break;
             }
         }
 
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                setPopup("Success");
-                openPopup();
-                setTimeout(() => {
-                    closePopup();
-                    navigate(`/deliveries`, { state: navigateData });
-                }, SUCCESS_WAIT)
-            } else {
-                console.error("update delivery failed");
+        if (lastResponse.ok) {
+            setPopup("Success");
+            openPopup();
+            setTimeout(() => {
+                closePopup();
+                navigate(`/deliveries`, { state: navigateData });
+            }, SUCCESS_WAIT);
+        } else {
+            console.error("update delivery failed");
                 setPopup("Fail");
                 openPopup();
                 setTimeout(() => {
                     closePopup();
                 }, FAIL_WAIT)
-            }
-        } else {
-            console.error("")
         }
 
-        return response;
+        return lastResponse;
     }
 
     /*/////////////////////////////////////////////////////////////////
@@ -592,6 +575,35 @@ const DeliveryForm = () => {
         return response string
     }
     *//////////////////////////////////////////////////////////////////
+
+    /*function validateForm(validationFields){
+        const dlvdate = document.getElementById("dlvdate");
+        const dlvtime = document.getElementById("dlvtime");
+        const dlvdpcs = document.getElementById("dlvdpcs");
+
+        const validationErrors = [];
+        const fieldsToValidate = [
+            { field: dlvdate, name: "Date", validate: (val) => val && !isNaN(new Date(val).getTime()) },
+            { field: dlvtime, name: "Time", validate: (val) => val },
+            { field: dlvdpcs, name: "Pieces Delivered", validate: (val) => val && !isNaN(val) && val >= dlvdpcs.min && val <= dlvdpcs.max }
+        ];
+
+        fieldsToValidate.forEach(({ field, name, validate }) => {
+            field.classList.remove("invalid_input");
+            if (!validate(field.value)) {
+                validationErrors.push(`${name} is required or invalid`);
+                field.classList.add("invalid_input");
+            }
+
+            if (dlvdpcs.disabled) {
+                validationErrors.push("Cannot edit pieces on batch delivery.");
+            }
+
+            if (validationErrors.length > 0) {
+                showFailFlag()
+            }
+        });
+    }*/
 
     async function handleUpdate(navigateData) {
         // initialize mandatory fields...
@@ -647,11 +659,11 @@ const DeliveryForm = () => {
             const sharedEntries = {
                 USERNAME: currUser,
                 LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00", 
-                STATUS: "1", 
-                DLVDDATE: delivery.DLVDDATE, 
-                DLVDTIME: delivery.DLVDTIME, 
-                DLVDSIGN: delivery.DLVDSIGN, 
-                DLVDNOTE: delivery.DLVDNOTE, 
+                STATUS: "1",
+                DLVDDATE: delivery.DLVDDATE,
+                DLVDTIME: delivery.DLVDTIME,
+                DLVDSIGN: delivery.DLVDSIGN,
+                DLVDNOTE: delivery.DLVDNOTE,
                 DLVDPCS: delivery.DLVDPCS
             };
 
@@ -667,11 +679,11 @@ const DeliveryForm = () => {
                         deliveryData.append(key === "DLVDIMGFILELOCN" ? "location_string" : "signature_string", value);
                         deliveryData.append(key, null);
                     // if image file uploaded, pull file from delivery state...
-                    } else if (key === "DLVDIMGFILELOCN" && delivery.DLVDIMGFILELOCN !== null && delivery.DLVDIMGFILELOCN instanceof File) {
+                    } else if (key === "DLVDIMGFILELOCN" && delivery.DLVDIMGFILELOCN instanceof File) {
                         //console.log("New image file upload recieved...");
                         deliveryData.append(key, delivery.DLVDIMGFILELOCN);
                     // if image blob uploaded, pull blob from delivery state...
-                    } else if (key === "DLVDIMGFILESIGN" && delivery.DLVDIMGFILESIGN !== null && delivery.DLVDIMGFILESIGN instanceof Blob) {
+                    } else if (key === "DLVDIMGFILESIGN" && delivery.DLVDIMGFILESIGN instanceof Blob) {
                         //console.log("New signature file upload recieved...");
                         deliveryData.append(key, delivery.DLVDIMGFILESIGN);
                     // else, set to null...
@@ -697,61 +709,45 @@ const DeliveryForm = () => {
         //console.log("formData", formData);
         //console.log("delivery", delivery);
 
-        let response;
-        if (DELIVERIES.length == 1) {
-            response = await fetch(API_URL + "api/Delivery/UpdateManifest", {
-                body: deliveryList[0],
+        let lastResponse;
+        for (const deliveryData of deliveryList) {
+            const mfstKey = deliveryData.get("MFSTKEY");
+            if (!mfstKey) {
+                console.error(`Updating manifests failed to pull MFSTKEY on delivery ${deliveryData.MFSTNUMBER}.`);
+            }
+
+            lastResponse = await fetch(API_URL + "v1/deliveries/" + mfstKey, {
+                body: deliveryData,
                 method: "PUT",
                 credentials: 'include'
             })
 
-            if (response.status === 401 || response.status == 403) {
+            if (lastResponse.status === 401 || lastResponse.status == 403) {
                 Logout();
             }
-        } else {
-            for (const deliveryData of deliveryList) {
-                const form = new FormData();
-                for(const [key,value] of deliveryData.entries()) {
-                    form.append(key,value);
-                }
 
-                response = await fetch(API_URL + "api/Delivery/UpdateManifest", {
-                    body: form,
-                    method: "PUT",
-                    credentials: 'include'
-                })
-
-                if (response.status === 401 || response.status == 403) {
-                    Logout();
-                }
-
-                if (!response.ok) {
-                    console.log(`Updating manifests failed on delivery ${deliveryData.MFSTNUMBER}.`);
-                    break;
-                }
+            if (!lastResponse.ok) {
+                console.error(`Updating manifests failed on delivery ${deliveryData.MFSTNUMBER}.`);
+                break;
             }
-        }        
+        }     
 
-        if (response.ok) {
-            const data = await response.json();
+        if (lastResponse && lastResponse.ok) {
+            //const data = await lastResponse.json();
+            setPopup("Success");
+            openPopup();
+            setTimeout(() => {
+                closePopup();
+                navigate(`/deliveries`, { state: navigateData });
+            }, SUCCESS_WAIT)
 
-            if (data.success) {
-                setPopup("Success");
-                openPopup();
-                setTimeout(() => {
-                    closePopup();
-                    navigate(`/deliveries`, { state: navigateData });
-                }, SUCCESS_WAIT)
-            } else {
-                console.error("update delivery failed");
-                setPopup("Fail");
-                openPopup();
-                setTimeout(() => {
-                    closePopup();
-                }, FAIL_WAIT)
-            }
         } else {
-            console.error("")
+            console.error("Updating delivery failed.");
+            setPopup("Fail");
+            openPopup();
+            setTimeout(() => {
+                closePopup();
+            }, FAIL_WAIT);
         }
     }
 
@@ -899,7 +895,7 @@ const DeliveryForm = () => {
                     alt="Provide Delivery Information"
                     MFSTDATE={delivery.MFSTDATE}
                     POWERUNIT={delivery.POWERUNIT}
-                    STOP={delivery.STOP}
+                    STOP={delivery.STOP.toString()}
                     PRONUMBER={delivery.PRONUMBER}
                     MFSTKEY={delivery.MFSTKEY}
                     toggle={header}

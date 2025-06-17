@@ -111,6 +111,24 @@ namespace DeliveryManager.Server.Controllers
             }
         }
 
+        private string GetMessage(int undelivered, int delivered)
+        {
+            if (undelivered > 0 && delivered > 0)
+            {
+                return "Both tables returned non-null values";
+            }
+            if (undelivered == 0 && delivered > 0)
+            {
+                return "Delivered returned non-null values, no valid undelivered records.";
+            }
+            if (delivered == 0 && undelivered > 0)
+            {
+                return "Undelivered returned non-null values, no valid delivered records.";
+            }
+
+            return "No valid records were found.";
+        }
+
         [HttpGet] // no route needed, defaults to v1/deliveries...
         public async Task<IActionResult> GetDeliveries([FromQuery] string powerunit, [FromQuery] string mfstdate)
         {
@@ -170,22 +188,60 @@ namespace DeliveryManager.Server.Controllers
             }
         }
 
-        private string GetMessage(int undelivered, int delivered)
+        [HttpPut]
+        [Route("{MFSTKEY}")]
+        public async Task<IActionResult> UpdateDelivery([FromRoute] string mfstKey, [FromForm] DeliveryForm data)
         {
-            if (undelivered > 0 && delivered > 0)
+            // ensure mfstKey from URL matches form data...
+            if (!string.Equals(mfstKey, data.MFSTKEY, StringComparison.OrdinalIgnoreCase))
             {
-                return "Both tables returned non-null values";
-            }
-            if (undelivered == 0 && delivered > 0)
-            {
-                return "Delivered returned non-null values, no valid undelivered records.";
-            }
-            if (delivered == 0 && undelivered > 0)
-            {
-                return "Undelivered returned non-null values, no valid delivered records.";
+                _logger.LogWarning("MFSTKEY mismatch: URL '{UrlKey}' does not match body '{BodyKey}'.", mfstKey, data.MFSTKEY);
+                return BadRequest(new { message = "MFSTKEY in URL must match MFSTKEY in request body." });
             }
 
-            return "No valid records were found.";
+            // authorize request *should this be reformatted to use in-built *[Authorize]*...
+            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            if (!success)
+            {
+                _logger.LogWarning("Unauthorized access attempt for UpdateDelivery: {Message}", message);
+                return Unauthorized(new { message = message });
+            }
+
+            // retrieve username from cookies...
+            var username = Request.Cookies["username"];
+            if (string.IsNullOrEmpty(username))
+            {
+                _logger.LogWarning("Username is missing from cookies while manifest updating.");
+                return BadRequest(new { message = "Company context is missing from your session. Please ensure you are logged in correctly." });
+            }
+
+            // retrieve active company from cookies...
+            var company = Request.Cookies["company"];
+            if (string.IsNullOrEmpty(company))
+            {
+                _logger.LogWarning("Company key cookies is missing for user '{Username}' during manifest updating.", username);
+                return BadRequest(new { message = "Company context is missing from your session. Please ensure you are logged in correctly." });
+            }
+
+            try
+            {
+                bool updateSuccess = await _deliveryService.UpdateDeliveryManifestAsync(data, company, username);
+                if (updateSuccess)
+                {
+                    _logger.LogInformation("Manifest {MFSTKEY} updated successfully.", mfstKey);
+                    return Ok(new { message = "Delivery updated successfully." });
+                }
+                else
+                {
+                    _logger.LogError("Failed to update manifest {MFSTKEY} in service (likely no rows affected or internal service error).", mfstKey);
+                    return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Failed to update delivery. Check server logs." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An unexpected error occurred while updating manifest {MFSTKEY}.", mfstKey);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Am unexpected server error occurred." });
+            }
         }
     }
 }

@@ -245,7 +245,7 @@ namespace DeliveryManager.Server.Controllers
 
         *//////////////////////////////////////////////////////////////////////////////
 
-        private string GetMessage(DataTable undelivered, DataTable delivered)
+        /*private string GetMessage(DataTable undelivered, DataTable delivered)
         {
             if (undelivered.Rows.Count > 0 && delivered.Rows.Count > 0)
             {
@@ -328,7 +328,7 @@ namespace DeliveryManager.Server.Controllers
                 _logger.LogError(ex, $"An error occurred while fetching deliveries (GetDeliveries(), DeliveryManagerController.cs); Exception: {ex.Message}");
                 return new JsonResult(new { success = false, error = "Error: " + ex.Message });
             }
-        }
+        }*/
 
         /*/////////////////////////////////////////////////////////////////////////////
  
@@ -338,7 +338,7 @@ namespace DeliveryManager.Server.Controllers
 
         *//////////////////////////////////////////////////////////////////////////////
 
-        [HttpPut]
+        /*[HttpPut]
         [Route("UpdateManifest")]
         public async Task<JsonResult> UpdateManifest([FromForm] DeliveryForm data)
         {
@@ -644,115 +644,6 @@ namespace DeliveryManager.Server.Controllers
             {
                 return new JsonResult(new { success = false, error = "Error updating delivery: " + ex.Message });
             }
-        }
-
-        /* 
-         * 
-         * PHASE THESE OUT OF DEVELOPMENT 
-         *
-         */
-
-        [HttpGet]
-        [Route("GetUndelivered")]
-        public JsonResult GetUndelivered(string POWERUNIT, string MFSTDATE)
-        {
-            //var tokenService = new TokenService(_config);
-            (bool success, string message) tokenAuth = _tokenService.AuthorizeRequest(HttpContext);
-            if (!tokenAuth.success)
-            {
-                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
-            }
-
-            var company = Request.Cookies["company"];
-            if (string.IsNullOrEmpty(company))
-            {
-                return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
-            }
-
-            string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=0 order by STOP";
-            DataTable table = new DataTable();
-            string sqlDatasource = _config.GetConnectionString(company);
-            SqlDataReader myReader;
-
-            try
-            {
-                using (SqlConnection myCon = new SqlConnection(sqlDatasource))
-                {
-                    myCon.Open();
-                    using (SqlCommand myCommand = new SqlCommand(query, myCon))
-                    {
-                        myCommand.Parameters.AddWithValue("@POWERUNIT", POWERUNIT);
-                        myCommand.Parameters.AddWithValue("@MFSTDATE", MFSTDATE);
-                        myReader = myCommand.ExecuteReader();
-                        table.Load(myReader);
-                        myReader.Close();
-                        myCon.Close();
-                    }
-                }
-                if (table.Rows.Count > 0)
-                {
-                    return new JsonResult(new { success = true, table = table });
-                }
-                else
-                {
-                    return new JsonResult(new { success = false, error = "Error: Empty table results" });
-                }
-            }
-            catch (Exception ex)
-            {
-                return new JsonResult(new { success = false, error = "Error: " + ex.Message });
-            }
-        }
-        [HttpGet]
-        [Route("GetDelivered")]
-        public JsonResult GetDelivered(string POWERUNIT, string MFSTDATE)
-        {
-            //var tokenService = new TokenService(_configuration);
-            (bool success, string message) tokenAuth = _tokenService.AuthorizeRequest(HttpContext);
-            if (!tokenAuth.success)
-            {
-                return new JsonResult(new { success = false, message = tokenAuth.message }) { StatusCode = StatusCodes.Status401Unauthorized };
-            }
-
-            var company = Request.Cookies["company"];
-            if (string.IsNullOrEmpty(company))
-            {
-                return new JsonResult(new { success = false, message = "Company key is missing." }) { StatusCode = StatusCodes.Status401Unauthorized };
-            }
-
-            string query = "select * from dbo.DMFSTDAT where POWERUNIT=@POWERUNIT and MFSTDATE=@MFSTDATE and STATUS=1 order by STOP";
-            DataTable table = new DataTable();
-            string sqlDatasource = _config.GetConnectionString(company);
-            SqlDataReader myReader;
-
-            try
-            {
-                using (SqlConnection myCon = new SqlConnection(sqlDatasource))
-                {
-                    myCon.Open();
-                    using (SqlCommand myCommand = new SqlCommand(query, myCon))
-                    {
-                        myCommand.Parameters.AddWithValue("@POWERUNIT", POWERUNIT);
-                        myCommand.Parameters.AddWithValue("@MFSTDATE", MFSTDATE);
-                        myReader = myCommand.ExecuteReader();
-                        table.Load(myReader);
-                        myReader.Close();
-                        myCon.Close();
-                    }
-                }
-                if (table.Rows.Count > 0)
-                {
-                    return new JsonResult(new { success = true, table = table });
-                }
-                else
-                {
-                    return new JsonResult(new { success = true, table = table });
-                }
-            }
-            catch (Exception ex)
-            {
-                return new JsonResult(new { success = false, error = "Error: " + ex.Message });
-            }
-        }
+        }*/
     }
 }
