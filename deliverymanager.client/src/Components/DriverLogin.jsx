@@ -149,9 +149,10 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     const openPopup = () => {
-        document.getElementById("popupWindow").style.visibility = "visible";
-        document.getElementById("popupWindow").style.opacity = 1;
-        document.getElementById("popupWindow").style.pointerEvents = "auto";  
+        const popup = document.getElementById("popupWindow");
+        popup.style.visibility = "visible";
+        popup.style.opacity = 1;
+        popup.style.pointerEvents = "auto";  
     };
 
     /*/////////////////////////////////////////////////////////////////
@@ -162,9 +163,10 @@ const DriverLogin = () => {
     *//////////////////////////////////////////////////////////////////
 
     const closePopup = () => {
-        document.getElementById("popupWindow").style.visibility = "hidden";
-        document.getElementById("popupWindow").style.opacity = 0;
-        document.getElementById("popupWindow").style.pointerEvents = "none";
+        const popup = document.getElementById("popupWindow");
+        popup.style.visibility = "hidden";
+        popup.style.opacity = 0;
+        popup.style.pointerEvents = "none";
     
         Logout();
     };
@@ -262,7 +264,7 @@ const DriverLogin = () => {
             credentials: 'include',
         })
 
-        alert(`stopping the app from loading with status: ${response.status} and ok: ${response.ok}`);
+        //alert(`stopping the app from loading with status: ${response.status} and ok: ${response.ok}`);
 
         if (!response.ok || response.status === 401 || response.status === 403) { 
             console.error("User validation failed, redirecting the login page.")

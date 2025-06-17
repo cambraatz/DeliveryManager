@@ -481,15 +481,15 @@ const DeliveryForm = () => {
             USERNAME: currUser,
             LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00",
             STATUS: "0",
-            DLVDDATE: null,
-            DLVDTIME: null,
+            DLVDDATE: "",
+            DLVDTIME: "",
             DLVDPCS: -1,
-            DLVDSIGN: null,
-            DLVDNOTE: null,
+            DLVDSIGN: "",
+            DLVDNOTE: "",
             DLVDIMGFILELOCN: null,
             DLVDIMGFILESIGN: null,
-            location_string: null,
-            signature_string: null
+            location_string: "",
+            signature_string: ""
         };
 
         // iterate list of deliveries and initialize reverted delivery objects...
@@ -502,11 +502,8 @@ const DeliveryForm = () => {
                 if (key in sharedEntries) {
                     deliveryData.append(key, sharedEntries[key]);
                 // standard delivery data processing...
-                } else if (value !== undefined && value !== "") {
-                    deliveryData.append(key, value);
-                // null-data processing...
                 } else {
-                    deliveryData.append(key, null);
+                    deliveryData.append(key, value);
                 }
             }
 
@@ -653,39 +650,46 @@ const DeliveryForm = () => {
             return;
         }
 
+        // define common data shared between selected deliveries...
+        const sharedEntries = {
+            USERNAME: currUser,
+            LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00", 
+            STATUS: "1",
+            DLVDDATE: delivery.DLVDDATE,
+            DLVDTIME: delivery.DLVDTIME,
+            DLVDSIGN: delivery.DLVDSIGN,
+            DLVDNOTE: delivery.DLVDNOTE,
+            DLVDPCS: delivery.DLVDPCS
+        };
+
         // iterate list of deliveries and initialize delivery updates...
         let deliveryList = DELIVERIES.map((currDelivery) => {
-            // define common data shared between selected deliveries...
-            const sharedEntries = {
-                USERNAME: currUser,
-                LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00", 
-                STATUS: "1",
-                DLVDDATE: delivery.DLVDDATE,
-                DLVDTIME: delivery.DLVDTIME,
-                DLVDSIGN: delivery.DLVDSIGN,
-                DLVDNOTE: delivery.DLVDNOTE,
-                DLVDPCS: delivery.DLVDPCS
-            };
-
             // initialize fresh FormData object for handling file upload...
             let deliveryData = new FormData();
 
+            console.log(currDelivery);
+
             // iterate delivery entries to build FormData objects...
-            for (const [key,value] of Object.entries(currDelivery)) {
+            for (const [key,val] of Object.entries(currDelivery)) {
+                console.log(`key: ${key}, value: ${val}`);
+
                 // handle file/blob processing...
                 if (key === "DLVDIMGFILELOCN" || key === "DLVDIMGFILESIGN") {
+                    const image = delivery[key];
                     // if file/blob exists, save file path and nullify file upload...
                     if (typeof value === "string") {
-                        deliveryData.append(key === "DLVDIMGFILELOCN" ? "location_string" : "signature_string", value);
-                        deliveryData.append(key, null);
+                        deliveryData.append(key === "DLVDIMGFILELOCN" ? "location_string" : "signature_string", val);
+                        deliveryData.append(key, "");
                     // if image file uploaded, pull file from delivery state...
-                    } else if (key === "DLVDIMGFILELOCN" && delivery.DLVDIMGFILELOCN instanceof File) {
+                    } else if (key === "DLVDIMGFILELOCN" && image instanceof File) {
                         //console.log("New image file upload recieved...");
-                        deliveryData.append(key, delivery.DLVDIMGFILELOCN);
+                        deliveryData.append(key, image);
+                        deliveryData.append("location_string", "");
                     // if image blob uploaded, pull blob from delivery state...
-                    } else if (key === "DLVDIMGFILESIGN" && delivery.DLVDIMGFILESIGN instanceof Blob) {
+                    } else if (key === "DLVDIMGFILESIGN" && image instanceof Blob) {
                         //console.log("New signature file upload recieved...");
-                        deliveryData.append(key, delivery.DLVDIMGFILESIGN);
+                        deliveryData.append(key, image);
+                        deliveryData.append("signature_string", "");
                     // else, set to null...
                     } else {
                         deliveryData.append(key, null);
@@ -694,11 +698,8 @@ const DeliveryForm = () => {
                 } else if (key in sharedEntries) {
                     deliveryData.append(key, sharedEntries[key]);
                 // standard delivery data processing...
-                } else if (value !== undefined && value !== "") {
-                    deliveryData.append(key, value);
-                // null-data processing...
                 } else {
-                    deliveryData.append(key, null);
+                    deliveryData.append(key, val);
                 }
             }
 
@@ -710,14 +711,14 @@ const DeliveryForm = () => {
         //console.log("delivery", delivery);
 
         let lastResponse;
-        for (const deliveryData of deliveryList) {
-            const mfstKey = deliveryData.get("MFSTKEY");
+        for (const listItem of deliveryList) {
+            const mfstKey = listItem.get("MFSTKEY");
             if (!mfstKey) {
-                console.error(`Updating manifests failed to pull MFSTKEY on delivery ${deliveryData.MFSTNUMBER}.`);
+                console.error(`Updating manifests failed to pull MFSTKEY on delivery ${mfstKey}.`);
             }
 
             lastResponse = await fetch(API_URL + "v1/deliveries/" + mfstKey, {
-                body: deliveryData,
+                body: listItem,
                 method: "PUT",
                 credentials: 'include'
             })
@@ -727,7 +728,7 @@ const DeliveryForm = () => {
             }
 
             if (!lastResponse.ok) {
-                console.error(`Updating manifests failed on delivery ${deliveryData.MFSTNUMBER}.`);
+                console.error(`Updating manifests failed on delivery ${mfstKey}.`);
                 break;
             }
         }     

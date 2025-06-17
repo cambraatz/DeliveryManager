@@ -10,7 +10,7 @@ namespace DeliveryManager.Server.Models
         public string LASTUPDATE { get; set; } = string.Empty;
         public string MFSTNUMBER { get; set; } = string.Empty;
         public string POWERUNIT { get; set; } = string.Empty;
-        public short STOP { get; set; } = 0;
+        public short? STOP { get; set; }
         public string MFSTDATE { get; set; } = string.Empty;
         public string PRONUMBER { get; set; } = string.Empty;
         public string PRODATE { get; set; } = string.Empty;
@@ -21,9 +21,9 @@ namespace DeliveryManager.Server.Models
         public string CONSCITY { get; set; } = string.Empty;
         public string CONSSTATE { get; set; } = string.Empty;
         public string CONSZIP { get; set; } = string.Empty;
-        public short TTLPCS { get; set; } = 0;
-        public short TTLYDS { get; set; } = 0;
-        public short TTLWGT { get; set; } = 0;
+        public short? TTLPCS { get; set; }
+        public short? TTLYDS { get; set; }
+        public short? TTLWGT { get; set; }
         public string? DLVDDATE { get; set; }
         public string? DLVDTIME { get; set; }
         public short? DLVDPCS { get; set; }

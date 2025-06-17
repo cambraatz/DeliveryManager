@@ -6,7 +6,6 @@ namespace DeliveryManager.Server.Services.Interfaces
     {
         Task<User?> GetByUsernameAsync(string username);
         Task<bool> IsPowerunitInUseAsync(string powerunit, string username);
-
         Task UpdatePowerunitAsync(string username, string powerunit);
     }
 }

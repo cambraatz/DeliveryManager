@@ -17,8 +17,8 @@ var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 var builder = WebApplication.CreateBuilder(args);
 
 var logPath = builder.Environment.IsProduction()
-    ? Path.Combine(builder.Environment.ContentRootPath, "Logs", "logs.log")
-    : "logs.log";
+    ? Path.Combine(builder.Environment.ContentRootPath, "logs", "logs.log")
+    : Path.Combine("logs","logs.log");
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.File(logPath, rollingInterval: RollingInterval.Day)
@@ -106,54 +106,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMappingService, MappingService>();
 builder.Services.AddScoped<IDeliveryService, DeliveryService>();
 builder.Services.AddScoped<IDeliveryListService, DeliveryListService>();
-
-/*var app = builder.Build();
-
-app.UseRouting();
-
-app.UseCookiePolicy(new CookiePolicyOptions
-{
-    MinimumSameSitePolicy = SameSiteMode.None,
-    HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always,
-    Secure = app.Environment.IsProduction() || (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Kestrel:Certificates:Default:Password:IsTrusted", false))
-        ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest
-});
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.UseCors(MyAllowSpecificOrigins);
-
-if (app.Environment.IsProduction())
-{
-    app.UseForwardedHeaders(new ForwardedHeadersOptions
-    {
-        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-    });
-}
-
-
-app.UseDefaultFiles();
-app.UseStaticFiles();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-app.MapControllers();
-app.MapFallbackToFile("/index.html");
-
-app.Run();*/
+builder.Services.AddScoped<IImageService, ImageService>();
 
 var app = builder.Build();
 

@@ -10,12 +10,14 @@ namespace DeliveryManager.Server.Services
     public class DeliveryService : IDeliveryService
     {
         private readonly IConfiguration _config;
+        private readonly IImageService _imageService;
         private readonly ILogger<DeliveryService> _logger;
         private readonly string _uploadFolderPath;
 
-        public DeliveryService(IConfiguration config, ILogger<DeliveryService> logger)
+        public DeliveryService(IConfiguration config, IImageService imageService,ILogger<DeliveryService> logger)
         {
             _config = config;
+            _imageService = imageService;
             _logger = logger;
             _uploadFolderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
             if (!Directory.Exists(_uploadFolderPath))
@@ -94,11 +96,15 @@ namespace DeliveryManager.Server.Services
             {
                 try
                 {
-                    locationFileName = Guid.NewGuid().ToString() + Path.GetExtension(data.DLVDIMGFILELOCN.FileName);
-                    string filePath = Path.Combine(_uploadFolderPath, locationFileName);
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    (string? fileName, string? errorMessage) = await _imageService.SaveImageAsync(data.DLVDIMGFILELOCN);
+                    if (fileName != null)
                     {
-                        await data.DLVDIMGFILELOCN.CopyToAsync(fileStream);
+                        locationFileName = Path.GetFileName(fileName);
+                    }
+                    else
+                    {
+                        _logger.LogError("Failed to save location image: {Error}", errorMessage);
+                        locationFileName = null;
                     }
                 }
                 catch (Exception ex)
@@ -112,11 +118,15 @@ namespace DeliveryManager.Server.Services
             {
                 try
                 {
-                    signatureFileName = Guid.NewGuid().ToString() + Path.GetExtension(data.DLVDIMGFILESIGN.FileName);
-                    string filePath = Path.Combine(_uploadFolderPath, signatureFileName);
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    (string? fileName, string? errorMessage) = await _imageService.SaveImageAsync(data.DLVDIMGFILESIGN);
+                    if (fileName != null)
                     {
-                        await data.DLVDIMGFILESIGN.CopyToAsync(fileStream);
+                        signatureFileName = Path.GetFileName(fileName);
+                    }
+                    else
+                    {
+                        _logger.LogError("Failed to save location image: {Error}", errorMessage);
+                        signatureFileName = null;
                     }
                 }
                 catch (Exception ex)
@@ -183,21 +193,21 @@ namespace DeliveryManager.Server.Services
                 comm.Parameters.AddWithValue("@SHIPNAME", data.SHIPNAME);
                 comm.Parameters.AddWithValue("@CONSNAME", data.CONSNAME);
                 comm.Parameters.AddWithValue("@CONSADD1", data.CONSADD1);
-                comm.Parameters.AddWithValue("@CONSADD2", data.CONSADD2 ?? (object)DBNull.Value); // If "null" string comes from frontend, change frontend to send actual null
+                comm.Parameters.AddWithValue("@CONSADD2", string.IsNullOrEmpty(data.CONSADD2) ? (object)DBNull.Value : data.CONSADD2);
                 comm.Parameters.AddWithValue("@CONSCITY", data.CONSCITY);
                 comm.Parameters.AddWithValue("@CONSSTATE", data.CONSSTATE);
                 comm.Parameters.AddWithValue("@CONSZIP", data.CONSZIP);
                 comm.Parameters.AddWithValue("@TTLPCS", data.TTLPCS);
                 comm.Parameters.AddWithValue("@TTLYDS", data.TTLYDS);
                 comm.Parameters.AddWithValue("@TTLWGT", data.TTLWGT);
-                comm.Parameters.AddWithValue("@DLVDDATE", data.DLVDDATE ?? (object)DBNull.Value);
-                comm.Parameters.AddWithValue("@DLVDTIME", data.DLVDTIME ?? (object)DBNull.Value);
-                comm.Parameters.AddWithValue("@DLVDPCS", data.DLVDPCS == -1 ? DBNull.Value : data.DLVDPCS); // handle -1 null values...
-                comm.Parameters.AddWithValue("@DLVDSIGN", data.DLVDSIGN ?? (object)DBNull.Value);
-                comm.Parameters.AddWithValue("@DLVDNOTE", data.DLVDNOTE ?? (object)DBNull.Value);
-                comm.Parameters.AddWithValue("@DLVDIMGFILELOCN", locationPath ?? (object)DBNull.Value); // Use new file name
-                comm.Parameters.AddWithValue("@DLVDIMGFILESIGN", signaturePath ?? (object)DBNull.Value); // Use new file name
-                comm.Parameters.AddWithValue("@USERNAME", username ?? (object)DBNull.Value);
+                comm.Parameters.AddWithValue("@DLVDDATE", string.IsNullOrEmpty(data.DLVDDATE) ? (object)DBNull.Value : data.DLVDDATE);
+                comm.Parameters.AddWithValue("@DLVDTIME", string.IsNullOrEmpty(data.DLVDTIME) ? (object)DBNull.Value : data.DLVDTIME);
+                comm.Parameters.AddWithValue("@DLVDPCS", data.DLVDPCS == -1 || data.DLVDPCS == null ? (object)DBNull.Value : data.DLVDPCS); // handle -1 null values...
+                comm.Parameters.AddWithValue("@DLVDSIGN", string.IsNullOrEmpty(data.DLVDSIGN) ? (object)DBNull.Value : data.DLVDSIGN);
+                comm.Parameters.AddWithValue("@DLVDNOTE", string.IsNullOrEmpty(data.DLVDNOTE) ? (object)DBNull.Value : data.DLVDNOTE);
+                comm.Parameters.AddWithValue("@DLVDIMGFILELOCN", string.IsNullOrEmpty(locationPath) ? (object)DBNull.Value : locationPath); // Use new file name
+                comm.Parameters.AddWithValue("@DLVDIMGFILESIGN", string.IsNullOrEmpty(signaturePath) ? (object)DBNull.Value : signaturePath); // Use new file name
+                comm.Parameters.AddWithValue("@USERNAME", string.IsNullOrEmpty(username) ? (object)DBNull.Value : username);
 
                 int rowsAffected = await comm.ExecuteNonQueryAsync();
                 return rowsAffected > 0;

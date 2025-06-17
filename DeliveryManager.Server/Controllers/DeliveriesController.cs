@@ -20,6 +20,7 @@ namespace DeliveryManager.Server.Controllers
         private readonly IUserService _userService;
         private readonly IDeliveryService _deliveryService;
         private readonly IDeliveryListService _deliveryListService;
+        private readonly IImageService _imageService;
         private readonly IConfiguration _config;
         private readonly ILogger<DeliveriesController> _logger;
 
@@ -28,6 +29,7 @@ namespace DeliveryManager.Server.Controllers
             IUserService userService,
             IDeliveryService deliveryService,
             IDeliveryListService deliveryListService,
+            IImageService imageService,
             IConfiguration config,
             ILogger<DeliveriesController> logger)
         {
@@ -35,6 +37,7 @@ namespace DeliveryManager.Server.Controllers
             _userService = userService;
             _deliveryService = deliveryService;
             _deliveryListService = deliveryListService;
+            _imageService = imageService;
             _config = config;
             _logger = logger;
         }
@@ -240,8 +243,26 @@ namespace DeliveryManager.Server.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An unexpected error occurred while updating manifest {MFSTKEY}.", mfstKey);
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Am unexpected server error occurred." });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected server error occurred." + ex });
             }
+        }
+
+        [HttpGet]
+        [Route("image/{fileName}")]
+        public async Task<IActionResult> GetImage(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                return BadRequest("Filename cannot be empty.");
+            }
+
+            (byte[]? fileBytes, string? contentType) = await _imageService.GetImageAsync(fileName);
+            if (fileBytes == null)
+            {
+                return NotFound();
+            }
+
+            return File(fileBytes, contentType ?? "application/octet-stream");
         }
     }
 }

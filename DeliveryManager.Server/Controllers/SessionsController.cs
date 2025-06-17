@@ -90,14 +90,14 @@ namespace DeliveryManager.Server.Controllers
                 return Unauthorized(new { message = message });
             }
 
-            string username = Request.Cookies["username"];
+            string? username = Request.Cookies["username"];
             if (string.IsNullOrEmpty(username))
             {
                 _logger.LogWarning("Required 'username' cookie is missing or empty.");
                 return BadRequest(new { message = "Username cookies is missing or empty." });
             }
 
-            string companyMapping = Request.Cookies["company_mapping"];
+            string? companyMapping = Request.Cookies["company_mapping"];
             if (string.IsNullOrEmpty(companyMapping))
             {
                 _logger.LogWarning("Required 'company_mapping' cookie is missing or empty.");

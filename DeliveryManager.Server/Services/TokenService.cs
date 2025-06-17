@@ -147,8 +147,22 @@ namespace DeliveryManager.Server.Services
             // if non-null, replace tokens in cookies with fresh set...
             if (accessToken != null && refreshToken != null)
             {
-                response.Cookies.Append("access_token", accessToken, _cookieService.AccessOptions());
-                response.Cookies.Append("refresh_token", refreshToken, _cookieService.RefreshOptions());
+                var cookies = request.Cookies.ToList();
+                foreach (var cookie in cookies)
+                {
+                    switch (cookie.Key.ToLowerInvariant())
+                    {
+                        case "access_token":
+                            response.Cookies.Append("access_token", accessToken, _cookieService.AccessOptions());
+                            break;
+                        case "refresh_token":
+                            response.Cookies.Append("refresh_token", refreshToken, _cookieService.RefreshOptions());
+                            break;
+                        default:
+                            response.Cookies.Append(cookie.Key, cookie.Value, _cookieService.AccessOptions());
+                            break;
+                    }
+                }
             }
 
             return (true, "Token has been validated, authorization granted.");
