@@ -17,13 +17,15 @@ namespace DeliveryManager.Server.Controllers
         private readonly IMappingService _mappingService;
         private readonly ILogger<SessionsController> _logger;
         private readonly IWebHostEnvironment _env;
+        private readonly IConfiguration _config;
 
         public SessionsController(IUserService userService, 
             ITokenService tokenService,
             ICookieService cookieService,
             IMappingService mappingService,
             ILogger<SessionsController> logger,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IConfiguration config)
         {
             _userService = userService;
             _tokenService = tokenService;
@@ -31,6 +33,7 @@ namespace DeliveryManager.Server.Controllers
             _mappingService = mappingService;
             _logger = logger;
             _env = env;
+            _config = config;
         }
 
         [HttpGet]
@@ -122,6 +125,16 @@ namespace DeliveryManager.Server.Controllers
                 Response.Cookies.Append(cookie.Key, "", _cookieService.RemoveOptions());
             }
             return Ok(new { message = "Logged out successfully" });
+        }
+
+        [HttpPost]
+        [Route("return")]
+        public IActionResult Return()
+        {
+            _cookieService.ExtendCookies(HttpContext, 15);
+            Response.Cookies.Append("return", "true", _cookieService.AccessOptions());
+
+            return Ok(new { message = "Returning, cookies extension completed successfully." });
         }
     }
 }

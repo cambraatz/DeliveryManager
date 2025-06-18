@@ -90,7 +90,7 @@ const UserWidget = (props) => {
 
     async function Logout() {
         clearMemory();
-        const response = await fetch(API_URL + "api/Registration/Logout", {
+        const response = await fetch(API_URL + "v1/sessions/logout", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json; charset=UTF-8'
@@ -120,7 +120,7 @@ const UserWidget = (props) => {
             handleGoBack();
             return;
         }
-        const response = await fetch(`${API_URL}api/Registration/Return`, {
+        const response = await fetch(API_URL + "v1/sessions/return", {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json; charset=UTF-8'

@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DeliveryManager.Server.Services.Interfaces;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using DeliveryManager.Server.Services.Interfaces;
+using System.Net;
 
 namespace DeliveryManager.Server.Services
 {
@@ -77,18 +78,15 @@ namespace DeliveryManager.Server.Services
 
             foreach (var cookie in request.Cookies)
             {
-                response.Cookies.Append(
-                    cookie.Key,
-                    cookie.Value,
-                    new CookieOptions
-                    {
-                        Expires = DateTime.UtcNow.AddMinutes(extensionMinutes),
-                        HttpOnly = true,  // Keeps it secure from JavaScript access
-                        Secure = true,    // Ensures cookies are only sent over HTTPS
-                        SameSite = SameSiteMode.None, // Allows access across subdomains
-                        Domain = GetCookieDomain()
-                    }
-                );
+                switch (cookie.Key.ToLowerInvariant())
+                {
+                    case "refresh_token":
+                        response.Cookies.Append("refresh_token", cookie.Value, RefreshOptions());
+                        break;
+                    default:
+                        response.Cookies.Append(cookie.Key, cookie.Value, AccessOptions());
+                        break;
+                }
             }
         }
     }

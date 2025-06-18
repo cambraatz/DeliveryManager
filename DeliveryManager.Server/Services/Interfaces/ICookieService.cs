@@ -7,6 +7,6 @@ namespace DeliveryManager.Server.Services.Interfaces
         CookieOptions RemoveOptions();
         CookieOptions AccessOptions();
         CookieOptions RefreshOptions();
-        void ExtendCookies(HttpContext contex, int extensionMinutes);
+        void ExtendCookies(HttpContext context, int extensionMinutes);
     }
 }
