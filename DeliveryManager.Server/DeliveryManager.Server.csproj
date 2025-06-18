@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <SpaRoot>..\deliverymanager.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
-    <SpaProxyServerUrl>https://localhost:7200</SpaProxyServerUrl>
+    <SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,7 +33,9 @@
   </ItemGroup>
 
   <ItemGroup>
+	<Folder Include="wwwroot\" />
     <Folder Include="wwwroot\uploads\" />
+	<Content Include="wwwroot\**" />
   </ItemGroup>
 
 </Project>

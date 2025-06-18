@@ -414,7 +414,7 @@ const DeliveryForm = () => {
     async function retrieveImage(image) {
         try {
             // fetch image from server using stored file paths...
-            const response = await fetch(API_URL + "api/DriverChecklist/GetImage?IMAGE=" + image, {
+            const response = await fetch(API_URL + "v1/deliveries/image/" + image, {
                 method: 'GET',
                 headers: {
                     //"Authorization": `Bearer ${token}`
