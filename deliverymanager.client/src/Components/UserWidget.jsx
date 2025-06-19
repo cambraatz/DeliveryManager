@@ -10,16 +10,8 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const UserWidget = (props) => {
     const [user, setUser] = useState(props.driver);
-    //const [status, setStatus] = useState(props.status);
 
     useEffect(() => {        
-        /*if (props.status === "Off"){
-            document.getElementById("Return").style.display = "none";
-        }
-        else {
-            document.getElementById("Return").style.display = "flex";
-        }*/
-
         if (props.toggle === "close") {
             document.getElementById("main_title").style.display = "none";
             document.getElementById("title_div").style.display = "none";
@@ -38,34 +30,12 @@ const UserWidget = (props) => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        //logout();
         Logout();
-        if (localStorage.getItem('accessToken') == null && localStorage.getItem('refreshToken') == null) {
-            console.log("Logged out, redirecting to login!");
-        }
-        //setUser("Signed Out");
-        //navigate('/', {state: props.company});
         setTimeout(() => {
             window.location.href = `https://www.login.tcsservices.com`;
         },1500)
         
     }
-
-    /*
-    const handleClick = () => {
-        document.getElementById("popupLogoutWindow").style.visibility = "visible";
-        document.getElementById("popupLogoutWindow").style.opacity = 1;
-        document.getElementById("popupLogoutWindow").style.pointerEvents = "auto";
-    };
-
-    const handleClose = () => {
-        document.getElementById("popupLogoutWindow").style.visibility = "hidden";
-        document.getElementById("popupLogoutWindow").style.opacity = 0;
-        document.getElementById("popupLogoutWindow").style.pointerEvents = "none";
-    };
-    */
-
-    //console.log("header: ", props.header)
     
     const [status,setStatus] = useState(props.toggle);
 
@@ -77,13 +47,11 @@ const UserWidget = (props) => {
                 document.getElementById("title_div").style.display = "none";
                 document.getElementById("buffer").style.height = "10px";
                 setStatus("close");
-                //e.target.id = "openToggle";
             } else {
                 document.getElementById("main_title").style.display = "flex";
                 document.getElementById("title_div").style.display = "flex";
                 document.getElementById("buffer").style.height = "20px";
                 setStatus("open");
-                //e.target.id = "collapseToggle";
             }
         }
     } 
@@ -105,7 +73,6 @@ const UserWidget = (props) => {
 
     async function Return() {
         const handleGoBack = () => {
-            //window.history.back();
             const path = window.location.pathname;
             let oneBack = path.substring(0, path.lastIndexOf('/'));
 

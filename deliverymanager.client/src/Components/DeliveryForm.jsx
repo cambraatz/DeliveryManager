@@ -20,8 +20,7 @@ import { scrapeDate,
     scrapeTime, 
     getDate, 
     getTime, 
-    translateDate, 
-    //API_URL, 
+    translateDate,  
     showFailFlag, 
     SUCCESS_WAIT,
     FAIL_WAIT} from '../Scripts/helperFunctions';
@@ -30,11 +29,9 @@ import LoadingSpinner from './LoadingSpinner.jsx';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-//////////////////////////////////////////////////////////////////////////////////////
-/* 
+/*////////////////////////////////////////////////////////////////////////////////////
+
 DeliveryForm() - User Manipulation of Delivery Records
-
-
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -512,6 +509,7 @@ const DeliveryForm = () => {
 
         
         let lastResponse;
+        //setLoading(true);
         for (const deliveryData of deliveryList) {
             const mfstKey = deliveryData.get("MFSTKEY");
             if (!mfstKey) {
@@ -535,9 +533,11 @@ const DeliveryForm = () => {
         }
 
         if (lastResponse.ok) {
+            //setLoading(false);
             setPopup("Success");
             openPopup();
             setTimeout(() => {
+                setLoading(true);
                 closePopup();
                 navigate(`/deliveries`, { state: navigateData });
             }, SUCCESS_WAIT);
@@ -572,35 +572,6 @@ const DeliveryForm = () => {
         return response string
     }
     *//////////////////////////////////////////////////////////////////
-
-    /*function validateForm(validationFields){
-        const dlvdate = document.getElementById("dlvdate");
-        const dlvtime = document.getElementById("dlvtime");
-        const dlvdpcs = document.getElementById("dlvdpcs");
-
-        const validationErrors = [];
-        const fieldsToValidate = [
-            { field: dlvdate, name: "Date", validate: (val) => val && !isNaN(new Date(val).getTime()) },
-            { field: dlvtime, name: "Time", validate: (val) => val },
-            { field: dlvdpcs, name: "Pieces Delivered", validate: (val) => val && !isNaN(val) && val >= dlvdpcs.min && val <= dlvdpcs.max }
-        ];
-
-        fieldsToValidate.forEach(({ field, name, validate }) => {
-            field.classList.remove("invalid_input");
-            if (!validate(field.value)) {
-                validationErrors.push(`${name} is required or invalid`);
-                field.classList.add("invalid_input");
-            }
-
-            if (dlvdpcs.disabled) {
-                validationErrors.push("Cannot edit pieces on batch delivery.");
-            }
-
-            if (validationErrors.length > 0) {
-                showFailFlag()
-            }
-        });
-    }*/
 
     async function handleUpdate(navigateData) {
         // initialize mandatory fields...
@@ -650,6 +621,8 @@ const DeliveryForm = () => {
             return;
         }
 
+        //setLoading(true);
+
         // define common data shared between selected deliveries...
         const sharedEntries = {
             USERNAME: currUser,
@@ -667,12 +640,8 @@ const DeliveryForm = () => {
             // initialize fresh FormData object for handling file upload...
             let deliveryData = new FormData();
 
-            console.log(currDelivery);
-
             // iterate delivery entries to build FormData objects...
             for (const [key,val] of Object.entries(currDelivery)) {
-                console.log(`key: ${key}, value: ${val}`);
-
                 // handle file/blob processing...
                 if (key === "DLVDIMGFILELOCN" || key === "DLVDIMGFILESIGN") {
                     const image = delivery[key];
@@ -702,7 +671,6 @@ const DeliveryForm = () => {
                     deliveryData.append(key, val);
                 }
             }
-
             return deliveryData;
         });
 
@@ -738,6 +706,7 @@ const DeliveryForm = () => {
             setPopup("Success");
             openPopup();
             setTimeout(() => {
+                setLoading(true);
                 closePopup();
                 navigate(`/deliveries`, { state: navigateData });
             }, SUCCESS_WAIT)
@@ -883,9 +852,8 @@ const DeliveryForm = () => {
     // render template...
     return (
         <div id="webpage">
-            {loading ? (
-                <LoadingSpinner />
-            ) : (
+            {loading && <LoadingSpinner />}
+            {!loading && (
                 <>
                 <Header
                     company={company}
@@ -993,36 +961,34 @@ const DeliveryForm = () => {
                     </div>
                 </div>
 
-                {/*** POPUP CONTENT - THIS SECTION IS HIDDEN BY DEFAULT ***/}
-                <div id="popupSignatureWindow" className="overlay">
-                    <div className="popupSignature">
-                        <div id="popupExit" className="content">
-                            <h1 id="close" onClick={handlePopupClose}>&times;</h1>
-                        </div>
-                        <SignatureField id="sigField" onSubmit={handleSignature}/>
-                    </div>
-                </div>
-                <div id="popupAddWindow" className="overlay">
-                    <div className="popupLogin">
-                        <div id="popupAddExit" className="content">
-                            <h1 id="close_add" className="popupLoginWindow" onClick={closePopup}>&times;</h1>
-                        </div>
-                        <Popup 
-                            message={popup}
-                            date={null}
-                            powerunit={null}
-                            closePopup={closePopup}
-                            handleDeliveryChange={null}
-                            handleUpdate={handleUpdate}
-                            company={company}
-                        />
-                    </div>
-                </div>
-
                 <Footer id="footer"/>
                 </>
-            )
-        }
+            )}
+            {/*** POPUP CONTENT - THIS SECTION IS HIDDEN BY DEFAULT ***/}
+            <div id="popupSignatureWindow" className="overlay">
+                <div className="popupSignature">
+                    <div id="popupExit" className="content">
+                        <h1 id="close" onClick={handlePopupClose}>&times;</h1>
+                    </div>
+                    <SignatureField id="sigField" onSubmit={handleSignature}/>
+                </div>
+            </div>
+            <div id="popupAddWindow" className="overlay">
+                <div className="popupLogin">
+                    <div id="popupAddExit" className="content">
+                        <h1 id="close_add" className="popupLoginWindow" onClick={closePopup}>&times;</h1>
+                    </div>
+                    <Popup 
+                        message={popup}
+                        date={null}
+                        powerunit={null}
+                        closePopup={closePopup}
+                        handleDeliveryChange={null}
+                        handleUpdate={handleUpdate}
+                        company={company}
+                    />
+                </div>
+            </div>
         </div>
     )
 }

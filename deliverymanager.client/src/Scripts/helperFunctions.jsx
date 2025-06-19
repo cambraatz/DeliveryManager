@@ -174,6 +174,10 @@ export const renderTime = (time) => {
 };
 
 export const translateDate = (date) => {
+    if (!date) {
+        console.error("Null date provided to translateDate.");
+        return
+    };
     const month = date.slice(0,2);
     const day = date.slice(2,4);
     const year = date.slice(4);

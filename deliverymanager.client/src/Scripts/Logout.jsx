@@ -3,7 +3,7 @@ import { API_URL } from "./helperFunctions";
 export default async function Logout() {
     localStorage.clear();
     sessionStorage.clear();
-    const response = await fetch(`${API_URL}/api/Registration/Logout`, {
+    const response = await fetch(`${API_URL}/v1/sessions/logout`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json; charset=UTF-8'
