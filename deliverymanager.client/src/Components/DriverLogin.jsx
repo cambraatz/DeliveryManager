@@ -38,6 +38,7 @@ const DriverLogin = () => {
 
     // check delivery validity onLoad and after message state change...
     useEffect(() => {
+        //setLoading(true); in validation...
         validateUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -387,9 +388,8 @@ const DriverLogin = () => {
     // render template...
     return(
         <div id="webpage">
-            {loading ? (
-                <LoadingSpinner />
-            ) : (
+            {loading && <LoadingSpinner /> }
+            {!loading && (
                 <>
                 <Header 
                     company={company}
@@ -424,18 +424,17 @@ const DriverLogin = () => {
                         <button type="submit" id="dm_confirm_button">Continue</button>
                     </form>
                 </div>
-                <div id="popupWindow" className="overlay">
-                    <div className="popup">
-                        <div id="popupExit" className="content">
-                            <h1 id="close" className="popupWindow" onClick={closePopup}>&times;</h1>
-                        </div>
-                        {renderPopup()}
-                    </div>
-                </div>
-
                 <Footer id="footer" />
                 </>
             )}
+            <div id="popupWindow" className="overlay">
+                <div className="popup">
+                    <div id="popupExit" className="content">
+                        <h1 id="close" className="popupWindow" onClick={closePopup}>&times;</h1>
+                    </div>
+                    {renderPopup()}
+                </div>
+            </div>
         </div>
     )
 };

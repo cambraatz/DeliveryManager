@@ -13,9 +13,6 @@ dist
 dist-ssr
 *.local
 
-DeliveryManager.Server/appsettings.Development.json
-DeliveryManager.Server/appsettings.json
-
 deliverymanager.client/.env.production
 deliverymanager.client/.env.development
 

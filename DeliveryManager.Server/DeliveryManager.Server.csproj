@@ -6,6 +6,7 @@
     <SpaRoot>..\deliverymanager.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
     <SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
+    <UserSecretsId>c57d0df4-602b-4b6a-8a2b-2b9317f09449</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
