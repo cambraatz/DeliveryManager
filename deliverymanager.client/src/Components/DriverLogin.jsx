@@ -199,14 +199,14 @@ const DriverLogin = () => {
 
         //alert(`stopping the app from loading with status: ${response.status} and ok: ${response.ok}`);
 
-        if (!response.ok || response.status === 401 || response.status === 403) { 
+        /*if (!response.ok || response.status === 401 || response.status === 403) { 
             console.error("User validation failed, redirecting the login page.")
             alert("User validation failed, redirecting the login page. Contact administrator if issue persists.");
             setTimeout(() => {
                 Logout();
                 return;
             }, FAIL_WAIT); 
-        }
+        }*/
 
         if (response.ok) {
             const data = await response.json();

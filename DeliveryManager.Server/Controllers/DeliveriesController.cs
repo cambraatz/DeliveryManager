@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System.Data;
 using DeliveryManager.Server.Models.Responses;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DeliveryManager.Server.Controllers
 {
@@ -44,6 +45,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpPost]
         [Route("validate-and-assign")]
+        [Authorize]
         public async Task<IActionResult> ValidateAndAssignManifest([FromBody] DriverVerificationRequest request)
         {
             // validate request parameters...
@@ -54,12 +56,12 @@ namespace DeliveryManager.Server.Controllers
             }
 
             // authorize request *should this be reformatted to use in-built *[Authorize]*...
-            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            /*(bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
             if (!success)
             {
                 _logger.LogWarning("Unauthorized access attempt for ValidateAndAssignManifest: {Message}", message);
                 return Unauthorized(new { message = message });
-            }
+            }*/
 
             // if opting for [Authorize] replace with User.Identity.Name instead...
             string currUsername = request.USERNAME;
@@ -133,15 +135,16 @@ namespace DeliveryManager.Server.Controllers
         }
 
         [HttpGet] // no route needed, defaults to v1/deliveries...
+        [Authorize]
         public async Task<IActionResult> GetDeliveries([FromQuery] string powerunit, [FromQuery] string mfstdate)
         {
             // authorize request *should this be reformatted to use in-built *[Authorize]*...
-            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            /*(bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
             if (!success)
             {
                 _logger.LogWarning("Unauthorized access attempt for GetDeliveries: {Message}", message);
                 return Unauthorized(new { message = message });
-            }
+            }*/
 
             // ensure non-null parameters...
             if (string.IsNullOrEmpty(powerunit) || string.IsNullOrEmpty(mfstdate))
@@ -193,6 +196,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpPut]
         [Route("{MFSTKEY}")]
+        [Authorize]
         public async Task<IActionResult> UpdateDelivery([FromRoute] string mfstKey, [FromForm] DeliveryForm data)
         {
             // ensure mfstKey from URL matches form data...
@@ -203,12 +207,12 @@ namespace DeliveryManager.Server.Controllers
             }
 
             // authorize request *should this be reformatted to use in-built *[Authorize]*...
-            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            /*(bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
             if (!success)
             {
                 _logger.LogWarning("Unauthorized access attempt for UpdateDelivery: {Message}", message);
                 return Unauthorized(new { message = message });
-            }
+            }*/
 
             // retrieve username from cookies...
             var username = Request.Cookies["username"];
@@ -249,6 +253,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpGet]
         [Route("image/{fileName}")]
+        [Authorize]
         public async Task<IActionResult> GetImage(string fileName)
         {
             if (string.IsNullOrEmpty(fileName))

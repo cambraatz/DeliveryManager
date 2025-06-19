@@ -3,6 +3,7 @@ using DeliveryManager.Server.Services;
 using DeliveryManager.Server.Services.Interfaces;
 using DeliveryManager.Server.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using System.Text.Json;
 
 namespace DeliveryManager.Server.Controllers
@@ -84,14 +85,15 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpGet]
         [Route("me")]
+        [Authorize]
         public async Task<IActionResult> GetCurrentDriver()
         {
-            (bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
+            /*(bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
             if (!success)
             {
                 _logger.LogWarning("Authentication failed for request to /api/sessions/me");
                 return Unauthorized(new { message = message });
-            }
+            }*/
 
             string? username = Request.Cookies["username"];
             if (string.IsNullOrEmpty(username))
@@ -118,6 +120,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpPost]
         [Route("logout")]
+        [Authorize]
         public IActionResult Logout()
         {
             foreach (var cookie in Request.Cookies)
@@ -129,6 +132,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpPost]
         [Route("return")]
+        [Authorize]
         public IActionResult Return()
         {
             _cookieService.ExtendCookies(HttpContext, 15);

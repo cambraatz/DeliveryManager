@@ -88,9 +88,58 @@ builder.Services.AddAuthentication(options =>
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            //ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidIssuer = "https://login.tcsservices.com",
+            //ValidAudience = builder.Configuration["Jwt:Audience"],
+            AudienceValidator = (audiences, securityToken, validationParameters) =>
+            {
+                foreach (var audience in audiences)
+                {
+                    if (audience.EndsWith(".tcsservices.com", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            },
+            ClockSkew = TimeSpan.Zero,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Try to read the token from the "access_token" cookie
+                if (context.Request.Cookies.ContainsKey("access_token"))
+                {
+                    context.Token = context.Request.Cookies["access_token"];
+                }
+                // If not found in cookie, you could also check headers (default behavior)
+                // Or prioritize cookies if that's your primary method
+                else if (context.Request.Headers.ContainsKey("Authorization"))
+                {
+                    // If it's in the header, make sure it's a "Bearer " token
+                    string authorizationHeader = context.Request.Headers["Authorization"];
+                    if (authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        context.Token = authorizationHeader.Substring("Bearer ".Length).Trim();
+                    }
+                }
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                // Log full exception for detailed debugging
+                //_logger.LogError(context.Exception, "JWT Authentication failed.");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine($"Token validated successfully for user: {context.Principal?.Identity?.Name}");
+                return Task.CompletedTask;
+            }
         };
     });
 
