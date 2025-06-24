@@ -88,13 +88,6 @@ namespace DeliveryManager.Server.Controllers
         [Authorize]
         public async Task<IActionResult> GetCurrentDriver()
         {
-            /*(bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
-            if (!success)
-            {
-                _logger.LogWarning("Authentication failed for request to /api/sessions/me");
-                return Unauthorized(new { message = message });
-            }*/
-
             string? username = Request.Cookies["username"];
             if (string.IsNullOrEmpty(username))
             {
@@ -120,7 +113,6 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpPost]
         [Route("logout")]
-        [Authorize]
         public IActionResult Logout()
         {
             foreach (var cookie in Request.Cookies)

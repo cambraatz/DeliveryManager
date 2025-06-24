@@ -55,14 +55,6 @@ namespace DeliveryManager.Server.Controllers
                 return BadRequest(ModelState);
             }
 
-            // authorize request *should this be reformatted to use in-built *[Authorize]*...
-            /*(bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
-            if (!success)
-            {
-                _logger.LogWarning("Unauthorized access attempt for ValidateAndAssignManifest: {Message}", message);
-                return Unauthorized(new { message = message });
-            }*/
-
             // if opting for [Authorize] replace with User.Identity.Name instead...
             string currUsername = request.USERNAME;
 
@@ -138,14 +130,6 @@ namespace DeliveryManager.Server.Controllers
         [Authorize]
         public async Task<IActionResult> GetDeliveries([FromQuery] string powerunit, [FromQuery] string mfstdate)
         {
-            // authorize request *should this be reformatted to use in-built *[Authorize]*...
-            /*(bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
-            if (!success)
-            {
-                _logger.LogWarning("Unauthorized access attempt for GetDeliveries: {Message}", message);
-                return Unauthorized(new { message = message });
-            }*/
-
             // ensure non-null parameters...
             if (string.IsNullOrEmpty(powerunit) || string.IsNullOrEmpty(mfstdate))
             {
