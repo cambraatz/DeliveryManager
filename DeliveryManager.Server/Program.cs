@@ -69,7 +69,7 @@ else
 // Adding Serializers, this is a new attempt...
 // JSON Serializer
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
-options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore).AddNewtonsoftJson(
+    options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore).AddNewtonsoftJson(
     options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
 
 
@@ -85,23 +85,48 @@ builder.Services.AddAuthentication(options =>
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+
             ValidateAudience = true,
+            AudienceValidator = (audiencesInToken, securityToken, validationParameters) =>
+            {
+                // These are the values your app *expects* from its configuration
+                string expectedAudience = builder.Configuration["Jwt:Audience"]!; // Should be "localhost:5173"
+                string expectedIssuer = builder.Configuration["Jwt:Issuer"]!;     // Should be "localhost:7242"
+
+                // This list contains the audiences YOUR APP considers valid for an incoming token
+                var allowedAudiencesForThisApp = new List<string>
+                {
+                    expectedAudience,
+                    expectedIssuer
+                };
+
+                Console.WriteLine($"--- AUDIENCE VALIDATOR DEBUG ---");
+                Console.WriteLine($"  Expected Audience (from config): '{expectedAudience}'");
+                Console.WriteLine($"  Expected Issuer (from config): '{expectedIssuer}'");
+                // This will show you exactly what strings the token handler passed into the validator
+                Console.WriteLine($"  Token Audiences (raw from param): {string.Join(", ", audiencesInToken.Select(a => $"'{a}'"))}");
+                Console.WriteLine($"  Allowed Audiences for This App (from config): {string.Join(", ", allowedAudiencesForThisApp.Select(a => $"'{a}'"))}");
+
+                // This is the core validation logic: Does ANY audience in the token match ANY of our allowed audiences?
+                bool hasValidAudience = audiencesInToken.Intersect(allowedAudiencesForThisApp, StringComparer.OrdinalIgnoreCase).Any();
+
+                if (hasValidAudience)
+                {
+                    Console.WriteLine($"  RESULT: Audience Validation Succeeded!");
+                }
+                else
+                {
+                    Console.WriteLine($"  RESULT: Audience Validation FAILED - No common audience found.");
+                }
+                Console.WriteLine($"----------------------------------");
+
+                return hasValidAudience;
+            },
+
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            //ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidIssuer = "https://login.tcsservices.com",
-            //ValidAudience = builder.Configuration["Jwt:Audience"],
-            AudienceValidator = (audiences, securityToken, validationParameters) =>
-            {
-                foreach (var audience in audiences)
-                {
-                    if (audience.EndsWith(".tcsservices.com", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            },
+
             ClockSkew = TimeSpan.Zero,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
         };

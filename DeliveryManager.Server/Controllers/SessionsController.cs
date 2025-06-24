@@ -72,13 +72,13 @@ namespace DeliveryManager.Server.Controllers
             IDictionary<string, string> modules = await _mappingService.GetModulesAsync();
 
             /* add max size warning optional */
-            Response.Cookies.Append("username", user.Username!, _cookieService.AccessOptions());
-            Response.Cookies.Append("company", company, _cookieService.AccessOptions());
+            Response.Cookies.Append("username", user.Username!, _cookieService.RefreshOptions());
+            Response.Cookies.Append("company", company, _cookieService.RefreshOptions());
             Response.Cookies.Append("access_token", access, _cookieService.AccessOptions());
             Response.Cookies.Append("refresh_token", refresh, _cookieService.RefreshOptions());
 
-            Response.Cookies.Append("company_mapping", JsonSerializer.Serialize(companies), _cookieService.AccessOptions());
-            Response.Cookies.Append("module_mapping", JsonSerializer.Serialize(modules), _cookieService.AccessOptions());
+            Response.Cookies.Append("company_mapping", JsonSerializer.Serialize(companies), _cookieService.RefreshOptions());
+            Response.Cookies.Append("module_mapping", JsonSerializer.Serialize(modules), _cookieService.RefreshOptions());
 
             return Redirect("https://localhost:5173/");
         }

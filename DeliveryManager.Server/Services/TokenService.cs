@@ -27,27 +27,42 @@ namespace DeliveryManager.Server.Services
         {
             var now = DateTimeOffset.UtcNow;
 
-            Claim[] BaseClaims(string jti) => new[]
+            List<Claim> baseClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, username),
-                new Claim(JwtRegisteredClaimNames.Jti,jti)
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
-            Console.WriteLine(_config["Jwt:Key"]);
+
+            var configuredAudiencesString = _config["Jwt:Audience"];
+            var audiences = configuredAudiencesString?
+                                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                .Select(a => a.Trim())
+                                .ToList();
+
+            if (audiences == null || audiences.Count == 0)
+            {
+                _logger.LogError("Jwt:Audience configuration is missing or empty. Token will be issued without audiences.");
+            }
+            else
+            {
+                foreach (var aud in audiences)
+                {
+                    baseClaims.Add(new Claim(JwtRegisteredClaimNames.Aud, aud));
+                }
+            }
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            Console.WriteLine($"token debug: key: {key}, creds: {creds}");
 
             var access = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: BaseClaims(Guid.NewGuid().ToString()),
+                claims: baseClaims,
                 expires: now.AddMinutes(15).UtcDateTime,
                 signingCredentials: creds);
 
             var refresh = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: BaseClaims(Guid.NewGuid().ToString()),
+                claims: baseClaims,
                 expires: now.AddDays(1).UtcDateTime,
                 signingCredentials: creds);
 
@@ -62,53 +77,122 @@ namespace DeliveryManager.Server.Services
             var tokenParams = new TokenValidationParameters
             {
                 ValidateIssuer = true,
-                ValidateAudience = true,
                 ValidIssuer = _config["Jwt:Issuer"],
-                ValidAudience = _config["Jwt:Audience"],
+
+                ValidateAudience = true,
+                ValidAudiences = _config["Jwt:Audience"]?.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(a => a.Trim()),
+
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)),
+
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
             };
 
+            ClaimsPrincipal? principal;
+            SecurityToken? validatedAccess;
+            bool accessExpired = false;
+
             try
             {
-                var principal = _handler.ValidateToken(accessToken, tokenParams, out var validated);
+                principal = _handler.ValidateToken(accessToken, tokenParams, out validatedAccess);
 
                 // token is still valid + not expiring soon...
-                var exp = DateTimeOffset.FromUnixTimeSeconds(((JwtSecurityToken)validated).Payload.Expiration!.Value);
+                var exp = DateTimeOffset.FromUnixTimeSeconds(((JwtSecurityToken)validatedAccess).Payload.Expiration!.Value);
                 if (exp - DateTimeOffset.UtcNow > TimeSpan.FromMinutes(5))
                 {
-                    //return new TokenValidation { IsValid = true, Principal = principal };
+                    _logger.LogInformation("Access token is valid and not expiring soon for user: {Username}", username);
+                    //return new TokenValidation(true, Principal: principal);
                     return new(true, Principal: principal);
-                }
-
-                if (!tryRefresh)
-                {
-                    //return new TokenValidation { IsValid = false, Message = "Access token is expiring soon, refreshing is disabled. Start new session to continue access." };
-                    return new(false, "Access token is expiring soon, refreshing is disabled. Start new session to continue access.");
-
-                }
-                // token is expired, attempt to refresh...
-                var refreshPrincipal = _handler.ValidateToken(refreshToken, tokenParams, out var valRef);
-                var refreshExp = DateTimeOffset.FromUnixTimeSeconds(((JwtSecurityToken)valRef).Payload.Expiration!.Value);
-
-                if (refreshExp <= DateTimeOffset.UtcNow)
-                {
-                    //return new TokenValidation { IsValid = false, Message = "Refresh token has expired, refresh access is denied. Start new session to continue access." };
-                    return new(false, "Refresh token has expired, refresh access is denied. Start new session to continue access.");
                 }
                 else
                 {
-                    var (newAccess, newRefresh) = GenerateToken(username);
-                    //return new TokenValidation { IsValid = true, Principal = principal, accessToken = newAccess, refreshToken = newRefresh };
-                    return new(true, Principal: principal, AccessToken: newAccess, RefreshToken: newRefresh);
+                    _logger.LogWarning("Access token is valid but expiring soon for user: {Username}. Attempting refresh.", username);
+                    accessExpired = true;
                 }
             }
-            catch (SecurityTokenException ex)
+            catch (SecurityTokenExpiredException)
             {
-                //return new TokenValidation { IsValid = false, Message = ex.Message };
-                return new(false, ex.Message);
+                _logger.LogWarning("Access token expired for user: {Username}. Attempting refresh.", username);
+                accessExpired = true; // Mark for refresh
+                principal = null; // Principal from expired token is not valid
+            }
+            catch (SecurityTokenValidationException ex)
+            {
+                _logger.LogError(ex, "Access token validation failed for user: {Username} (Reason: {Message})", username, ex.Message);
+                //return new TokenValidation(false, "Invalid access token."); // Token invalid for other reasons, cannot refresh
+                return new(false, "Invalid access token.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error validating access token for user: {Username}", username);
+                //return new TokenValidation(false, "An unexpected error occurred during access token validation.");
+                return new(false, "An unexpected error occurred during access token validation.");
+            }
+
+            if (accessExpired && tryRefresh)
+            {
+                try
+                {
+                    var refreshTokenParams = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidIssuer = _config["Jwt:Issuer"],
+                        ValidateAudience = true,
+                        ValidAudiences = _config["Jwt:Audience"]?.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(a => a.Trim()),
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)),
+                        ValidateLifetime = true, // Ensure refresh token itself is not expired
+                        ClockSkew = TimeSpan.Zero
+                    };
+
+                    ClaimsPrincipal refreshPrincipal = _handler.ValidateToken(refreshToken, refreshTokenParams, out var validatedRefreshToken);
+                    var refreshTokenExp = DateTimeOffset.FromUnixTimeSeconds(((JwtSecurityToken)validatedRefreshToken).Payload.Expiration!.Value);
+
+                    if (refreshTokenExp <= DateTimeOffset.UtcNow)
+                    {
+                        _logger.LogWarning("Refresh token expired for user: {Username}. Login required.", username);
+                        return new(false, "Refresh token has expired. Please log in again.");
+                    }
+
+                    // refresh token is valid, generate new tokens...
+                    _logger.LogInformation("Refresh token is valid for user: {Username}. Generating new tokens.", username);
+                    var (newAccess, newRefresh) = GenerateToken(username);
+
+                    // re-validate the new access token to get the principal for the response...
+                    var newPrincipal = _handler.ValidateToken(newAccess, tokenParams, out var _);
+
+                    return new(true, Principal: newPrincipal, AccessToken: newAccess, RefreshToken: newRefresh);
+                }
+                catch (SecurityTokenExpiredException)
+                {
+                    _logger.LogWarning("Refresh token expired for user: {Username}. Login required.", username);
+                    return new(false, "Refresh token has expired. Please log in again.");
+                }
+                catch (SecurityTokenValidationException ex)
+                {
+                    _logger.LogError(ex, "Refresh token validation failed for user: {Username} (Reason: {Message})", username, ex.Message);
+                    return new(false, "Invalid refresh token. Please log in again.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Unexpected error validating refresh token for user: {Username}", username);
+                    return new(false, "An unexpected error occurred during refresh token validation.");
+                }
+            }
+
+            else if (accessExpired && !tryRefresh)
+            {
+                _logger.LogInformation("Access token expired for user: {Username}, but refresh is disabled.", username);
+                return new(false, "Access token is expired and refreshing is disabled. Start a new session.");
+            }
+            else // This branch covers cases where access token was invalid for non-expiry reasons, or refresh was not attempted.
+            {
+                // This state should ideally be handled by the initial `catch (SecurityTokenValidationException ex)` for access token.
+                // Reaching here might mean the access token was valid but just "near expiry" and `tryRefresh` was false,
+                // or some other unforeseen path. For safety, return false if no valid path was found.
+                _logger.LogInformation("No token refresh performed or access token was already invalid for user: {Username}", username);
+                return new(false, "Invalid or insufficient tokens to establish a session.");
             }
         }
 
@@ -121,6 +205,7 @@ namespace DeliveryManager.Server.Services
             var username = request.Cookies["username"];
             if (string.IsNullOrEmpty(username))
             {
+                _logger.LogInformation("Authorization failed: Username cookie missing.");
                 return (false, "Username is missing");
             }
 
@@ -129,6 +214,7 @@ namespace DeliveryManager.Server.Services
             var refreshToken = request.Cookies["refresh_token"];
             if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
             {
+                _logger.LogInformation("Authorization failed: Access or refresh token cookie missing for user: {Username}", username);
                 return (false, "Access token is missing");
             }
 
@@ -137,15 +223,12 @@ namespace DeliveryManager.Server.Services
             var result = ValidateTokens(accessToken, refreshToken, username);
             if (!result.IsValid)
             {
+                _logger.LogWarning("Authorization failed for user: {Username}. Reason: {Message}", username, result.Message);
                 return (false, "Invalid access token, authorization failed.");
             }
 
-            // valid tokens are returned, regardless of refresh status...
-            accessToken = result.AccessToken;
-            refreshToken = result.RefreshToken;
-
             // if non-null, replace tokens in cookies with fresh set...
-            if (accessToken != null && refreshToken != null)
+            if (result.AccessToken != null && result.RefreshToken != null)
             {
                 var cookies = request.Cookies.ToList();
                 foreach (var cookie in cookies)
@@ -153,18 +236,20 @@ namespace DeliveryManager.Server.Services
                     switch (cookie.Key.ToLowerInvariant())
                     {
                         case "access_token":
-                            response.Cookies.Append("access_token", accessToken, _cookieService.AccessOptions());
+                            response.Cookies.Append("access_token", result.AccessToken, _cookieService.AccessOptions());
                             break;
                         case "refresh_token":
-                            response.Cookies.Append("refresh_token", refreshToken, _cookieService.RefreshOptions());
+                            response.Cookies.Append("refresh_token", result.RefreshToken, _cookieService.RefreshOptions());
                             break;
                         default:
-                            response.Cookies.Append(cookie.Key, cookie.Value, _cookieService.AccessOptions());
+                            response.Cookies.Append(cookie.Key, cookie.Value, _cookieService.RefreshOptions());
                             break;
                     }
                 }
             }
 
+            context.User = result.Principal!; // Principal should always be non-null if IsValid is true
+            _logger.LogInformation("Authorization granted for user: {Username}", username);
             return (true, "Token has been validated, authorization granted.");
         }
     }

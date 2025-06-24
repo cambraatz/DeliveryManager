@@ -206,14 +206,6 @@ namespace DeliveryManager.Server.Controllers
                 return BadRequest(new { message = "MFSTKEY in URL must match MFSTKEY in request body." });
             }
 
-            // authorize request *should this be reformatted to use in-built *[Authorize]*...
-            /*(bool success, string message) = _tokenService.AuthorizeRequest(HttpContext);
-            if (!success)
-            {
-                _logger.LogWarning("Unauthorized access attempt for UpdateDelivery: {Message}", message);
-                return Unauthorized(new { message = message });
-            }*/
-
             // retrieve username from cookies...
             var username = Request.Cookies["username"];
             if (string.IsNullOrEmpty(username))

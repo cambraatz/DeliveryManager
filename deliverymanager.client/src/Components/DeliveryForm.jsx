@@ -628,11 +628,11 @@ const DeliveryForm = () => {
             USERNAME: currUser,
             LASTUPDATE: currDate.slice(0,4) + currDate.slice(5,7) + currDate.slice(8) + currTime.slice(0,2) + currTime.slice(3) + "00", 
             STATUS: "1",
-            DLVDDATE: delivery.DLVDDATE,
-            DLVDTIME: delivery.DLVDTIME,
-            DLVDSIGN: delivery.DLVDSIGN,
-            DLVDNOTE: delivery.DLVDNOTE,
-            DLVDPCS: delivery.DLVDPCS
+            DLVDDATE: (delivery.DLVDDATE === null || delivery.DLVDDATE === undefined || delivery.DLVDDATE === "") ? scrapeDate(formData.deliveryDate) : delivery.DLVDDATE,
+            DLVDTIME: (delivery.DLVDTIME == null || delivery.DLVDTIME === undefined || delivery.DLVDTIME === "") ? scrapeTime(formData.deliveryTime) : delivery.DLVDTIME,
+            DLVDSIGN: (delivery.DLVDSIGN == null || delivery.DLVDSIGN === undefined || delivery.DLVDSIGN === "") ? formData.deliverySign : delivery.DLVDSIGN,
+            DLVDNOTE: (delivery.DLVDNOTE == null || delivery.DLVDNOTE === undefined || delivery.DLVDNOTE === "") ? formData.deliveryNotes : delivery.DLVDNOTE,
+            DLVDPCS: (delivery.DLVDPCS == null || delivery.DLVDPCS === undefined || delivery.DLVDPCS === "") ? formData.deliveredPieces : delivery.DLVDPCS,
         };
 
         // iterate list of deliveries and initialize delivery updates...
