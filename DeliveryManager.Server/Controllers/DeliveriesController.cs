@@ -17,7 +17,6 @@ namespace DeliveryManager.Server.Controllers
     [Route("v1/deliveries")]
     public class DeliveriesController : ControllerBase
     {
-        private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
         private readonly IDeliveryService _deliveryService;
         private readonly IDeliveryListService _deliveryListService;
@@ -26,7 +25,6 @@ namespace DeliveryManager.Server.Controllers
         private readonly ILogger<DeliveriesController> _logger;
 
         public DeliveriesController(
-            ITokenService tokenService,
             IUserService userService,
             IDeliveryService deliveryService,
             IDeliveryListService deliveryListService,
@@ -34,7 +32,6 @@ namespace DeliveryManager.Server.Controllers
             IConfiguration config,
             ILogger<DeliveriesController> logger)
         {
-            _tokenService = tokenService;
             _userService = userService;
             _deliveryService = deliveryService;
             _deliveryListService = deliveryListService;
