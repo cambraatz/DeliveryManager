@@ -1,7 +1,7 @@
 //import logo from './logo.svg';
 import './App.css';
 import DriverPortal from './Components/DriverPortal'
-import DeliveryForm from './Components/DeliveryForm'
+import DeliveryForm from './Components/DeliveryForm/DeliveryForm'
 import DriverLogin from './Components/DriverLogin'
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 

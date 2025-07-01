@@ -8,12 +8,12 @@ Update Date: 1/9/2025
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Header from './Header';
-import Popup from './Popup';
-import Footer from './Footer';
-import SignatureField from './SignatureField';
-import ImageUploadLogo from '../assets/add_image.svg';
-import SignUploadLogo from '../assets/add_sign.svg';
+import Header from '../Header.jsx';
+import Popup from '../Popup.jsx';
+import Footer from '../Footer.jsx';
+import SignatureField from '../SignatureField.jsx';
+import ImageUploadLogo from '../../assets/add_image.svg';
+import SignUploadLogo from '../../assets/add_sign.svg';
 import { scrapeDate, 
     renderDate, 
     renderTime, 
@@ -23,9 +23,11 @@ import { scrapeDate,
     translateDate,  
     showFailFlag, 
     SUCCESS_WAIT,
-    FAIL_WAIT} from '../Scripts/helperFunctions';
-import Logout from '../Scripts/Logout.jsx';
-import LoadingSpinner from './LoadingSpinner.jsx';
+    FAIL_WAIT} from '../../Scripts/helperFunctions.jsx';
+import Logout from '../../Scripts/Logout.jsx';
+import LoadingSpinner from '../LoadingSpinner.jsx';
+
+import './DeliveryForm.css';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -420,7 +422,8 @@ const DeliveryForm = () => {
             });
 
             if (response.status === 401 || response.status == 403) {
-                Logout();
+                console.error('Error retrieving image: Status ', response.status);
+                //Logout();
             }
 
             if(!response.ok) { throw new Error('Failed to fetch image...'); }
@@ -430,7 +433,7 @@ const DeliveryForm = () => {
             return URL.createObjectURL(blob);
         } catch (error) {
             console.error('Error retrieving image:', error);
-            Logout();
+            //Logout();
             return;
         }
     }
@@ -663,6 +666,14 @@ const DeliveryForm = () => {
                     } else {
                         deliveryData.append(key, null);
                     }
+                // handle delivery pieces (different for each delivery)...
+                } else if (key === "DLVDPCS") {
+                    if (currDelivery.DLVDPCS === null || currDelivery.DLVDPCS == undefined || currDelivery.DLVDPCS === 0) {
+                        deliveryData.append(key, currDelivery.TTLPCS);
+                    } else {
+                        deliveryData.append(key, currDelivery.DLVDPCS);
+                    }
+                    
                 // handle commonly shared data on batch processing...
                 } else if (key in sharedEntries) {
                     deliveryData.append(key, sharedEntries[key]);
@@ -920,7 +931,7 @@ const DeliveryForm = () => {
                                             alt="Saved userSignature" 
                                             onClick={signatureToggle}
                                         />
-                                    ) : null}
+                                    ) : <p className="signatureIMG_error_text">Error loading signature...</p>}
                                 </div>
                                 <div id="sigCapture" className="file_upload_widget" style={{display: "none"}} onClick={signatureToggle}>
                                     <img id="fileUploadLogo" src={SignUploadLogo} alt="file upload logo" />
@@ -938,7 +949,7 @@ const DeliveryForm = () => {
                                             alt="Saved delivery location" 
                                             onClick={handleImageClick}
                                         />
-                                    ) : null}
+                                    ) : <p className="locationIMG_error_text">Error loading image...</p>}
                                 </div>
                                 <div id="locCapture" className="file_upload_widget" style={{display: "none"}} onClick={handleImageClick}>
                                     <img id="fileUploadLogo" src={ImageUploadLogo} alt="file upload logo" />

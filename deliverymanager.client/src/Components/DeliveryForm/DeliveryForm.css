@@ -1,0 +1,6 @@
+.signatureIMG_error_text,
+.locationIMG_error_text {
+    margin: auto;
+    color: lightgray;
+    font-weight: bolder;
+}

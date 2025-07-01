@@ -841,7 +841,7 @@ input:read-only:hover {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
 }
 #img_Div_Loc, 
 #img_Div_Sign {
