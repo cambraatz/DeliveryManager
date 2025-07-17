@@ -1,0 +1,34 @@
+#sigDiv {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#sigDiv canvas {
+    width: 98%;
+    height: 15em;
+}
+#sigDiv button {
+    margin: 3% 0 2%;
+    width: 30%;
+    min-height: 3em;
+}
+#sigDiv div {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 10%;
+}
+
+.sigCanvas {
+    border: 1px solid black;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
+    border-radius: 5px;
+    background-color: rgb(252, 252, 252);
+}
+
+@media only screen and (min-width:630px) {
+    #sigDiv canvas {
+        height: 12em;
+    }
+}

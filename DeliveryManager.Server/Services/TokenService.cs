@@ -108,18 +108,21 @@ namespace DeliveryManager.Server.Services
                 else
                 {
                     _logger.LogWarning("Access token is valid but expiring soon for user: {Username}. Attempting refresh.", username);
+                    Console.WriteLine("Access token is valid but expiring soon for user: {Username}. Attempting refresh.", username);
                     accessExpired = true;
                 }
             }
             catch (SecurityTokenExpiredException)
             {
                 _logger.LogWarning("Access token expired for user: {Username}. Attempting refresh.", username);
+                Console.WriteLine("Access token expired for user: {Username}. Attempting refresh.", username);
                 accessExpired = true; // Mark for refresh
                 principal = null; // Principal from expired token is not valid
             }
             catch (SecurityTokenValidationException ex)
             {
                 _logger.LogError(ex, "Access token validation failed for user: {Username} (Reason: {Message})", username, ex.Message);
+                Console.WriteLine("Access token validation failed for user: {Username} (Reason: {Message})", username, ex.Message);
                 //return new TokenValidation(false, "Invalid access token."); // Token invalid for other reasons, cannot refresh
                 return new(false, "Invalid access token.");
             }
@@ -215,6 +218,7 @@ namespace DeliveryManager.Server.Services
             if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
             {
                 _logger.LogInformation("Authorization failed: Access or refresh token cookie missing for user: {Username}", username);
+                Console.WriteLine("Authorization failed: Access or refresh token cookie missing for user: {Username}", username);
                 return (false, "Access token is missing");
             }
 
@@ -224,6 +228,7 @@ namespace DeliveryManager.Server.Services
             if (!result.IsValid)
             {
                 _logger.LogWarning("Authorization failed for user: {Username}. Reason: {Message}", username, result.Message);
+                Console.WriteLine("Authorization failed for user: {Username}. Reason: {Message}", username, result.Message);
                 return (false, "Invalid access token, authorization failed.");
             }
 

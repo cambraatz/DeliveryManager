@@ -101,25 +101,7 @@ builder.Services.AddAuthentication(options =>
                     expectedIssuer
                 };
 
-                Console.WriteLine($"--- AUDIENCE VALIDATOR DEBUG ---");
-                Console.WriteLine($"  Expected Audience (from config): '{expectedAudience}'");
-                Console.WriteLine($"  Expected Issuer (from config): '{expectedIssuer}'");
-                // This will show you exactly what strings the token handler passed into the validator
-                Console.WriteLine($"  Token Audiences (raw from param): {string.Join(", ", audiencesInToken.Select(a => $"'{a}'"))}");
-                Console.WriteLine($"  Allowed Audiences for This App (from config): {string.Join(", ", allowedAudiencesForThisApp.Select(a => $"'{a}'"))}");
-
-                // This is the core validation logic: Does ANY audience in the token match ANY of our allowed audiences?
                 bool hasValidAudience = audiencesInToken.Intersect(allowedAudiencesForThisApp, StringComparer.OrdinalIgnoreCase).Any();
-
-                if (hasValidAudience)
-                {
-                    Console.WriteLine($"  RESULT: Audience Validation Succeeded!");
-                }
-                else
-                {
-                    Console.WriteLine($"  RESULT: Audience Validation FAILED - No common audience found.");
-                }
-                Console.WriteLine($"----------------------------------");
 
                 return hasValidAudience;
             },

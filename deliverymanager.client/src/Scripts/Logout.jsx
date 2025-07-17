@@ -1,4 +1,4 @@
-import { API_URL } from "./helperFunctions";
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default async function Logout() {
     localStorage.clear();

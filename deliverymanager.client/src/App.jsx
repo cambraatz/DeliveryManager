@@ -1,20 +1,24 @@
 //import logo from './logo.svg';
 import './App.css';
-import DriverPortal from './Components/DriverPortal'
-import DeliveryForm from './Components/DeliveryForm/DeliveryForm'
-import DriverLogin from './Components/DriverLogin'
+import DeliveryForm from './components/DeliveryForm';
+import DeliveryValidation from './components/DeliveryValidation';
+import DeliveryManifest from './components/DeliveryManifest';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+
+import { AppProvider } from './contexts/AppContext';
 
 function App() {
   return (
     <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<DriverLogin />} />
-          <Route path='/deliveries' element={<DriverPortal />} />
-          <Route path='/deliveries/:mfstkey' element={<DeliveryForm />} />
-        </Routes>
-      </BrowserRouter>
+      <AppProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<DeliveryValidation />} />
+            <Route path='/deliveries' element={<DeliveryManifest />} />
+            <Route path='/deliveries/:mfstkey' element={<DeliveryForm />} />
+          </Routes>
+        </BrowserRouter>
+      </AppProvider>
     </div>
   );
 }

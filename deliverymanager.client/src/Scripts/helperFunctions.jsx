@@ -1,17 +1,17 @@
 export const getToken = () => {
     return sessionStorage.getItem('accessToken');
-}
+};
 
 export const cacheToken = (access,refresh) => {
     sessionStorage.setItem('accessToken', access);
     sessionStorage.setItem('refreshToken', refresh);
-}
+};
 
 export const logout = () => {
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('refreshToken');
     localStorage.removeItem('company');
-}
+};
 
 export const isTokenExpiring = (token) => {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -21,7 +21,7 @@ export const isTokenExpiring = (token) => {
     //const threshold = 30 * 1000;
 
     return expiration - currentTime < threshold;
-}
+};
 
 export const isTokenValid = (token) => {
     if (!token) { return false; }
@@ -41,7 +41,7 @@ export const isTokenValid = (token) => {
         console.error("Failed to decode token payload", e);
         return false;
     }
-}
+};
 
 export async function refreshToken(username) {
     const refreshToken = sessionStorage.getItem("refreshToken");
@@ -96,7 +96,7 @@ export async function requestAccess(username) {
 
 export const cacheCompany = (company) => {
     localStorage.setItem('company', company);
-}
+};
 
 export const isCompanyValid = () => {
     let company = localStorage.getItem('company');
@@ -112,7 +112,7 @@ export const isCompanyValid = () => {
         }
         return null;
     }
-}
+};
 
 export async function getCompany_DB() {
     const response = await fetch(API_URL + "api/Registration/GetCompany?COMPANYKEY=c01", {
@@ -150,7 +150,7 @@ export const showFailFlag = (id, message) => {
     setTimeout(() => {
         flag.classList.remove("visible");
     },1500)
-}
+};
 
 export const scrapeDate = (date) => {
     const year = date.slice(0,4);
@@ -167,6 +167,7 @@ export const renderDate = (date) => {
 };
 
 export const renderTime = (time) => {
+    if (!time) { return null ;}
     const hour = time.slice(0,2);
     const minute = time.slice(2);
     const new_time = hour + ":" + minute;
@@ -176,8 +177,8 @@ export const renderTime = (time) => {
 export const translateDate = (date) => {
     if (!date) {
         console.error("Null date provided to translateDate.");
-        return
-    };
+        return;
+    }
     const month = date.slice(0,2);
     const day = date.slice(2,4);
     const year = date.slice(4);
@@ -266,7 +267,7 @@ export const clearMemory = () => {
     //sessionStorage.removeItem('refreshToken');
 };
 
-export const FAIL_WAIT = 1000;
+export const FAIL_WAIT = 1500;
 export const SUCCESS_WAIT = 1500;
 
 //export const API_URL = "http://www.tcsservices.com:40730/"
