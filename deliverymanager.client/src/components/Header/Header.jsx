@@ -1,9 +1,13 @@
 import PropTypes from 'prop-types';
 import UserWidget from '../UserWidget/UserWidget';
+import Popup from '../Popup/Popup';
 import toggleDots from '../../assets/Toggle_Dots.svg';
+import { useNavigate } from "react-router-dom";
+import { Logout, Return } from '../../utils/api/sessions';
 import "./Header.css";
 
 import { useAppContext } from '../../hooks/useAppContext';
+import { usePopup } from '../../hooks/usePopup';
 
 const Header = ({ 
     company, 
@@ -11,9 +15,15 @@ const Header = ({
     subtitle,
     currUser, 
     logoutButton, 
-    root 
+    root
 }) => {
     const { collapsed, setCollapsed } = useAppContext();
+    const {
+        popupType, /*setPopupType,*/
+        openPopup, closePopup,
+        popupVisible, /*setVisible,*/
+    } = usePopup();
+    const navigate = useNavigate();
 
     const toggleHeader = () => {
         setCollapsed(prevCollapsed => !prevCollapsed);
@@ -22,7 +32,22 @@ const Header = ({
         sessionStorage.setItem("collapsed", !collapsedSS);
     }
 
+    async function popupReturn(root) {
+        if (root) {
+            openPopup("return");
+        }
+        // navigate back a URL directory...
+        const path = await Return(root);
+        navigate(path);
+    }
+        
+    const popupLogout = () => {
+        openPopup("logout");
+        Logout();
+    }
+
     return(
+        <>
         <header className={`header ${collapsed ? "collapsed-header" : ''}`}>
             <div className={`buffer ${collapsed ? "collapsed-buffer" : ''}`}></div>
             
@@ -44,9 +69,19 @@ const Header = ({
                     currUser={currUser} 
                     logoutButton={logoutButton}
                     root={root}
+                    popupReturn={popupReturn}
+                    popupLogout={popupLogout}
                 />
             </div>
         </header>
+        {popupVisible && (
+            <Popup 
+                popupType={popupType}
+                isVisible={popupVisible}
+                closePopup={closePopup}
+            />
+        )}
+        </>
     )
 };
 
@@ -59,5 +94,5 @@ Header.propTypes = {
     subtitle: PropTypes.string, // const page title
     currUser: PropTypes.string, // var current username {currUser}*
     logoutButton: PropTypes.bool, // render logout button?
-    root: PropTypes.bool
+    root: PropTypes.bool,
 };

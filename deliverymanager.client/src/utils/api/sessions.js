@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL;
 import { SUCCESS_WAIT, FAIL_WAIT } from "../../scripts/helperFunctions";
+import { useNavigate } from "react-router-dom";
 
 async function parseErrorMessage(response) {
     let errorMessage = "An unknown error occurred";
@@ -68,6 +69,29 @@ export async function validateSession() {
     return response;
 }
 
+const goBackOneDirectory = () => {
+    const currPath = window.location.pathname;
+    if (currPath === '/' || currPath ==='') {
+        return '/';
+    }
+    const pathSegments = currPath.split('/');
+    if (pathSegments.length > 0) {
+        pathSegments.pop();
+    }
+    if (pathSegments.length > 1 && pathSegments[pathSegments.length - 1] === '') {
+        pathSegments.pop();
+    }
+
+    let newPath = pathSegments.join('/');
+    if (newPath === '') {
+        newPath = '/';
+    } else if (!newPath.startsWith('/')) {
+        newPath = '/' + newPath;
+    }
+
+    return newPath;
+}
+
 export async function Return(root) {    
     if (root) {
         const response = await fetch(`${API_URL}v1/sessions/return`, {
@@ -78,20 +102,21 @@ export async function Return(root) {
             credentials: "include"
         });
 
-        let success = false;
-
         if (response.ok) {
             console.log("Return Successful!");
-            success = true;
+            setTimeout(() => {
+                //console.log("Logged Out... [dev]");
+                window.location.href = `https://login.tcsservices.com`;
+            }, SUCCESS_WAIT);
         } else {
             console.error("Return cookie generation failed, return failure.");
+            return;
         }
-        setTimeout(() => {
-            //console.log("Logged Out... [dev]");
-            window.location.href = `https://login.tcsservices.com`;
-        }, success ? SUCCESS_WAIT : FAIL_WAIT);
     }
-    else { window.history.back(); }
+    else {
+        const path = goBackOneDirectory();
+        return path;
+    }
 }
 
 export async function Logout() {

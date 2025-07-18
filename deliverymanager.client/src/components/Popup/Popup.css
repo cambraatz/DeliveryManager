@@ -88,8 +88,9 @@
 
     /* Add initial state for the inner box animation */
     transform: scale(0.9); /* Start slightly smaller */
-    opacity: 0;  /* Start invisible */
+    opacity: 0;   /*Start invisible*/
     transition: transform 0.75s ease-in-out, opacity 0.75s ease-in-out; /* Animate these properties */
+    max-width: 250px;
 }
 
 .popupDeliveryManager,
@@ -129,8 +130,8 @@
 /* When the overlay is visible, animate the inner popupLogin box */
 .overlay.overlay-visible .popupLogin,
 .overlay.overlay-visible .popupDeliveryManager,
-.overlay.overlay-visible .popupCheckbox
- {
+.overlay.overlay-visible .popupCheckbox,
+.overlay.overlay-visible .popupGraphic {
     transform: scale(1); /* Animate to full size */
     opacity: 1; /* Animate to full opacity */
 }

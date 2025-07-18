@@ -12,6 +12,7 @@ import Header from './Header/Header.jsx';
 import LoadingSpinner from './LoadingSpinner/LoadingSpinner.jsx';
 import MenuWindow from './MenuWindow/MenuWindow.jsx';
 import Footer from './Footer/Footer.jsx';
+import Popup from './Popup/Popup.jsx';
 import { 
     renderDate, 
     getDate,
@@ -23,6 +24,7 @@ import { validateAndAssignManifest } from '../utils/api/deliveries.js';
 import { validateDeliveryConfirm } from '../utils/validation/validateForms.js';
 
 import { useAppContext } from '../hooks/useAppContext.js';
+import { usePopup } from '../hooks/usePopup.js';
 
 const DeliveryValidation = () => {
     const { 
@@ -37,6 +39,12 @@ const DeliveryValidation = () => {
         valid: false,
     }*/
 
+    const {
+        popupType, /*setPopupType,*/
+        openPopup, closePopup,
+        popupVisible, /*setVisible,*/
+    } = usePopup();
+
     // Date processing functions ...
     const currDate = getDate(); // "YYYY-MM-DD"
     const navigate = useNavigate();
@@ -46,6 +54,8 @@ const DeliveryValidation = () => {
     // check delivery validity onLoad and after message state change...
     useEffect(() => {
         validateUserSession();
+        //setPopupType("return");
+        //setVisible(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -137,9 +147,12 @@ const DeliveryValidation = () => {
                 powerunit: responseError,
             })
 
+            openPopup("fail");
             setTimeout(() => {
                 clearStateStyling();
                 Logout();
+                closePopup();
+                return;
             }, FAIL_WAIT);
         }        
     }
@@ -176,9 +189,12 @@ const DeliveryValidation = () => {
                     powerunit: responseError,
                 })
 
+                openPopup("fail");
                 setTimeout(() => {
                     clearStateStyling();
                     Logout();
+                    closePopup();
+                    return;
                 }, FAIL_WAIT);
             }
             const responseError = "No delivery found.";
@@ -218,6 +234,13 @@ const DeliveryValidation = () => {
                     />
                     <Footer className="validation_window_footer" />
                 </>
+            )}
+            {popupVisible && (
+                <Popup 
+                    popupType={popupType}
+                    isVisible={popupVisible}
+                    closePopup={closePopup}
+                />
             )}
         </div>
     )

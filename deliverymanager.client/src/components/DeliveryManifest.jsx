@@ -18,6 +18,7 @@ import Popup from './Popup/Popup.jsx';
 import { Logout, /*Return*/ } from '../utils/api/sessions.js';
 import { fetchDeliveryManifest } from '../utils/api/deliveries.js';
 import { FAIL_WAIT, scrapeDate } from '../scripts/helperFunctions.jsx';
+
 import { usePopup } from '../hooks/usePopup.js';
 import { useAppContext } from '../hooks/useAppContext.js';
 
@@ -34,7 +35,8 @@ const DeliveryManifest = () => {
     } = useAppContext();
     const { 
         popupType,
-        popupVisible, 
+        popupVisible,
+        openPopup, closePopup,
     } = usePopup();
 
     /* Page rendering, navigation and state initialization... */
@@ -54,7 +56,12 @@ const DeliveryManifest = () => {
             session.company === "" ||
             !session.valid
         ) {
-            Logout();
+            openPopup("fail");
+            setTimeout(() => {
+                Logout();
+                closePopup();
+                return;
+            }, FAIL_WAIT);
         }
 
         getDeliveries(session.powerunit, scrapeDate(session.mfstdate));
@@ -89,8 +96,12 @@ const DeliveryManifest = () => {
         } catch (error) {
             console.error(error);
             // set delay before logging out...
+            //setPopupType("fail");
+            //setVisible(true);
+            openPopup("fail");
             setTimeout(() => {
                 Logout();
+                closePopup();
                 return;
             }, FAIL_WAIT);
         }

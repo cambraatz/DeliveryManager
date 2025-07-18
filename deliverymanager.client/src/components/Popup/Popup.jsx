@@ -11,13 +11,15 @@ import {
     //PopupContent_Users
 } from './Content';
 
+//import { usePopup } from '../../hooks/usePopup.js';
+
 const Popup = ({
         popupType,
         isVisible,
         closePopup,
         deliveries,
         handleSubmit,
-        handleSignature
+        handleSignature,
     }) => {
 
     const popupContent = () => {
@@ -26,7 +28,7 @@ const Popup = ({
                 <>
                     <div className="popupLoginContent success_popup">
                         <img id="success" src={Success} alt="success"/>
-                        <p>Logged out success!</p>
+                        <p>Logout success!</p>
                     </div>
                 </>
             )
@@ -43,7 +45,7 @@ const Popup = ({
         }
         else if (popupType === "return") {
             return (
-                <div className="popupLoginContent">
+                <div className="popupLoginContent success_popup">
                     <img id="success" src={Success} alt="success"/>
                     <p>Returning to Login Portal.</p>
                 </div>
@@ -51,7 +53,7 @@ const Popup = ({
         }
         else if (popupType === "logout") {
             return (
-                <div className="popupLoginContent">
+                <div className="popupLoginContent success_popup">
                     <img id="success" src={Success} alt="success"/>
                     <p>Logging Out.</p>
                 </div>
@@ -103,12 +105,8 @@ const Popup = ({
         }
     }
 
+    //const overlayClass = isVisible ? 'overlay-visible' : 'overlay-hidden';
     const overlayClass = isVisible ? 'overlay-visible' : 'overlay-hidden';
-    /*const popupClass = (
-        (popupType.startsWith('deliveries') && 
-        !popupType.includes("success") &&
-        (!popupType.includes("Fail") || !popupType.includes("fail"))) ? "popupDeliveryManager" : "popupLogin"
-    );*/
 
     let popupClass = "popupDeliveryManager";
     if (popupType.includes("Success") || popupType.includes("success") || popupType.includes("Fail") || popupType.includes("fail")) {
@@ -119,6 +117,9 @@ const Popup = ({
     }
     else if (popupType.includes("multiple")) {
         popupClass = "popupCheckbox";
+    }
+    else if (popupType.includes("logout") || popupType.includes("return")) {
+        popupClass = "popupGraphic";
     }
 
     return (
@@ -141,5 +142,5 @@ Popup.propTypes = {
     closePopup: PropTypes.func,
     deliveries: PropTypes.array,
     handleSubmit: PropTypes.func,
-    handleSignature: PropTypes.func,
+    handleSignature: PropTypes.func
 }

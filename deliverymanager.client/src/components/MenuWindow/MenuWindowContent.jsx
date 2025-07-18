@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 import /*React,*/ { useRef, useState, useEffect } from 'react';
 
 import Popup from "../Popup/Popup.jsx";
+import { usePopup } from '../../hooks/usePopup.js';
+
 import ImageUploadLogo from '../../assets/add_image.svg';
 import SignUploadLogo from '../../assets/add_sign.svg';
 import { showFailFlag } from '../../scripts/helperFunctions.jsx';
-
-import { usePopup } from '../../hooks/usePopup.js';
 
 const handleKeyPress = (reference) => {
     const handleKeyDown = (e) => {
@@ -55,9 +55,6 @@ const MenuWindowContent = ({
         handleKeyPress(addContinueButtonRef);
     }, [addContinueButtonRef]);
 
-    // custom hooks...
-    const { popupType, popupVisible, openPopup, closePopup } = usePopup();
-
     const [sigImageFail, setSigImageFail] = useState(false);
     const [locImageFail, setLocImageFail] = useState(false);
 
@@ -68,6 +65,8 @@ const MenuWindowContent = ({
         }
     }
 
+    // custom hooks...
+    const { popupType, popupVisible, openPopup, closePopup } = usePopup();
     const handleSignatureUpdate = (signatureIMG) => {
         handleSignature(signatureIMG);
         closePopup();
@@ -152,14 +151,6 @@ const MenuWindowContent = ({
                         >Continue</button>
                     </form>
                 </div>
-                {popupVisible && (
-                    <Popup
-                        popupType={popupType}
-                        isVisible={popupVisible}
-                        closePopup={closePopup}
-                        //handleSignature={handleSignatureUpdate}
-                    />
-                )}
                 </>
             )
         case (contentType.startsWith("delivery_update")):

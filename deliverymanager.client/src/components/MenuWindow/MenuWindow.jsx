@@ -2,6 +2,9 @@ import PropTypes from 'prop-types';
 import MenuWindowContent from "./MenuWindowContent";
 import "./MenuWindow.css";
 
+import Popup from "../Popup/Popup.jsx";
+import { usePopup } from '../../hooks/usePopup.js';
+
 const MenuWindow = ({ 
     contentType,
     prompt, 
@@ -23,6 +26,8 @@ const MenuWindow = ({
     //sigImageFail,
     //locImageFail,
 }) => {
+    // custom hooks...
+    const { popupType, popupVisible, openPopup, closePopup } = usePopup();
     const MenuHeader = (
             <>
             {prompt ? (
@@ -66,6 +71,14 @@ const MenuWindow = ({
             showSignatureThumbnail={showSignatureThumbnail}
             showLocationThumbnail={showLocationThumbnail}
         />
+        {popupVisible && (
+            <Popup
+                popupType={popupType}
+                isVisible={popupVisible}
+                closePopup={closePopup}
+                //handleSignature={handleSignatureUpdate}
+            />
+        )}
         </>
     )
 };
