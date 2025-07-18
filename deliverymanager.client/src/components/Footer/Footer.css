@@ -58,6 +58,11 @@
         margin: 0 calc(20% + 1%);
     }
 
+    .validation_window_footer {
+        margin: 0 auto;
+        max-width: calc(var(--maxWidgetWidth) - 1%);
+    }
+
     .table_window_footer {
         margin: 0 auto;
         max-width: calc(var(--maxTableWidth) - 1%);

@@ -1,4 +1,4 @@
-import { SUCCESS_WAIT, FAIL_WAIT } from "../../Scripts/helperFunctions";
+import { SUCCESS_WAIT, FAIL_WAIT } from "../../scripts/helperFunctions";
 import { Logout } from '../api/sessions';
 
 const DEFAULT_POPUP = "users_update"
@@ -28,11 +28,11 @@ export const closePopup = (setPopup, setVisible, clearState=null) => {
 };
 
 // set success prompt popup...
-export const successPopup = (popupType, setPopup) => {
+export const successPopup = (popupType, setPopup, duration=SUCCESS_WAIT) => {
     setPopup(popupType);
     setTimeout(() => {
         closePopup();
-    },SUCCESS_WAIT)
+    },duration)
 }
 
 // set failed prompt popup...

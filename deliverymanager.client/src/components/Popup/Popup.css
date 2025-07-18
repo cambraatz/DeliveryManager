@@ -78,6 +78,20 @@
     color: #333;
 }
 
+.popupGraphic {
+    margin: auto; /* Good for centering in flex container */
+    width: 50%;
+    padding: 15px 20px;
+    background: #fff;
+    border-radius: 5px;
+    position: relative; /* For the close button positioning */
+
+    /* Add initial state for the inner box animation */
+    transform: scale(0.9); /* Start slightly smaller */
+    opacity: 0;  /* Start invisible */
+    transition: transform 0.75s ease-in-out, opacity 0.75s ease-in-out; /* Animate these properties */
+}
+
 .popupDeliveryManager,
 .popupCheckbox {
     margin: auto; /* Good for centering in flex container */

@@ -20,13 +20,12 @@ import { scrapeDate,
     translateDate,   
     SUCCESS_WAIT,
     FAIL_WAIT} from '../scripts/helperFunctions.jsx';
-import Logout from '../scripts/Logout.jsx';
+//import Logout from '../scripts/Logout.jsx';
 import LoadingSpinner from './LoadingSpinner/LoadingSpinner.jsx';
-
-import './DeliveryForm.css';
 import MenuWindow from './MenuWindow/MenuWindow.jsx';
 
 import { clearDeliveryForms, updateDeliveryForms } from '../utils/api/deliveries.js';
+import { Logout } from '../utils/api/sessions.js';
 import { validateDeliveryUpdate } from '../utils/validation/validateForms.js';
 
 import { usePopup } from '../hooks/usePopup.js';
@@ -113,8 +112,8 @@ const DeliveryForm = () => {
         session // [obj] credentials for session
     } = useAppContext();
     const { 
-        popupType, 
-        popupVisible,  
+        popupType, openPopup, closePopup,
+        popupVisible, setVisible,
         successPopup, failPopup 
     } = usePopup();
 
@@ -160,6 +159,11 @@ const DeliveryForm = () => {
         initializeRender();
 
         setLoading(false);
+        
+        // uncomment to force popup visible...
+        //openPopup("deliveries_update_fail");
+        //setVisible(true);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [session, DELIVERY, initImgLoc, initImgSign]);
 
@@ -367,7 +371,7 @@ const DeliveryForm = () => {
         }
 
         // set popup and navigate back...
-        successPopup("deliveries_update_success");
+        successPopup("deliveries_update_success",15000);
         setTimeout(() => {
             navigate(`/deliveries`, { state: navigateData });
         }, SUCCESS_WAIT)

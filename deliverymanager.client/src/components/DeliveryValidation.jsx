@@ -16,7 +16,7 @@ import {
     renderDate, 
     getDate,
     FAIL_WAIT, 
-} from '../Scripts/helperFunctions.jsx';
+} from '../scripts/helperFunctions.jsx';
 
 import { Logout, validateSession } from '../utils/api/sessions.js';
 import { validateAndAssignManifest } from '../utils/api/deliveries.js';

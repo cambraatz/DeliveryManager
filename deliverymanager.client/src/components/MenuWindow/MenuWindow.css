@@ -540,13 +540,13 @@
     }
 
     .mw_header {
-        margin: 5% auto 0;
-        max-width: (--maxWidgetWidth);
+        margin: 3% auto 0;
+        max-width: var(--maxWidgetWidth);
     }
 
     .dm_pd_div {
-        margin: 0 auto 5%;
-        max-width: (--maxWidgetWidth);
+        margin: 0 auto;
+        max-width: var(--maxWidgetWidth);
     }
 
 

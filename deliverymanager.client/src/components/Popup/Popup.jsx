@@ -24,7 +24,7 @@ const Popup = ({
         if(popupType === "Success"){
             return(
                 <>
-                    <div className="popupLoginContent">
+                    <div className="popupLoginContent success_popup">
                         <img id="success" src={Success} alt="success"/>
                         <p>Logged out success!</p>
                     </div>
@@ -34,7 +34,7 @@ const Popup = ({
         else if(popupType === "Fail" || popupType == "fail"){
             return(
                 <>
-                    <div className="popupLoginContent">
+                    <div className="popupLoginContent fail_popup">
                         <img id="fail" src={Fail} alt="fail"/>
                         <p>Oops! Something went wrong, logging out.</p>
                     </div>
@@ -91,6 +91,16 @@ const Popup = ({
                 </>
             )
         }
+        else if (popupType === "deliveries_update_fail") {
+            return(
+                <>
+                    <div className="popupLoginContent fail_popup">
+                        <img id="fail" src={Fail} alt="fail"/>
+                        <p>Updating delivery failed, try again.</p>
+                    </div>
+                </>
+            )
+        }
     }
 
     const overlayClass = isVisible ? 'overlay-visible' : 'overlay-hidden';
@@ -101,8 +111,8 @@ const Popup = ({
     );*/
 
     let popupClass = "popupDeliveryManager";
-    if (popupType.includes("success") || popupType.includes("Fail") || popupType.includes("fail")) {
-        popupClass = "popupLogin";
+    if (popupType.includes("Success") || popupType.includes("success") || popupType.includes("Fail") || popupType.includes("fail")) {
+        popupClass = "popupGraphic";
     }
     else if (popupType.includes("signature")) {
         popupClass = "popupSignature";

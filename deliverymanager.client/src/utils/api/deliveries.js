@@ -4,7 +4,7 @@ import {
     getTime,
     scrapeDate,
     scrapeTime
- } from "../../Scripts/helperFunctions";
+ } from "../../scripts/helperFunctions";
 
 async function parseErrorMessage(response) {
     let errorMessage = "An unknown error occurred";

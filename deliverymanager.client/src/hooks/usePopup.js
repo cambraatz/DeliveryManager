@@ -1,6 +1,6 @@
 // src/hooks/usePopup.js
 import { useState, useCallback } from 'react';
-import { FAIL_WAIT, SUCCESS_WAIT } from '../Scripts/helperFunctions';
+import { FAIL_WAIT, SUCCESS_WAIT } from '../scripts/helperFunctions';
 
 const DEFAULT_POPUP_TYPE = "Success"; // Or whatever your default is
 
@@ -38,5 +38,5 @@ export const usePopup = () => {
     }, [])
 
     // Return the state and functions that consuming components will need
-    return { popupType, setPopupType, popupVisible, openPopup, closePopup, successPopup, failPopup };
+    return { popupType, setPopupType, popupVisible, setVisible, openPopup, closePopup, successPopup, failPopup };
 };
