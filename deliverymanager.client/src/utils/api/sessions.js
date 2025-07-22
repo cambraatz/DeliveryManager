@@ -144,3 +144,43 @@ export async function Logout() {
         },FAIL_WAIT);
     }
 }
+
+export async function checkManifestAccess(powerUnit, mfstDateString) {
+    try {
+        const response = await fetch(`${API_URL}v1/sessions/check-manifest-access`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Cookies are usually sent automatically by the browser for same-site requests
+            },
+            body: JSON.stringify({
+                powerUnit: powerUnit,
+                mfstDateString: mfstDateString // e.g., "07182025"
+            }),
+            credentials: "include",
+        });
+
+        if (response.ok) { // Status 200-299
+            const result = await response.json();
+            console.log("Manifest access granted:", response.message);
+            // Proceed to load manifest data
+            return { success: true, message: result.message };
+        } else if (response.status === 403) { // Forbidden due to SSO conflict
+            const error = await response.text(); // Get raw text for specific message
+            console.error("SSO Conflict:", error);
+            return { success: false, message: error, code: 403 };
+        } else if (response.status === 401) { // Unauthorized, session expired
+            console.error("Unauthorized: Session expired. Redirecting to login.");
+            // Redirect to login page
+            window.location.href = '/'; // Or your login route
+            return { success: false, message: "Session expired. Please log in again.", code: 401 };
+        } else {
+            const error = await response.text();
+            console.error("Failed to check manifest access:", response.status, error);
+            return { success: false, message: `Error (${response.status}): ${error}`, code: response.status };
+        }
+    } catch (error) {
+        console.error("Network or unexpected error:", error);
+        return { success: false, message: `Network error: ${error.message}`, code: 500 };
+    }
+}

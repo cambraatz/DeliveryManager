@@ -19,7 +19,7 @@ import {
     FAIL_WAIT, 
 } from '../scripts/helperFunctions.jsx';
 
-import { Logout, validateSession } from '../utils/api/sessions.js';
+import { checkManifestAccess, Logout, validateSession } from '../utils/api/sessions.js';
 import { validateAndAssignManifest } from '../utils/api/deliveries.js';
 import { validateDeliveryConfirm } from '../utils/validation/validateForms.js';
 
@@ -170,6 +170,26 @@ const DeliveryValidation = () => {
             return;
         }
 
+        // ensure SSO gated access on mfstdate + powerunit...
+        const result = await checkManifestAccess(formData.powerunit, formData.deliverydate);
+        if (!result.success) {
+            alert("You've been blocked!");
+            console.error("add in some logic here...");
+            setInputErrors({ 
+                mfstdate: "add in some logic here...",
+                powerunit: "add in some logic here..."
+            });
+            return;
+        }
+        // handle conflict...
+        else if (result.status === 409) {
+            const responseError = "Date/Powerunit is in active use, try again later.";
+            setInputErrors({
+                mfstdate: responseError,
+                powerunit: responseError,
+            })
+        }
+
         const response = await validateAndAssignManifest(session.username, formData.powerunit, formData.deliverydate);
         if(response.ok){
             // update global session state...
@@ -180,10 +200,11 @@ const DeliveryValidation = () => {
             });
 
             navigate(`/deliveries`);
+            return;
         }
-        else {
-            if (response.status === 401) {
-                const responseError = "Unauthorized attempt, please log in.";
+        // handle unauthorized...
+        else if (response.status === 401) {
+            const responseError = "Unauthorized attempt, please log in.";
                 setInputErrors({
                     mfstdate: responseError,
                     powerunit: responseError,
@@ -196,17 +217,17 @@ const DeliveryValidation = () => {
                     closePopup();
                     return;
                 }, FAIL_WAIT);
-            }
+        }
+        else {
             const responseError = "No delivery found.";
             setInputErrors({
                 mfstdate: responseError,
                 powerunit: responseError,
             })
-
-            setTimeout(() => {
-                clearStateStyling();
-            }, FAIL_WAIT);
         }
+        setTimeout(() => {
+            clearStateStyling();
+        }, FAIL_WAIT);
     }
 
     // render template...

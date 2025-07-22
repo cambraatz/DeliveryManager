@@ -23,6 +23,7 @@ namespace DeliveryManager.Server.Controllers
         private readonly IImageService _imageService;
         private readonly IConfiguration _config;
         private readonly ILogger<DeliveriesController> _logger;
+        private readonly ISessionService _sessionService;
 
         public DeliveriesController(
             IUserService userService,
@@ -30,7 +31,8 @@ namespace DeliveryManager.Server.Controllers
             IDeliveryListService deliveryListService,
             IImageService imageService,
             IConfiguration config,
-            ILogger<DeliveriesController> logger)
+            ILogger<DeliveriesController> logger,
+            ISessionService sessionService)
         {
             _userService = userService;
             _deliveryService = deliveryService;
@@ -38,6 +40,7 @@ namespace DeliveryManager.Server.Controllers
             _imageService = imageService;
             _config = config;
             _logger = logger;
+            _sessionService = sessionService;
         }
 
         [HttpPost]
@@ -84,6 +87,10 @@ namespace DeliveryManager.Server.Controllers
                     _logger.LogError("Connection string for company '{Company}' not found in configuration.", company);
                     return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"Server configuration error: Connection string for company '{company}' not found, contact system administrator." });
                 }
+
+                // update driver session...
+                await _sessionService.UpdateSessionLastActivityAsync(currUsername);
+                _logger.LogDebug("Session last activity updated for user {Username}.", currUsername);
 
                 // retrieve first matching delivery manifest, if present...
                 DeliveryManifest? manifest = await _deliveryService.GetDeliveryManifestAsync(companyConnString, request.POWERUNIT, request.MFSTDATE);
@@ -149,6 +156,18 @@ namespace DeliveryManager.Server.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"Server configuration error: Connection string for company '{company}' not found, contact system administrator." });
             }
 
+            // ensure non-null parameters...
+            var username = Request.Cookies["username"];
+            if (string.IsNullOrEmpty(username))
+            {
+                _logger.LogWarning("USername is required to fetch deliveries.");
+                return BadRequest(new { message = "Username are required." });
+            }
+
+            // update driver session...
+            await _sessionService.UpdateSessionLastActivityAsync(username);
+            _logger.LogDebug("Session last activity updated for user {Username}.", username);
+
             try
             {
                 (List<DeliveryManifest> undelivered, List<DeliveryManifest> delivered) = await _deliveryListService.GetManifestListsAsync(companyConnString, powerunit, mfstdate);
@@ -202,6 +221,10 @@ namespace DeliveryManager.Server.Controllers
                 _logger.LogWarning("Company key cookies is missing for user '{Username}' during manifest updating.", username);
                 return BadRequest(new { message = "Company context is missing from your session. Please ensure you are logged in correctly." });
             }
+
+            // update driver session...
+            await _sessionService.UpdateSessionLastActivityAsync(username);
+            _logger.LogDebug("Session last activity updated for user {Username}.", username);
 
             try
             {

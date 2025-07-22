@@ -16,7 +16,7 @@ var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
 
-var logPath = builder.Environment.IsProduction()
+/*var logPath = builder.Environment.IsProduction()
     ? Path.Combine(builder.Environment.ContentRootPath, "logs", "logs.log")
     : Path.Combine("logs","logs.log");
 
@@ -26,7 +26,17 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
     .CreateLogger();
 
-builder.Host.UseSerilog();
+builder.Host.UseSerilog();*/
+
+// Configure Serilog to read from appsettings.json
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext());
+
+// Optional: Add a simple log message here to confirm Serilog initialized
+Log.Information("Application startup. Serilog initialized from configuration. Environment: {EnvironmentName}", builder.Environment.EnvironmentName);
+Log.Debug("This is a test debug message to confirm verbose logging is active.");
 
 if (builder.Environment.IsProduction())
 {
@@ -163,6 +173,9 @@ builder.Services.AddScoped<IMappingService, MappingService>();
 builder.Services.AddScoped<IDeliveryService, DeliveryService>();
 builder.Services.AddScoped<IDeliveryListService, DeliveryListService>();
 builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<ISessionService, SessionService>();
+
+builder.Services.AddHostedService<DeliveryManager.Server.BackgroundServices.SessionCleanupHostedService>();
 
 var app = builder.Build();
 
