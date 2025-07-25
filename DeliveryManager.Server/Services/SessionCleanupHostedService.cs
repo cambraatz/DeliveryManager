@@ -15,8 +15,8 @@ namespace DeliveryManager.Server.BackgroundServices
         private readonly IServiceScopeFactory _scopeFactory; // To get a scoped ISessionService instance
 
         // Configuration for the cleanup
-        private readonly TimeSpan _cleanupInterval = TimeSpan.FromMinutes(15); // How often to run the cleanup
-        private readonly TimeSpan _idleSessionTimeout = TimeSpan.FromMinutes(30); // How long before a session is considered idle
+        private readonly TimeSpan _cleanupInterval = TimeSpan.FromMinutes(5); // How often to run the cleanup
+        private readonly TimeSpan _idleSessionTimeout = TimeSpan.FromMinutes(15); // How long before a session is considered idle
 
         public SessionCleanupHostedService(ILogger<SessionCleanupHostedService> logger, IServiceScopeFactory scopeFactory)
         {

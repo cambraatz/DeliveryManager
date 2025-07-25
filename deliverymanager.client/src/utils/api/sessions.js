@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
-import { SUCCESS_WAIT, FAIL_WAIT } from "../../scripts/helperFunctions";
+import { SUCCESS_WAIT, FAIL_WAIT,scrapeDate } from "../../scripts/helperFunctions";
 import { useNavigate } from "react-router-dom";
 
 async function parseErrorMessage(response) {
@@ -109,7 +109,8 @@ export async function Return(root) {
                 window.location.href = `https://login.tcsservices.com`;
             }, SUCCESS_WAIT);
         } else {
-            console.error("Return cookie generation failed, return failure.");
+            console.error("Return cookie generation failed, logging out.");
+            Logout();
             return;
         }
     }
@@ -119,7 +120,7 @@ export async function Return(root) {
     }
 }
 
-export async function Logout() {
+export async function Logout(session=null) {
     localStorage.clear();
     sessionStorage.clear();
 
@@ -128,6 +129,9 @@ export async function Logout() {
         headers: {
             'Content-Type': 'application/json; charset=UTF-8'
         },
+        body: JSON.stringify({
+            session: session,
+        }),
         credentials: "include",
     })
     if (response.ok) {
@@ -145,7 +149,7 @@ export async function Logout() {
     }
 }
 
-export async function checkManifestAccess(powerUnit, mfstDateString) {
+export async function checkManifestAccess(username, powerUnit, mfstDate) {
     try {
         const response = await fetch(`${API_URL}v1/sessions/check-manifest-access`, {
             method: 'POST',
@@ -155,28 +159,103 @@ export async function checkManifestAccess(powerUnit, mfstDateString) {
             },
             body: JSON.stringify({
                 powerUnit: powerUnit,
-                mfstDateString: mfstDateString // e.g., "07182025"
+                mfstDate: scrapeDate(mfstDate) // e.g., "07182025"
+            }),
+            credentials: "include",
+        });
+
+        // handle 
+        if (response.ok) { // Status 200-299
+            const result = await response.json();
+            console.log(`${result.sessionUser} was returned for comparison to ${username}`);
+            if (result.conflict && result.sessionUser === username) {
+                console.log("Current user session already exists, terminate session to gain access.");
+                return { success: false, message: "Current user session already exists, terminate session to gain access." };
+            }
+            console.log("Manifest access granted:", response.message);
+            // Proceed to load manifest data
+            return { success: true, message: result.message };
+        } 
+        else if (response.status === 403 || response.status === 409) { // Forbidden due to SSO conflict
+            const error = await response.json(); // Get raw text for specific message
+            console.error("SSO Conflict:", error.message);
+            return { success: false, message: error.message, code: 403 };
+        } 
+        else if (response.status === 401) { // Unauthorized, session expired
+            console.error("Unauthorized: Session expired. Redirecting to login.");
+            // Redirect to login page
+            window.location.href = '/'; // Or your login route
+            return { success: false, message: "Session expired. Please log in again.", code: 401 };
+        } 
+        else {
+            const error = await response.text();
+            console.error("Failed to check manifest access:", response.status, error);
+            return { success: false, message: `Error (${response.status}): ${error}`, code: response.status };
+        }
+    } catch (error) {
+        console.error("Network or unexpected error:", error);
+        return { success: false, message: `Network error: ${error.message}`, code: 500 };
+    }
+}
+
+export async function releaseManifestAccess(username, powerunit=null, mfstdate=null) {
+    try {
+        const response = await fetch(`${API_URL}v1/sessions/release-manifest-access`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Cookies are usually sent automatically by the browser for same-site requests
+            },
+            body: JSON.stringify({
+                username: username,
+                powerunit: powerunit,
+                mfstdate: scrapeDate(mfstdate) // e.g., "07182025"
             }),
             credentials: "include",
         });
 
         if (response.ok) { // Status 200-299
             const result = await response.json();
-            console.log("Manifest access granted:", response.message);
+            console.log("Manifest released successfully:", response.message);
             // Proceed to load manifest data
             return { success: true, message: result.message };
-        } else if (response.status === 403) { // Forbidden due to SSO conflict
-            const error = await response.text(); // Get raw text for specific message
-            console.error("SSO Conflict:", error);
-            return { success: false, message: error, code: 403 };
-        } else if (response.status === 401) { // Unauthorized, session expired
-            console.error("Unauthorized: Session expired. Redirecting to login.");
-            // Redirect to login page
-            window.location.href = '/'; // Or your login route
-            return { success: false, message: "Session expired. Please log in again.", code: 401 };
-        } else {
+        } 
+        else {
             const error = await response.text();
-            console.error("Failed to check manifest access:", response.status, error);
+            console.error("Failed to release manifest access:", response.status, error);
+            return { success: false, message: `Error (${response.status}): ${error}`, code: response.status };
+        }
+    } catch (error) {
+        console.error("Network or unexpected error:", error);
+        return { success: false, message: `Network error: ${error.message}`, code: 500 };
+    }
+}
+
+export async function resetManifestAccess(username, powerunit, mfstdate) {
+    try {
+        const response = await fetch(`${API_URL}v1/sessions/reset-manifest-access`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Cookies are usually sent automatically by the browser for same-site requests
+            },
+            body: JSON.stringify({
+                username: username,
+                powerunit: powerunit,
+                mfstdate: scrapeDate(mfstdate) // e.g., "07182025"
+            }),
+            credentials: "include",
+        });
+
+        if (response.ok) { // Status 200-299
+            const result = await response.json();
+            console.log("Manifest reset successfully:", response.message);
+            // Proceed to load manifest data
+            return { success: true, message: result.message };
+        }
+        else {
+            const error = await response.text();
+            console.error("Failed to release manifest access:", response.status, error);
             return { success: false, message: `Error (${response.status}): ${error}`, code: response.status };
         }
     } catch (error) {

@@ -3,7 +3,12 @@ import UserWidget from '../UserWidget/UserWidget';
 import Popup from '../Popup/Popup';
 import toggleDots from '../../assets/Toggle_Dots.svg';
 import { useNavigate } from "react-router-dom";
-import { Logout, Return } from '../../utils/api/sessions';
+import { 
+    Logout, 
+    Return, 
+    releaseManifestAccess, 
+    resetManifestAccess 
+} from '../../utils/api/sessions';
 import "./Header.css";
 
 import { useAppContext } from '../../hooks/useAppContext';
@@ -17,7 +22,8 @@ const Header = ({
     logoutButton, 
     root
 }) => {
-    const { collapsed, setCollapsed } = useAppContext();
+    const { collapsed, setCollapsed, session
+     } = useAppContext();
     const {
         popupType, /*setPopupType,*/
         openPopup, closePopup,
@@ -38,12 +44,21 @@ const Header = ({
         }
         // navigate back a URL directory...
         const path = await Return(root);
+        if (!root && path.endsWith('/')) {
+            // URL ends with /deliveries
+            console.log("Attempting to release manifest access...");
+            const response = await resetManifestAccess(session.username, session.powerunit, session.mfstdate);
+            if (!response.success) {
+                console.error("Failed to release manifest access hold.");
+            }
+        }
+
         navigate(path);
     }
         
     const popupLogout = () => {
         openPopup("logout");
-        Logout();
+        Logout(session);
     }
 
     return(

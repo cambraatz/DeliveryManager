@@ -6,6 +6,7 @@ import "./Popup.css";
 
 import {
     PopupContent_DeliveryList,
+    PopupContent_SessionConflict,
     //PopupContent_Signature,
     //PopupContent_Sessions,
     //PopupContent_Users
@@ -19,7 +20,7 @@ const Popup = ({
         closePopup,
         deliveries,
         handleSubmit,
-        handleSignature,
+        handleSignature
     }) => {
 
     const popupContent = () => {
@@ -101,6 +102,14 @@ const Popup = ({
                         <p>Updating delivery failed, try again.</p>
                     </div>
                 </>
+            )
+        }
+        else if (popupType === "sessions_existing_dm_conflict") {
+            return(
+                <PopupContent_SessionConflict 
+                    closePopup={closePopup}
+                    handleSubmit={handleSubmit}
+                />
             )
         }
     }

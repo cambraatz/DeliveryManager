@@ -19,7 +19,7 @@ import {
     FAIL_WAIT, 
 } from '../scripts/helperFunctions.jsx';
 
-import { checkManifestAccess, Logout, validateSession } from '../utils/api/sessions.js';
+import { checkManifestAccess, Logout, validateSession, releaseManifestAccess } from '../utils/api/sessions.js';
 import { validateAndAssignManifest } from '../utils/api/deliveries.js';
 import { validateDeliveryConfirm } from '../utils/validation/validateForms.js';
 
@@ -141,20 +141,111 @@ const DeliveryValidation = () => {
             return;
         }
         else {
-            const responseError = "Session could not be validated, please log in.";
+            /*const responseError = "Session could not be validated, please log in.";
             setInputErrors({
                 mfstdate: responseError,
                 powerunit: responseError,
-            })
+            })*/
 
             openPopup("fail");
             setTimeout(() => {
-                clearStateStyling();
-                Logout();
+                //clearStateStyling();
+                Logout(session);
                 closePopup();
                 return;
             }, FAIL_WAIT);
         }        
+    }
+
+    async function validationLogin() {
+        // validate delivery from data/powerunit...
+        let response = await validateAndAssignManifest(session.username, formData.powerunit, formData.deliverydate);
+        if(response.ok){
+            // update global session state...
+            setSession({
+                ...session,
+                mfstdate: formData.deliverydate,
+                powerunit: formData.powerunit,
+            });
+
+            navigate(`/deliveries`);
+            return;
+        }
+
+        // release manifest access for non-existent delivery (cleanup)...
+        const release = await releaseManifestAccess(session.username, formData.powerunit, formData.deliverydate);
+        if(release.ok){
+            setTimeout(() => {
+                clearStateStyling();
+                return;
+            }, FAIL_WAIT);
+        }
+
+        // handle unauthorized...
+        if (response.status === 401 || release.status === 401) {
+            const responseError = "Unauthorized attempt, please log in.";
+                setInputErrors({
+                    mfstdate: responseError,
+                    powerunit: responseError,
+                })
+
+                openPopup("fail");
+                setTimeout(() => {
+                    clearStateStyling();
+                    Logout(formData.powerunit,formData.deliverydate);
+                    closePopup();
+                    return;
+                }, FAIL_WAIT);
+        }
+        // handle unauthorized...
+        else if (response.status === 404 || release.status === 404) {
+            const responseError = "No delivery found.";
+                setInputErrors({
+                    mfstdate: responseError,
+                    powerunit: responseError,
+                })
+                setTimeout(() => {
+                    clearStateStyling();
+                    return;
+                }, FAIL_WAIT);
+        }
+        else {
+            const responseError = "Server error, contact administrator.";
+            setInputErrors({
+                mfstdate: responseError,
+                powerunit: responseError,
+            })
+        }
+    }
+
+    async function releaseSessionAndLogin() {
+        // release previous user session in conflict...
+        const release = await releaseManifestAccess(session.username, formData.powerunit, formData.deliverydate);
+        if(!release.ok){
+            setTimeout(() => {
+                clearStateStyling();
+                return;
+            }, FAIL_WAIT);
+        }
+
+        // ensure SSO gated access on mfstdate + powerunit...
+        const result = await checkManifestAccess(session.username, formData.powerunit, formData.deliverydate);
+        if (!result.success) {
+            if (result.message.includes("already exists")) {
+                console.error("user already has an active session!");
+                openPopup("sessions_existing_dm_conflict");
+                return;
+            }
+            // handle conflict...
+            //const responseError = "Date/Powerunit is in active use, try again later.";
+            setInputErrors({
+                mfstdate: result.message,
+                powerunit: result.message
+            });
+            return;
+        }
+
+        await validationLogin();
     }
 
     // validate credentials, prompt for correction in fail or open popup in success...
@@ -171,26 +262,23 @@ const DeliveryValidation = () => {
         }
 
         // ensure SSO gated access on mfstdate + powerunit...
-        const result = await checkManifestAccess(formData.powerunit, formData.deliverydate);
+        const result = await checkManifestAccess(session.username, formData.powerunit, formData.deliverydate);
         if (!result.success) {
-            alert("You've been blocked!");
-            console.error("add in some logic here...");
-            setInputErrors({ 
-                mfstdate: "add in some logic here...",
-                powerunit: "add in some logic here..."
+            if (result.message.includes("already exists")) {
+                console.error("user already has an active session!");
+                openPopup("sessions_existing_dm_conflict");
+                return;
+            }
+            // handle conflict...
+            //const responseError = "Date/Powerunit is in active use, try again later.";
+            setInputErrors({
+                mfstdate: result.message,
+                powerunit: result.message
             });
             return;
-        }
-        // handle conflict...
-        else if (result.status === 409) {
-            const responseError = "Date/Powerunit is in active use, try again later.";
-            setInputErrors({
-                mfstdate: responseError,
-                powerunit: responseError,
-            })
-        }
-
-        const response = await validateAndAssignManifest(session.username, formData.powerunit, formData.deliverydate);
+        }      
+        await validationLogin();
+        /*const response = await validateAndAssignManifest(session.username, formData.powerunit, formData.deliverydate);
         if(response.ok){
             // update global session state...
             setSession({
@@ -224,7 +312,7 @@ const DeliveryValidation = () => {
                 mfstdate: responseError,
                 powerunit: responseError,
             })
-        }
+        }*/
         setTimeout(() => {
             clearStateStyling();
         }, FAIL_WAIT);
@@ -261,6 +349,7 @@ const DeliveryValidation = () => {
                     popupType={popupType}
                     isVisible={popupVisible}
                     closePopup={closePopup}
+                    handleSubmit={releaseSessionAndLogin}
                 />
             )}
         </div>

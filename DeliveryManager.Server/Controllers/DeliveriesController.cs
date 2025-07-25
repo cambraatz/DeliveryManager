@@ -88,8 +88,11 @@ namespace DeliveryManager.Server.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, new { message = $"Server configuration error: Connection string for company '{company}' not found, contact system administrator." });
                 }
 
+                var accessToken = Request.Cookies["access_token"];
+                //var refreshToken = Request.Cookies["refresh_token"];
+
                 // update driver session...
-                await _sessionService.UpdateSessionLastActivityAsync(currUsername);
+                await _sessionService.UpdateSessionLastActivityAsync(currUsername, accessToken!);
                 _logger.LogDebug("Session last activity updated for user {Username}.", currUsername);
 
                 // retrieve first matching delivery manifest, if present...
@@ -164,8 +167,11 @@ namespace DeliveryManager.Server.Controllers
                 return BadRequest(new { message = "Username are required." });
             }
 
+            var accessToken = Request.Cookies["access_token"];
+            //var refreshToken = Request.Cookies["refresh_token"];
+
             // update driver session...
-            await _sessionService.UpdateSessionLastActivityAsync(username);
+            await _sessionService.UpdateSessionLastActivityAsync(username, accessToken!);
             _logger.LogDebug("Session last activity updated for user {Username}.", username);
 
             try
@@ -222,8 +228,11 @@ namespace DeliveryManager.Server.Controllers
                 return BadRequest(new { message = "Company context is missing from your session. Please ensure you are logged in correctly." });
             }
 
+            var accessToken = Request.Cookies["access_token"];
+            //var refreshToken = Request.Cookies["refresh_token"];
+
             // update driver session...
-            await _sessionService.UpdateSessionLastActivityAsync(username);
+            await _sessionService.UpdateSessionLastActivityAsync(username, accessToken!);
             _logger.LogDebug("Session last activity updated for user {Username}.", username);
 
             try

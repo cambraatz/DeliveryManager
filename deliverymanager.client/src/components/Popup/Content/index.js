@@ -3,3 +3,4 @@
 export { default as PopupContent_Sessions } from './PopupContent_Sessions';
 export { default as PopupContent_DeliveryList } from './PopupContent_DeliveryList';
 export { default as PopupContent_Signature } from './PopupContent_Signature';
+export { default as PopupContent_SessionConflict } from './PopupContent_SessionConflict';

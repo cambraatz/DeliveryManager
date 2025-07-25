@@ -164,8 +164,6 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// var app = builder.Build();
-
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICookieService, CookieService>();
 builder.Services.AddScoped<IUserService, UserService>();

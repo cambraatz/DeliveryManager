@@ -8,10 +8,10 @@ namespace DeliveryManager.Server.Models.Requests
         public string PowerUnit { get; set; } = string.Empty;
 
         // This property will receive the string in "MMDDYYYY" format from the client
-        public string MfstDateString { get; set; } = string.Empty;
+        public string MfstDate { get; set; } = string.Empty;
 
         // This computed property will attempt to parse the string into a DateTime
-        public DateTime MfstDate
+        /*public DateTime MfstDate
         {
             get
             {
@@ -27,6 +27,6 @@ namespace DeliveryManager.Server.Models.Requests
                 // For robustness, returning default(DateTime) is fine, as the controller checks for it.
                 return default(DateTime); // Returns DateTime.MinValue if parsing fails
             }
-        }
+        }*/
     }
 }

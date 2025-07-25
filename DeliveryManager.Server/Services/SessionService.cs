@@ -16,30 +16,30 @@ namespace DeliveryManager.Server.Services
             _logger = logger;
         }
 
-        public async Task<bool> AddOrUpdateSessionAsync(string username, string accessToken, string refreshToken, DateTime expiryTime, string? powerUnit, DateTime? mfstDate)
+        public async Task<bool> AddOrUpdateSessionAsync(string username, string accessToken, string refreshToken, DateTime expiryTime, string? powerUnit, string? mfstDate)
         {
             try
             {
                 using (var conn = new SqlConnection(_connString))
                 {
-                    var checkQuery = "SELECT COUNT(1) FROM dbo.SESSIONS WHERE Username = @Username";
+                    var checkQuery = "SELECT COUNT(1) FROM dbo.SESSIONS WHERE USERNAME = @USERNAME AND ACCESSTOKEN = @ACCESSTOKEN";
 
                     await conn.OpenAsync();
                     using (var cmd = new SqlCommand(checkQuery, conn))
                     {
                         cmd.Parameters.AddWithValue("@USERNAME", username);
+                        cmd.Parameters.AddWithValue("@ACCESSTOKEN", accessToken);
                         var exists = (int)await cmd.ExecuteScalarAsync() > 0;
                         if (exists)
                         {
                             var updateQuery = @"
                                 UPDATE dbo.SESSIONS 
-                                SET ACCESSTOKEN = @ACCESSTOKEN, 
-                                    REFRESHTOKEN = @REFRESHTOKEN, 
+                                SET REFRESHTOKEN = @REFRESHTOKEN, 
                                     EXPIRYTIME = @EXPIRYTIME, 
                                     LASTACTIVITY = @LASTACTIVITY, 
                                     POWERUNIT = @POWERUNIT, 
                                     MFSTDATE = @MFSTDATE 
-                                WHERE USERNAME = @USERNAME";
+                                WHERE USERNAME = @USERNAME AND ACCESSTOKEN = @ACCESSTOKEN";
 
                             using (var updateCmd = new SqlCommand(updateQuery, conn))
                             {
@@ -48,8 +48,8 @@ namespace DeliveryManager.Server.Services
                                 updateCmd.Parameters.AddWithValue("@EXPIRYTIME", expiryTime);
                                 updateCmd.Parameters.AddWithValue("@LASTACTIVITY", DateTime.UtcNow);
                                 // Handle nullable parameters for POWERUNIT and MFSTDATE
-                                updateCmd.Parameters.Add("@POWERUNIT", SqlDbType.NVarChar, 50).Value = (object?)powerUnit ?? DBNull.Value;
-                                updateCmd.Parameters.Add("@MFSTDATE", SqlDbType.Date).Value = (object?)mfstDate ?? DBNull.Value;
+                                updateCmd.Parameters.Add("@POWERUNIT", SqlDbType.NVarChar, 10).Value = (object?)powerUnit ?? DBNull.Value;
+                                updateCmd.Parameters.Add("@MFSTDATE", SqlDbType.NVarChar, 8).Value = (object?)mfstDate ?? DBNull.Value;
                                 updateCmd.Parameters.AddWithValue("@USERNAME", username);
 
                                 await updateCmd.ExecuteNonQueryAsync();
@@ -69,10 +69,10 @@ namespace DeliveryManager.Server.Services
                                 insertCommand.Parameters.AddWithValue("@REFRESHTOKEN", refreshToken);
                                 insertCommand.Parameters.AddWithValue("@EXPIRYTIME", expiryTime);
                                 insertCommand.Parameters.AddWithValue("@LOGINTIME", DateTime.UtcNow);
-                                insertCommand.Parameters.AddWithValue("@LastActivity", DateTime.UtcNow);
+                                insertCommand.Parameters.AddWithValue("@LASTACTIVITY", DateTime.UtcNow);
                                 // Handle nullable parameters for PowerUnit and MFSTDATE
                                 insertCommand.Parameters.Add("@POWERUNIT", SqlDbType.NVarChar, 50).Value = (object?)powerUnit ?? DBNull.Value;
-                                insertCommand.Parameters.Add("@MFSTDATE", SqlDbType.Date).Value = (object?)mfstDate ?? DBNull.Value;
+                                insertCommand.Parameters.Add("@MFSTDATE", SqlDbType.NVarChar, 8).Value = (object?)mfstDate ?? DBNull.Value;
 
                                 await insertCommand.ExecuteNonQueryAsync();
                             }
@@ -89,7 +89,7 @@ namespace DeliveryManager.Server.Services
             }
         }
 
-        public async Task<bool> UpdateSessionLastActivityAsync(string username)
+        public async Task<bool> UpdateSessionLastActivityAsync(string username, string accessToken)
         {
             if (string.IsNullOrEmpty(_connString))
             {
@@ -105,12 +105,13 @@ namespace DeliveryManager.Server.Services
                     var sql = @"
                         UPDATE dbo.SESSIONS
                         SET LASTACTIVITY = @LASTACTIVITY
-                        WHERE USERNAME = @USERNAME"; // Assuming one active session per user
+                        WHERE USERNAME = @USERNAME AND ACCESSTOKEN = @ACCESSTOKEN";
 
                     using (var cmd = new SqlCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@LASTACTIVITY", DateTime.UtcNow);
                         cmd.Parameters.AddWithValue("@USERNAME", username);
+                        cmd.Parameters.AddWithValue("@ACCESSTOKEN", accessToken);
                         var rowsAffected = await cmd.ExecuteNonQueryAsync();
                         return rowsAffected > 0;
                     }
@@ -123,17 +124,22 @@ namespace DeliveryManager.Server.Services
             }
         }
 
-        public async Task<SessionModel?> GetSessionAsync(string username)
+        public async Task<SessionModel?> GetSessionAsync(string username, string accessToken, string refreshToken)
         {
             try
             {
                 using (var conn = new SqlConnection(_connString))
                 {
                     await conn.OpenAsync();
-                    var query = "SELECT ID, USERNAME, ACCESSTOKEN, REFRESHTOKEN, EXPIRYTIME, LOGINTIME, LASTACTIVITY, POWERUNIT, MFSTDATE FROM dbo.SESSIONS WHERE USERNAME = @USERNAME";
+                    var query = @"
+                        SELECT ID, USERNAME, ACCESSTOKEN, REFRESHTOKEN, EXPIRYTIME, LOGINTIME, LASTACTIVITY, POWERUNIT, MFSTDATE 
+                        FROM dbo.SESSIONS WHERE USERNAME = @USERNAME AND (ACCESSTOKEN = @ACCESSTOKEN OR REFRESHTOKEN = @REFRESHTOKEN)";
                     using (var comm = new SqlCommand(query, conn))
                     {
                         comm.Parameters.AddWithValue("@USERNAME", username);
+                        comm.Parameters.AddWithValue("@ACCESSTOKEN", accessToken);
+                        comm.Parameters.AddWithValue("@REFRESHTOKEN", refreshToken);
+
                         using (var reader = await comm.ExecuteReaderAsync())
                         {
                             if (await reader.ReadAsync())
@@ -148,7 +154,7 @@ namespace DeliveryManager.Server.Services
                                     LoginTime = reader.GetDateTime(reader.GetOrdinal("LOGINTIME")),
                                     LastActivity = reader.GetDateTime(reader.GetOrdinal("LASTACTIVITY")),
                                     PowerUnit = reader.IsDBNull(reader.GetOrdinal("POWERUNIT")) ? null : reader.GetString(reader.GetOrdinal("POWERUNIT")),
-                                    MfstDate = reader.IsDBNull(reader.GetOrdinal("MFSTDATE")) ? null : reader.GetDateTime(reader.GetOrdinal("MFSTDATE"))
+                                    MfstDate = reader.IsDBNull(reader.GetOrdinal("MFSTDATE")) ? null : reader.GetString(reader.GetOrdinal("MFSTDATE"))
                                 };
                             }
                             return null;
@@ -163,7 +169,7 @@ namespace DeliveryManager.Server.Services
             }
         }
 
-        public async Task<SessionModel?> GetSessionByManifestDetailsAsync(string username, string powerUnit, DateTime mfstDate)
+        public async Task<SessionModel?> GetSessionByManifestDetailsAsync(string username, string powerUnit, string mfstDate, string accessToken, string refreshToken)
         {
             try
             {
@@ -174,14 +180,17 @@ namespace DeliveryManager.Server.Services
                     var sql = @"
                         SELECT TOP 1 ID, USERNAME, ACCESSTOKEN, REFRESHTOKEN, EXPIRYTIME, LOGINTIME, LASTACTIVITY, POWERUNIT, MFSTDATE
                         FROM dbo.SESSIONS
-                        WHERE USERNAME != @USERNAME
+                        WHERE ACCESSTOKEN != @ACCESSTOKEN 
+                          OR REFRESHTOKEN != @REFRESHTOKEN
                           AND POWERUNIT = @POWERUNIT
                           AND MFSTDATE = @MFSTDATE"; // Assumes non-null PowerUnit and MfstDate for conflict check
                     using (var command = new SqlCommand(sql, connection))
                     {
-                        command.Parameters.AddWithValue("@USERNAME", username);
+                        //command.Parameters.AddWithValue("@USERNAME", username);
                         command.Parameters.AddWithValue("@POWERUNIT", powerUnit);
-                        command.Parameters.AddWithValue("@MFSTDATE", mfstDate.Date); // Ensure date comparison is consistent (e.g., just date part)
+                        command.Parameters.AddWithValue("@MFSTDATE", mfstDate); // Ensure date comparison is consistent (e.g., just date part)
+                        command.Parameters.AddWithValue("@ACCESSTOKEN", accessToken);
+                        command.Parameters.AddWithValue("@REFRESHTOKEN", refreshToken);
 
                         using (var reader = await command.ExecuteReaderAsync())
                         {
@@ -197,7 +206,7 @@ namespace DeliveryManager.Server.Services
                                     LoginTime = reader.GetDateTime(reader.GetOrdinal("LOGINTIME")),
                                     LastActivity = reader.GetDateTime(reader.GetOrdinal("LASTACTIVITY")),
                                     PowerUnit = reader.IsDBNull(reader.GetOrdinal("POWERUNIT")) ? null : reader.GetString(reader.GetOrdinal("POWERUNIT")),
-                                    MfstDate = reader.IsDBNull(reader.GetOrdinal("MFSTDATE")) ? null : reader.GetDateTime(reader.GetOrdinal("MFSTDATE"))
+                                    MfstDate = reader.IsDBNull(reader.GetOrdinal("MFSTDATE")) ? null : reader.GetString(reader.GetOrdinal("MFSTDATE"))
                                 };
                             }
                         }
@@ -213,7 +222,7 @@ namespace DeliveryManager.Server.Services
         }
 
         // This method will be crucial for SSO:
-        public async Task<SessionModel?> GetConflictingSessionAsync(string currentUsername, string powerUnit, DateTime mfstDate)
+        public async Task<SessionModel?> GetConflictingSessionAsync(string currUsername, string powerUnit, string mfstDate, string accessToken, string refreshToken)
         {
             try
             {
@@ -224,14 +233,18 @@ namespace DeliveryManager.Server.Services
                     var sql = @"
                         SELECT TOP 1 ID, USERNAME, ACCESSTOKEN, REFRESHTOKEN, EXPIRYTIME, LOGINTIME, LASTACTIVITY, POWERUNIT, MFSTDATE
                         FROM dbo.SESSIONS
-                        WHERE USERNAME != @CURRUSERNAME
-                          AND POWERUNIT = @POWERUNIT
-                          AND MFSTDATE = @MFSTDATE"; // Assumes non-null PowerUnit and MfstDate for conflict check
+                        WHERE 
+                            POWERUNIT COLLATE SQL_Latin1_General_CP1_CI_AS = @POWERUNIT COLLATE SQL_Latin1_General_CP1_CI_AS
+                            AND MFSTDATE COLLATE SQL_Latin1_General_CP1_CI_AS = @MFSTDATE COLLATE SQL_Latin1_General_CP1_CI_AS
+                            AND ACCESSTOKEN != @ACCESSTOKEN"; // Assumes non-null PowerUnit and MfstDate for conflict check
+
                     using (var command = new SqlCommand(sql, connection))
                     {
-                        command.Parameters.AddWithValue("@CURRUSERNAME", currentUsername);
-                        command.Parameters.AddWithValue("@POWERUNIT", powerUnit);
-                        command.Parameters.AddWithValue("@MFSTDATE", mfstDate.Date); // Ensure date comparison is consistent (e.g., just date part)
+                        //command.Parameters.AddWithValue("@CURRUSERNAME", currUsername);
+                        command.Parameters.Add("@MFSTDATE", SqlDbType.NVarChar, 8).Value = mfstDate.Trim();
+                        command.Parameters.Add("@POWERUNIT", SqlDbType.NVarChar, 10).Value = powerUnit.Trim();
+                        command.Parameters.Add("@ACCESSTOKEN", SqlDbType.NVarChar, -1).Value = accessToken.Trim();
+                        //command.Parameters.AddWithValue("@REFRESHTOKEN", refreshToken);
 
                         using (var reader = await command.ExecuteReaderAsync())
                         {
@@ -239,7 +252,7 @@ namespace DeliveryManager.Server.Services
                             {
                                 return new SessionModel
                                 {
-                                    Id = reader.GetInt32(reader.GetOrdinal("ID")),
+                                    Id = reader.GetInt64(reader.GetOrdinal("ID")),
                                     Username = reader.GetString(reader.GetOrdinal("USERNAME")),
                                     AccessToken = reader.GetString(reader.GetOrdinal("ACCESSTOKEN")),
                                     RefreshToken = reader.GetString(reader.GetOrdinal("REFRESHTOKEN")),
@@ -247,7 +260,7 @@ namespace DeliveryManager.Server.Services
                                     LoginTime = reader.GetDateTime(reader.GetOrdinal("LOGINTIME")),
                                     LastActivity = reader.GetDateTime(reader.GetOrdinal("LASTACTIVITY")),
                                     PowerUnit = reader.IsDBNull(reader.GetOrdinal("POWERUNIT")) ? null : reader.GetString(reader.GetOrdinal("POWERUNIT")),
-                                    MfstDate = reader.IsDBNull(reader.GetOrdinal("MFSTDATE")) ? null : reader.GetDateTime(reader.GetOrdinal("MFSTDATE"))
+                                    MfstDate = reader.IsDBNull(reader.GetOrdinal("MFSTDATE")) ? null : reader.GetString(reader.GetOrdinal("MFSTDATE"))
                                 };
                             }
                         }
@@ -257,20 +270,20 @@ namespace DeliveryManager.Server.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get conflicting session for user {CurrentUsername}, PowerUnit {PU}, MfstDate {MD}. Error: {Message}", currentUsername, powerUnit, mfstDate, ex.Message);
-                Console.WriteLine("Failed to get conflicting session for user {CurrentUsername}, PowerUnit {PU}, MfstDate {MD}. Error: {Message}", currentUsername, powerUnit, mfstDate, ex.Message);
+                _logger.LogError(ex, "Failed to get conflicting session for user {currUsername}, PowerUnit {PU}, MfstDate {MD}. Error: {Message}", currUsername, powerUnit, mfstDate, ex.Message);
+                Console.WriteLine($"Failed to get conflicting session for user {currUsername}, PowerUnit {powerUnit}, MfstDate {mfstDate}. Error: {ex.Message}");
                 return null;
             }
         }
 
-        public async Task<bool> InvalidateSessionAsync(string username)
+        public async Task<bool> InvalidateSessionAsync(string username, string accessToken, string refreshToken)
         {
             try
             {
                 using (var connection = new SqlConnection(_connString))
                 {
                     await connection.OpenAsync();
-                    var sql = "DELETE FROM dbo.SESSIONS WHERE USERNAME = @USERNAME";
+                    var sql = "DELETE FROM dbo.SESSIONS WHERE USERNAME = @USERNAME AND ACCESSTOKEN = @ACCESSTOKEN AND REFRESHTOKEN != @REFRESHTOKEN";
                     using (var command = new SqlCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@USERNAME", username);
@@ -306,6 +319,57 @@ namespace DeliveryManager.Server.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to invalidate session by tokens. Error: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<bool> InvalidateSessionByDeliveryManifest(string username, string powerunit, string mfstdate)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connString))
+                {
+                    await connection.OpenAsync();
+                    var sql = "DELETE FROM dbo.SESSIONS WHERE USERNAME = @USERNAME AND POWERUNIT = @POWERUNIT AND MFSTDATE = @MFSTDATE";
+                    using (var command = new SqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@USERNAME", username);
+                        command.Parameters.AddWithValue("@POWERUNIT", powerunit);
+                        command.Parameters.AddWithValue("@MFSTDATE", mfstdate);
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to invalidate session by manifest credentials. Error: {Message}", ex.Message);
+                return false;
+            }
+        }
+
+        public async Task<bool> ResetSessionByDeliveryManifestAsync(string username, string powerunit, string mfstdate, string accessToken)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connString))
+                {
+                    await connection.OpenAsync();
+                    var sql = "UPDATE dbo.SESSIONS SET POWERUNIT = NULL, MFSTDATE = NULL WHERE USERNAME = @USERNAME AND ACCESSTOKEN = @ACCESSTOKEN";
+                    using (var command = new SqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@USERNAME", username);
+                        command.Parameters.AddWithValue("@POWERUNIT", powerunit);
+                        command.Parameters.AddWithValue("@MFSTDATE", mfstdate);
+                        command.Parameters.AddWithValue("@ACCESSTOKEN", accessToken);
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to invalidate session by manifest credentials. Error: {Message}", ex.Message);
                 return false;
             }
         }
