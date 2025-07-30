@@ -100,7 +100,7 @@ const DeliveryManifest = () => {
             //setVisible(true);
             openPopup("fail");
             setTimeout(() => {
-                Logout();
+                Logout(session.id);
                 closePopup();
                 return;
             }, FAIL_WAIT);

@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
-import { SUCCESS_WAIT, FAIL_WAIT,scrapeDate } from "../../scripts/helperFunctions";
+import { SUCCESS_WAIT, FAIL_WAIT, scrapeDate } from "../../scripts/helperFunctions";
 import { useNavigate } from "react-router-dom";
 
 async function parseErrorMessage(response) {
@@ -44,6 +44,43 @@ async function parseErrorMessage(response) {
 
     console.error(`Error (${errorStatus} - ${errorType}):`, errorMessage);
     return {status: errorStatus, message: errorMessage };
+}
+
+// Helper function to parse response body for a message and the full parsed JSON
+async function parseResponseForMessage(response) {
+    let message = `An unexpected error occurred with status ${response.status}.`;
+    let parsedBody = null;
+
+    try {
+        // Clone the response so we can read the body multiple times if needed later
+        // (though in this specific refactor, we'll aim to read it once and store)
+        const clonedResponse = response.clone(); 
+        parsedBody = await clonedResponse.json(); // Try to parse as JSON first
+
+        if (parsedBody && parsedBody.message) {
+            message = parsedBody.message;
+        } else if (parsedBody && parsedBody.errors) { // Common for ASP.NET Core BadRequest (400)
+            // Flatten validation errors into a single string
+            const errorMessages = Object.values(parsedBody.errors).flat().join('; ');
+            if (errorMessages) {
+                message = errorMessages;
+            }
+        } else {
+            // If JSON parsed but no specific message found, return a generic one
+            message = `Server responded with status ${response.status}.`;
+        }
+    } catch {
+        // If it's not JSON, try to get it as plain text
+        try {
+            const text = await response.text();
+            if (text) {
+                message = text;
+            }
+        } catch {
+            // Fallback if unable to get any text
+        }
+    }
+    return { message, parsedBody }; // Return both the message and the parsed body
 }
 
 export async function validateSession() {
@@ -92,9 +129,9 @@ const goBackOneDirectory = () => {
     return newPath;
 }
 
-export async function Return(root) {    
+export async function Return(root, userId) {    
     if (root) {
-        const response = await fetch(`${API_URL}v1/sessions/return`, {
+        const response = await fetch(`${API_URL}v1/sessions/return/${userId}`, {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json; charset=UTF-8'
@@ -124,20 +161,18 @@ export async function Logout(session=null) {
     localStorage.clear();
     sessionStorage.clear();
 
-    const response = await fetch(`${API_URL}v1/sessions/logout`, {
+    const response = await fetch(`${API_URL}v1/sessions/logout/${session.id}`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json; charset=UTF-8'
         },
-        body: JSON.stringify({
-            session: session,
-        }),
+        body: JSON.stringify(session),
         credentials: "include",
     })
     if (response.ok) {
         console.log("Logout Successful!");
         setTimeout(() => {
-            //console.log("Logged Out... [dev]");
+            //console.log(`Logged Out... [${session.id}]`);
             window.location.href = `https://login.tcsservices.com`;
         },SUCCESS_WAIT);
     } else {
@@ -149,13 +184,12 @@ export async function Logout(session=null) {
     }
 }
 
-export async function checkManifestAccess(username, powerUnit, mfstDate) {
+export async function checkManifestAccess(powerUnit, mfstDate, userId) {
     try {
-        const response = await fetch(`${API_URL}v1/sessions/check-manifest-access`, {
+        const response = await fetch(`${API_URL}v1/sessions/check-manifest-access/${userId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // Cookies are usually sent automatically by the browser for same-site requests
             },
             body: JSON.stringify({
                 powerUnit: powerUnit,
@@ -164,43 +198,97 @@ export async function checkManifestAccess(username, powerUnit, mfstDate) {
             credentials: "include",
         });
 
-        // handle 
-        if (response.ok) { // Status 200-299
-            const result = await response.json();
-            console.log(`${result.sessionUser} was returned for comparison to ${username}`);
-            if (result.conflict && result.sessionUser === username) {
-                console.log("Current user session already exists, terminate session to gain access.");
-                return { success: false, message: "Current user session already exists, terminate session to gain access." };
+        const statusCode = response.status;
+        let { message: resultMessage, parsedBody: serverResponseJson } = await parseResponseForMessage(response);
+
+        if (response.ok) {
+            console.log("Server's 200 OK JSON response:", serverResponseJson);
+
+            if (serverResponseJson && serverResponseJson.conflict) {
+                if (serverResponseJson.conflictType === "same_user") {
+                    console.warn("Same user conflict detected. Server message:", resultMessage)
+
+                    // Return specific flags for client to trigger popup
+                    return {
+                        success: false,
+                        message: resultMessage, // Use server's message for popup
+                        conflict: true,
+                        conflictType: "same_user",
+                        conflictingSessionId: serverResponseJson.conflictingSessionId,
+                        conflictingSessionUser: serverResponseJson.conflictingSessionUser
+                    };
+                }
+                else {
+                    // This branch should ideally not be hit if server is strict with 200 OK + conflictTy
+                    console.error("Unexpected conflict type with 200 OK status. Server message:", serverResponseJson.message);
+                    return { success: false, message: serverResponseJson.message || "An unexpected conflict occurred.", conflict: true, conflictType: "unknown" };
+                }
+                
+            } else {
+                // No conflict, or 'current_session' type, which is treated as success
+                console.log("Manifest access granted:", serverResponseJson.message);
+                return { success: true, message: serverResponseJson.message || "Manifest access granted.", code: statusCode };
             }
-            console.log("Manifest access granted:", response.message);
-            // Proceed to load manifest data
-            return { success: true, message: result.message };
-        } 
-        else if (response.status === 403 || response.status === 409) { // Forbidden due to SSO conflict
-            const error = await response.json(); // Get raw text for specific message
-            console.error("SSO Conflict:", error.message);
-            return { success: false, message: error.message, code: 403 };
-        } 
-        else if (response.status === 401) { // Unauthorized, session expired
-            console.error("Unauthorized: Session expired. Redirecting to login.");
-            // Redirect to login page
-            window.location.href = '/'; // Or your login route
-            return { success: false, message: "Session expired. Please log in again.", code: 401 };
-        } 
-        else {
-            const error = await response.text();
-            console.error("Failed to check manifest access:", response.status, error);
-            return { success: false, message: `Error (${response.status}): ${error}`, code: response.status };
+        } else { // handle non-2xx statuses
+            console.error(`Failed to check manifest access: ${statusCode}`);
+            console.error("Error message from server:", resultMessage);
+
+            // Attempt to get specific conflictType if available (e.g., for 403)
+            let conflictType = "unknown";
+            let conflictingSessionId = null;
+            let conflictingSessionUser = null;
+
+            // Use the already parsed JSON body to get conflict details if available
+            if (serverResponseJson && serverResponseJson.conflictType) {
+                conflictType = serverResponseJson.conflictType;
+                conflictingSessionId = serverResponseJson.conflictingSessionId;
+                conflictingSessionUser = serverResponseJson.conflictingSessionUser;
+            }
+
+            // Provide specific messages for common HTTP error codes
+            if (statusCode === 400) {
+                resultMessage = resultMessage || "Invalid request. Please check your input.";
+            } else if (statusCode === 401) {
+                resultMessage = "Session expired or unauthorized. Please log in again.";
+                console.error("Unauthorized: Session expired. Redirecting to login.");
+                window.location.href = '/'; // Redirect to login page
+            } else if (statusCode === 403 && conflictType === "different_user") {
+                // Specific handling for different user conflict (immediate rejection)
+                resultMessage = resultMessage || "Access denied. Manifest is in use by another user.";
+                console.error("Different user conflict detected. Immediately rejecting.");
+                return {
+                    success: false,
+                    message: resultMessage,
+                    conflict: true,
+                    conflictType: "different_user", // Client will look for this
+                    conflictingSessionId: conflictingSessionId,
+                    conflictingSessionUser: conflictingSessionUser,
+                    code: statusCode
+                };
+            } else if (statusCode === 403) { // Generic 403 if not a specific conflictType
+                resultMessage = resultMessage || "Access denied. You do not have permission to perform this action.";
+            } else if (statusCode === 404) {
+                resultMessage = resultMessage || "Resource not found.";
+            } else if (statusCode === 409) { // Conflict status (e.g., from your server if it returns 409)
+                resultMessage = resultMessage || "A conflict occurred. The resource might be in use.";
+            } else if (statusCode >= 500) {
+                resultMessage = resultMessage || "An internal server error occurred. Please try again later.";
+            } else {
+                resultMessage = resultMessage || `Error (${statusCode}): An unexpected status code was received.`;
+            }
+
+            return { success: false, message: resultMessage, code: statusCode, conflict: true, conflictType: conflictType };
         }
     } catch (error) {
         console.error("Network or unexpected error:", error);
-        return { success: false, message: `Network error: ${error.message}`, code: 500 };
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return { success: false, message: `Network error: ${errorMessage}`, code: 500, conflict: false, conflictType: "none" };
     }
 }
 
-export async function releaseManifestAccess(username, powerunit=null, mfstdate=null) {
+export async function releaseManifestAccess(username, powerunit=null, mfstdate=null, userId) {
     try {
-        const response = await fetch(`${API_URL}v1/sessions/release-manifest-access`, {
+        const response = await fetch(`${API_URL}v1/sessions/release-manifest-access/${userId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -231,9 +319,9 @@ export async function releaseManifestAccess(username, powerunit=null, mfstdate=n
     }
 }
 
-export async function resetManifestAccess(username, powerunit, mfstdate) {
+export async function resetManifestAccess(username, powerunit, mfstdate, userId) {
     try {
-        const response = await fetch(`${API_URL}v1/sessions/reset-manifest-access`, {
+        const response = await fetch(`${API_URL}v1/sessions/reset-manifest-access/${userId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

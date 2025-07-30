@@ -43,11 +43,11 @@ const Header = ({
             openPopup("return");
         }
         // navigate back a URL directory...
-        const path = await Return(root);
+        const path = await Return(root, session.id);
         if (!root && path.endsWith('/')) {
             // URL ends with /deliveries
             console.log("Attempting to release manifest access...");
-            const response = await resetManifestAccess(session.username, session.powerunit, session.mfstdate);
+            const response = await resetManifestAccess(session.username, session.powerunit, session.mfstdate, session.id);
             if (!response.success) {
                 console.error("Failed to release manifest access hold.");
             }

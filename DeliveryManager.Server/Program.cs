@@ -1,5 +1,7 @@
 using DeliveryManager.Server.Services;
 using DeliveryManager.Server.Services.Interfaces;
+using DeliveryManager.Server.Models;
+using DeliveryManager.Server.Authorization.Requirements;
 
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -10,23 +12,13 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 using Serilog;
+using Microsoft.AspNetCore.Authorization;
+using DeliveryManager.Server.Authorization.Handlers;
 
 // new modification to CORS package...
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
-
-/*var logPath = builder.Environment.IsProduction()
-    ? Path.Combine(builder.Environment.ContentRootPath, "logs", "logs.log")
-    : Path.Combine("logs","logs.log");
-
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.File(logPath, rollingInterval: RollingInterval.Day)
-    //.WriteTo.File("/var/www/deliverymanager/log/logs.log", rollingInterval: RollingInterval.Day)
-    .Enrich.FromLogContext()
-    .CreateLogger();
-
-builder.Host.UseSerilog();*/
 
 // Configure Serilog to read from appsettings.json
 builder.Host.UseSerilog((context, services, configuration) => configuration
@@ -160,9 +152,16 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("SessionActive", policy =>
+        policy.Requirements.Add(new SessionActiveRequirement()));
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICookieService, CookieService>();
@@ -173,7 +172,11 @@ builder.Services.AddScoped<IDeliveryListService, DeliveryListService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddHostedService<DeliveryManager.Server.BackgroundServices.SessionCleanupHostedService>();
+
+builder.Services.AddScoped<IAuthorizationHandler, SessionActiveHandler>();
 
 var app = builder.Build();
 

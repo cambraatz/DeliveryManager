@@ -29,7 +29,7 @@ const PopupContent_SessionConflict = ({closePopup, handleSubmit}) => {
         <div className="popupContent">
             <div id="popupPrompt" className="content">
                 <img id="fail" src={Fail} alt="fail"/>
-                <p>Existing session already exists, logging in will logout of the previous session.</p>
+                <p>Existing session already exists, proceed to logout of the previous session.</p>
             </div>
             <div id="submit_company">
                 <button 

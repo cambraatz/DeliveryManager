@@ -44,9 +44,9 @@ namespace DeliveryManager.Server.Controllers
         }
 
         [HttpPost]
-        [Route("validate-and-assign")]
-        [Authorize]
-        public async Task<IActionResult> ValidateAndAssignManifest([FromBody] DriverVerificationRequest request)
+        [Route("validate-and-assign/{userId}")]
+        [Authorize(Policy = "SessionActive")]
+        public async Task<IActionResult> ValidateAndAssignManifest([FromBody] DriverVerificationRequest request, long userId)
         {
             // validate request parameters...
             if (!ModelState.IsValid)
@@ -60,13 +60,14 @@ namespace DeliveryManager.Server.Controllers
 
             try
             {
+                /* IS THIS STILL NEEDED AFTER checkManifestAccess??? */
                 // verify powerunit provided is not already assigned...
-                bool puInUse = await _userService.IsPowerunitInUseAsync(request.POWERUNIT, currUsername);
+                /*bool puInUse = await _userService.IsPowerunitInUseAsync(request.POWERUNIT, currUsername);
                 if (puInUse)
                 {
                     _logger.LogWarning("Powerunit '{Powerunit}' is already assigned to another driver (user: '{Username}').", request.POWERUNIT, currUsername);
                     return Conflict(new { message = $"The provided powerunit '{request.POWERUNIT}' is already assigned to another driver. Please contact administrator." });
-                }
+                }*/
 
                 // update users powerunit in user DB...
                 await _userService.UpdatePowerunitAsync(currUsername, request.POWERUNIT);
@@ -92,7 +93,8 @@ namespace DeliveryManager.Server.Controllers
                 //var refreshToken = Request.Cookies["refresh_token"];
 
                 // update driver session...
-                await _sessionService.UpdateSessionLastActivityAsync(currUsername, accessToken!);
+                //await _sessionService.UpdateSessionLastActivityAsync(currUsername, accessToken!);
+                await _sessionService.UpdateSessionActivityAsync(userId);
                 _logger.LogDebug("Session last activity updated for user {Username}.", currUsername);
 
                 // retrieve first matching delivery manifest, if present...
@@ -134,7 +136,7 @@ namespace DeliveryManager.Server.Controllers
         }
 
         [HttpGet] // no route needed, defaults to v1/deliveries...
-        [Authorize]
+        [Authorize(Policy = "SessionActive")]
         public async Task<IActionResult> GetDeliveries([FromQuery] string powerunit, [FromQuery] string mfstdate)
         {
             // ensure non-null parameters...
@@ -202,7 +204,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpPut]
         [Route("{MFSTKEY}")]
-        [Authorize]
+        [Authorize(Policy = "SessionActive")]
         public async Task<IActionResult> UpdateDelivery([FromRoute] string mfstKey, [FromForm] DeliveryForm data)
         {
             // ensure mfstKey from URL matches form data...
@@ -258,7 +260,7 @@ namespace DeliveryManager.Server.Controllers
 
         [HttpGet]
         [Route("image/{fileName}")]
-        [Authorize]
+        [Authorize(Policy = "SessionActive")]
         public async Task<IActionResult> GetImage(string fileName)
         {
             if (string.IsNullOrEmpty(fileName))

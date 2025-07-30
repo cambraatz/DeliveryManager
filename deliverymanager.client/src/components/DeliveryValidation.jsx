@@ -32,9 +32,10 @@ const DeliveryValidation = () => {
         session, setSession, // [obj] credentials for session
      } = useAppContext();
     /*session = {
+        id: -1,
         username: "",
-        mfstdate: "",
         powerunit: "",
+        mfstdate: "",
         company: "",
         valid: false,
     }*/
@@ -116,9 +117,11 @@ const DeliveryValidation = () => {
         const response = await validateSession();
         if (response.ok) {
             const data = await response.json();
+            console.log(data);
 
             // init results from data...
             const username = data.user.Username;
+            const userId = data.userId;
             const company_map = JSON.parse(data.mapping);
             const company_name = company_map[data.user.ActiveCompany];
             const powerunit = data.user.Powerunit;
@@ -127,6 +130,7 @@ const DeliveryValidation = () => {
             setSession({ 
                 ...session, 
                 username: username,
+                id: userId,
                 //mfstdate: null,
                 powerunit: powerunit,
                 company: company_name,
@@ -159,7 +163,7 @@ const DeliveryValidation = () => {
 
     async function validationLogin() {
         // validate delivery from data/powerunit...
-        let response = await validateAndAssignManifest(session.username, formData.powerunit, formData.deliverydate);
+        let response = await validateAndAssignManifest(session.username, formData.powerunit, formData.deliverydate, session.id);
         if(response.ok){
             // update global session state...
             setSession({
@@ -170,57 +174,59 @@ const DeliveryValidation = () => {
 
             navigate(`/deliveries`);
             return;
-        }
-
-        // release manifest access for non-existent delivery (cleanup)...
-        const release = await releaseManifestAccess(session.username, formData.powerunit, formData.deliverydate);
-        if(release.ok){
-            setTimeout(() => {
-                clearStateStyling();
-                return;
-            }, FAIL_WAIT);
-        }
-
-        // handle unauthorized...
-        if (response.status === 401 || release.status === 401) {
-            const responseError = "Unauthorized attempt, please log in.";
-                setInputErrors({
-                    mfstdate: responseError,
-                    powerunit: responseError,
-                })
-
-                openPopup("fail");
-                setTimeout(() => {
-                    clearStateStyling();
-                    Logout(formData.powerunit,formData.deliverydate);
-                    closePopup();
-                    return;
-                }, FAIL_WAIT);
-        }
-        // handle unauthorized...
-        else if (response.status === 404 || release.status === 404) {
-            const responseError = "No delivery found.";
-                setInputErrors({
-                    mfstdate: responseError,
-                    powerunit: responseError,
-                })
+        // handle failed validation...
+        } else {
+            // release manifest access (cleanup)...
+            const release = await releaseManifestAccess(session.username, formData.powerunit, formData.deliverydate, session.id);
+            if(release.ok){
                 setTimeout(() => {
                     clearStateStyling();
                     return;
                 }, FAIL_WAIT);
-        }
-        else {
-            const responseError = "Server error, contact administrator.";
-            setInputErrors({
-                mfstdate: responseError,
-                powerunit: responseError,
-            })
+            }
+
+            // handle unauthorized...
+            if (response.status === 401 || release.status === 401) {
+                const responseError = "Unauthorized attempt, please log in.";
+                    setInputErrors({
+                        mfstdate: responseError,
+                        powerunit: responseError,
+                    })
+
+                    openPopup("fail");
+                    setTimeout(() => {
+                        clearStateStyling();
+                        Logout(session);
+                        closePopup();
+                        return;
+                    }, FAIL_WAIT);
+            }
+            // handle unauthorized...
+            else if (response.status === 404 || release.status === 404) {
+                const responseError = "No delivery found.";
+                    setInputErrors({
+                        mfstdate: responseError,
+                        powerunit: responseError,
+                    })
+                    setTimeout(() => {
+                        clearStateStyling();
+                        return;
+                    }, FAIL_WAIT);
+            }
+            else {
+                const responseError = "Server error, contact administrator.";
+                setInputErrors({
+                    mfstdate: responseError,
+                    powerunit: responseError,
+                })
+            }
         }
     }
 
+    const [conflictID, setConflictID] = useState(-1);
     async function releaseSessionAndLogin() {
         // release previous user session in conflict...
-        const release = await releaseManifestAccess(session.username, formData.powerunit, formData.deliverydate);
+        const release = await releaseManifestAccess(session.username, formData.powerunit, formData.deliverydate, conflictID);
         if(!release.ok){
             setTimeout(() => {
                 clearStateStyling();
@@ -229,20 +235,45 @@ const DeliveryValidation = () => {
         }
 
         // ensure SSO gated access on mfstdate + powerunit...
-        const result = await checkManifestAccess(session.username, formData.powerunit, formData.deliverydate);
-        if (!result.success) {
-            if (result.message.includes("already exists")) {
-                console.error("user already has an active session!");
-                openPopup("sessions_existing_dm_conflict");
-                return;
+        const result = await checkManifestAccess(formData.powerunit, formData.deliverydate, session.id);
+        if (result.success) {
+            // Manifest access was granted (either free or current user's current session)
+            console.log("Manifest access granted:", result.message);
+        } else {
+            // Something went wrong or a conflict was detected
+            console.error("Manifest access check failed:", result.message);
+
+            if (result.conflict) {
+                setConflictID(result.conflictingSessionId);
+                if (result.conflictType === "same_user") {
+                    console.warn("User already has an active session on this manifest. Presenting option to terminate old session.");
+                    // Trigger popup for same-user conflict
+                    openPopup("sessions_existing_dm_conflict");
+                }
+                else if (result.conflictType === "different_user") {
+                    console.error("Manifest is in use by another user. Immediately rejecting.");
+                    // Immediately reject, display an error message to the user
+                    setInputErrors({
+                        mfstdate: result.message,
+                        powerunit: result.message
+                    });
+                }
+                else {
+                    // Fallback for unknown conflict types (shouldn't happen with strict server)
+                    console.error("Unknown conflict type:", result.message);
+                    setInputErrors({
+                        mfstdate: result.message,
+                        powerunit: result.message
+                    });
+                }
+            } else {
+                // Handle other non-conflict related errors (e.g., 400, 500, network errors)
+                console.error("Non-conflict error:", result.message);
+                setInputErrors({
+                    mfstdate: result.message,
+                    powerunit: result.message
+                });
             }
-            // handle conflict...
-            //const responseError = "Date/Powerunit is in active use, try again later.";
-            setInputErrors({
-                mfstdate: result.message,
-                powerunit: result.message
-            });
-            return;
         }
 
         await validationLogin();
@@ -262,13 +293,54 @@ const DeliveryValidation = () => {
         }
 
         // ensure SSO gated access on mfstdate + powerunit...
-        const result = await checkManifestAccess(session.username, formData.powerunit, formData.deliverydate);
+        const result = await checkManifestAccess(formData.powerunit, formData.deliverydate, session.id);
+        if (result.success) {
+            // Manifest access was granted (either free or current user's current session)
+            console.log("Manifest access granted:", result.message);
+        } else {
+            // Something went wrong or a conflict was detected
+            console.error("Manifest access check failed:", result.message);
+
+            if (result.conflict) {
+                setConflictID(result.conflictingSessionId);
+                if (result.conflictType === "same_user") {
+                    console.warn("User already has an active session on this manifest. Presenting option to terminate old session.");
+                    // Trigger popup for same-user conflict
+                    openPopup("sessions_existing_dm_conflict");
+                }
+                else if (result.conflictType === "different_user") {
+                    console.error("Manifest is in use by another user. Immediately rejecting.");
+                    // Immediately reject, display an error message to the user
+                    setInputErrors({
+                        mfstdate: result.message,
+                        powerunit: result.message
+                    });
+                }
+                else {
+                    // Fallback for unknown conflict types (shouldn't happen with strict server)
+                    console.error("Unknown conflict type:", result.message);
+                    setInputErrors({
+                        mfstdate: result.message,
+                        powerunit: result.message
+                    });
+                }
+            } else {
+                // Handle other non-conflict related errors (e.g., 400, 500, network errors)
+                console.error("Non-conflict error:", result.message);
+                setInputErrors({
+                    mfstdate: result.message,
+                    powerunit: result.message
+                });
+            }
+        }
+        
         if (!result.success) {
-            if (result.message.includes("already exists")) {
+            if (result.message && result.message.includes("already exists")) {
                 console.error("user already has an active session!");
                 openPopup("sessions_existing_dm_conflict");
                 return;
             }
+
             // handle conflict...
             //const responseError = "Date/Powerunit is in active use, try again later.";
             setInputErrors({
@@ -278,41 +350,6 @@ const DeliveryValidation = () => {
             return;
         }      
         await validationLogin();
-        /*const response = await validateAndAssignManifest(session.username, formData.powerunit, formData.deliverydate);
-        if(response.ok){
-            // update global session state...
-            setSession({
-                ...session,
-                mfstdate: formData.deliverydate,
-                powerunit: formData.powerunit,
-            });
-
-            navigate(`/deliveries`);
-            return;
-        }
-        // handle unauthorized...
-        else if (response.status === 401) {
-            const responseError = "Unauthorized attempt, please log in.";
-                setInputErrors({
-                    mfstdate: responseError,
-                    powerunit: responseError,
-                })
-
-                openPopup("fail");
-                setTimeout(() => {
-                    clearStateStyling();
-                    Logout();
-                    closePopup();
-                    return;
-                }, FAIL_WAIT);
-        }
-        else {
-            const responseError = "No delivery found.";
-            setInputErrors({
-                mfstdate: responseError,
-                powerunit: responseError,
-            })
-        }*/
         setTimeout(() => {
             clearStateStyling();
         }, FAIL_WAIT);

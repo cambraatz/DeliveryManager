@@ -52,7 +52,9 @@ namespace DeliveryManager.Server.Controllers
             [FromQuery] string? username = "cbraatz",
             [FromQuery] string? company = "TCS",
             [FromQuery] string? powerunit = "047",
-            [FromQuery] string? mfstdate = "02162024")
+            [FromQuery] string? mfstdate = "02162024",
+            long userId = 0
+            )
         {
             // ensure development environment only...
             if (!_env.IsDevelopment())
@@ -67,6 +69,9 @@ namespace DeliveryManager.Server.Controllers
                 return BadRequest(new { message = "Username and company are both required for dev login." });
             }
 
+            // generate valid access/refresh tokens for dev session...
+            (string access, string refresh) = _tokenService.GenerateToken(username);
+
             // fetch user credentials from local DB...
             User? user = await _userService.GetByUsernameAsync(username);
             if (user == null)
@@ -74,9 +79,6 @@ namespace DeliveryManager.Server.Controllers
                 _logger.LogWarning("Development user '{Username}' not found in local DB", username);
                 return NotFound(new { message = $"Development user '{username}' not found in local database. User must be created prior to login." });
             }
-
-            // generate valid access/refresh tokens for dev session...
-            (string access, string refresh) = _tokenService.GenerateToken(username);
 
             // adding session record to database...
             // Parse defaultMfstDate if provided
@@ -110,7 +112,8 @@ namespace DeliveryManager.Server.Controllers
 
             // Add or update the session record in the database
             // Now passing the optional defaultPowerUnit and parsedDefaultMfstDate
-            var sessionUpdateSuccess = await _sessionService.AddOrUpdateSessionAsync(
+            var sessionUpdateSuccess = await _sessionService.AddSessionAsync(
+                userId,
                 username,
                 access,
                 refresh,
@@ -160,18 +163,31 @@ namespace DeliveryManager.Server.Controllers
                 return BadRequest(new { message = "Company mapping cookie is missing or empty." });
             }
 
+            string? accessToken = Request.Cookies["access_token"];
+            string? refreshToken = Request.Cookies["refresh_token"];
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+            {
+                _logger.LogWarning("Return: Missing required cookies for user {Username}.", username);
+                return Unauthorized(new { message = "Session cookies are missing. Please log in again." });
+            }
+
             User? user = await _userService.GetByUsernameAsync(username);
             if (user == null)
             {
                 return NotFound(new { message = "Driver not found." });
             }
 
-            return Ok(new { user = user, mapping = companyMapping });
+            SessionModel? session = await _sessionService.GetSessionAsync(username, accessToken, refreshToken);
+            if (session != null)
+            {
+                return Ok(new { user = user, mapping = companyMapping, userId = session.Id });
+            }
+            return Unauthorized(new { message = "Session cookies are missing. Please log in again." });
         }
 
         [HttpPost]
-        [Route("logout")]
-        public async Task<IActionResult> Logout(SessionModel? session)
+        [Route("logout/{userId}")]
+        public async Task<IActionResult> Logout([FromBody] SessionModel? session, long userId)
         {
             if (session != null)
             {
@@ -182,6 +198,7 @@ namespace DeliveryManager.Server.Controllers
                 // If the SessionModel was provided (e.g., from a request body),
                 // and it contains a username, use it. Otherwise, get it from what's available.
                 string? username = session?.Username;
+                //long? userId = session?.Id;
                 string? powerUnit = session?.PowerUnit;
                 string? mfstDate = session?.MfstDate;
 
@@ -196,8 +213,9 @@ namespace DeliveryManager.Server.Controllers
                                             ?? string.Empty;
 
                 bool sessionCleared = false;
+
                 // delete session after delivery validation...
-                if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(powerUnit) && !string.IsNullOrEmpty(mfstDate))
+                /*if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(powerUnit) && !string.IsNullOrEmpty(mfstDate))
                 {
                     _logger.LogWarning($"Invalidate by tokens {powerUnit} and {mfstDate}");
                     sessionCleared = await _sessionService.InvalidateSessionByDeliveryManifest(username, powerUnit, mfstDate);
@@ -208,7 +226,12 @@ namespace DeliveryManager.Server.Controllers
                 {
                     _logger.LogWarning($"Invalidate by tokens {accessToken} and {refreshToken}");
                     sessionCleared = await _sessionService.InvalidateSessionByTokensAsync(accessToken, refreshToken);
-                }
+                }*/
+
+                // delete session by ID...
+                _logger.LogWarning($"Invalidate by session ID {userId}");
+                sessionCleared = await _sessionService.DeleteUserSessionByIdAsync(userId);
+
                 // stale session, clean expired sessions...
                 if (!sessionCleared)
                 {
@@ -228,9 +251,9 @@ namespace DeliveryManager.Server.Controllers
         }
 
         [HttpPost]
-        [Route("return")]
+        [Route("return/{userId}")]
         [Authorize]
-        public async Task<IActionResult> Return()
+        public async Task<IActionResult> Return(long userId)
         {
             string? username = Request.Cookies["username"];
             string? accessToken = Request.Cookies["access_token"];
@@ -261,7 +284,8 @@ namespace DeliveryManager.Server.Controllers
                 _logger.LogError(ex, "CheckManifestAccess: Could not parse refresh token expiry for user {Username}. Using default expiry.", username);
             }
 
-            var success = await _sessionService.AddOrUpdateSessionAsync(
+            var success = await _sessionService.UpdateSessionAsync(
+                userId,
                 username,
                 accessToken,
                 refreshToken,
@@ -283,9 +307,9 @@ namespace DeliveryManager.Server.Controllers
         }
 
         [HttpPost]
-        [Route("check-manifest-access")]
-        [Authorize]
-        public async Task<IActionResult> CheckManifestAccess([FromBody] ManifestAccessRequest request)
+        [Route("check-manifest-access/{userId}")]
+        [Authorize(Policy = "SessionActive")]
+        public async Task<IActionResult> CheckManifestAccess([FromBody] ManifestAccessRequest request, long userId)
         {
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
             if (string.IsNullOrEmpty(username))
@@ -313,30 +337,61 @@ namespace DeliveryManager.Server.Controllers
 
             _logger.LogInformation("CheckManifestAccess: Checking for SSO conflicts for user {Username} on PowerUnit {PowerUnit} and ManifestDate {MfstDate}",
                                    username, request.PowerUnit, request.MfstDate);
-            var conflictingSession = await _sessionService.GetConflictingSessionAsync(
+
+            /*var assignedSession = await _sessionService.GetConflictingSessionAsync(
                 username,
                 request.PowerUnit,
                 request.MfstDate,
                 accessToken,
-                refreshToken);
+                refreshToken);*/
+            var assignedSession = await _sessionService.GetConflictingSessionIdAsync(request.PowerUnit, request.MfstDate, userId);
 
-            if (conflictingSession != null)
+            if (assignedSession != null)
             {
-                if (conflictingSession.Username == username)
+                // Check if the found assigned session is the *current* user's *current* session
+                bool isCurrentSession =
+                    assignedSession!.Username.Equals(username, StringComparison.OrdinalIgnoreCase) &&
+                    assignedSession.AccessToken!.Equals(accessToken, StringComparison.Ordinal) &&
+                    assignedSession.RefreshToken!.Equals(refreshToken, StringComparison.Ordinal);
+
+                if (isCurrentSession)
                 {
-                    _logger.LogInformation("CheckManifestAccess: User {Username} is already accessing PowerUnit {PowerUnit} on ManifestDate {MfstDate}. Prompting user for action.",
-                                           username, request.PowerUnit, request.MfstDate);
-                    return Ok(new { conflict = true, sessionUser = username, message = $"{username} already has an active session accessing {request.PowerUnit} - {request.MfstDate}" });
+                    // NOT A CONFLICT, just confirming the current session is valid in DB...
+                    _logger.LogInformation("CheckManifestAccess: User {Username}'s current session (ID: {SessionId}) is already assigned to PowerUnit {PowerUnit} on ManifestDate {MfstDate}.",
+                                    username, assignedSession.Id, request.PowerUnit, request.MfstDate);
+                    return Ok(new { message = "Manifest already assigned to your current session. Access granted.", conflict = false });
                 }
                 else
                 {
-                    _logger.LogWarning("SSO conflict detected! User {ConflictingUser} is already accessing PowerUnit {PowerUnit} on ManifestDate {MfstDate}. Invalidating their session.",
-                                   conflictingSession.Username, request.PowerUnit, request.MfstDate);
+                    _logger.LogWarning("SSO conflict detected! PowerUnit {PowerUnit} on ManifestDate {MfstDate} is already assigned to session ID {ConflictingSessionId} (User: {ConflictingUser}). Current user {CurrentUser} is blocked.",
+                                   request.PowerUnit, request.MfstDate, assignedSession.Id, assignedSession.Username, username);
 
-                    // DO NOT boot the conflicting user off...
-                    //await _sessionService.InvalidateSessionAsync(conflictingSession.Username, accessToken, refreshToken);
-
-                    return StatusCode(403, new { message = "Another user is currently accessing this manifest." });
+                    if (assignedSession.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Conflict Type A: Same user, but a different session
+                        // Return 200 OK so client can show a popup, but include conflict details
+                        return Ok(new
+                        {
+                            message = $"'{username}') already has active session.",
+                            conflict = true,
+                            conflictType = "same_user", // Client will look for this
+                            conflictingSessionId = assignedSession.Id,
+                            conflictingSessionUser = assignedSession.Username
+                        });
+                    }
+                    else
+                    {
+                        // Conflict Type B: Different user
+                        // Return 403 Forbidden for immediate rejection on client
+                        return StatusCode(403, new
+                        {
+                            message = $"Manifest is already in use by another user ({assignedSession.Username}).",
+                            conflict = true,
+                            conflictType = "different_user", // Client will look for this
+                            conflictingSessionId = assignedSession.Id,
+                            conflictingSessionUser = assignedSession.Username
+                        });
+                    }
                 }
             }
 
@@ -354,7 +409,8 @@ namespace DeliveryManager.Server.Controllers
                 _logger.LogError(ex, "CheckManifestAccess: Could not parse refresh token expiry for user {Username}. Using default expiry.", username);
             }
 
-            var success = await _sessionService.AddOrUpdateSessionAsync(
+            var success = await _sessionService.UpdateSessionAsync(
+                userId,
                 username,
                 accessToken,
                 refreshToken,
@@ -377,9 +433,9 @@ namespace DeliveryManager.Server.Controllers
         }
 
         [HttpPost]
-        [Route("release-manifest-access")]
-        [Authorize]
-        public async Task<IActionResult> ReleaseManifestAccess([FromBody] DriverVerificationRequest delivery)
+        [Route("release-manifest-access/{userId}")]
+        [Authorize(Policy = "SessionActive")]
+        public async Task<IActionResult> ReleaseManifestAccess([FromBody] DriverVerificationRequest delivery, long userId)
         {
             /*var username = User.FindFirst(ClaimTypes.Name)?.Value;
             if (string.IsNullOrEmpty(username))
@@ -393,7 +449,8 @@ namespace DeliveryManager.Server.Controllers
             if (delivery.MFSTDATE != null && delivery.POWERUNIT != null)
             {
                 // delete previous conflicting session from database...
-                success = await _sessionService.InvalidateSessionByDeliveryManifest(delivery.USERNAME, delivery.POWERUNIT, delivery.MFSTDATE);
+                //success = await _sessionService.InvalidateSessionByDeliveryManifest(delivery.USERNAME, delivery.POWERUNIT, delivery.MFSTDATE);
+                success = await _sessionService.DeleteUserSessionByIdAsync(userId);
                 if (!success)
                 {
                     _logger.LogError("ReleaseManifestAccess: Failed to release manifest access for user {Username} on PowerUnit {PowerUnit} and ManifestDate {MfstDate}.",
@@ -403,6 +460,7 @@ namespace DeliveryManager.Server.Controllers
                 message = success ? "Successfully released previous manifest access."
                     : "Failed to release previous manifest access.";
             }
+            // THIS MAY BE HANDLED AS A RESET AND NOT A RELEASE...
             else
             {
                 // remove powerunit/mfstdate from current session and update tokens...
@@ -428,7 +486,8 @@ namespace DeliveryManager.Server.Controllers
                     _logger.LogError(ex, "CheckManifestAccess: Could not parse refresh token expiry for user {Username}. Using default expiry.", delivery.USERNAME);
                 }
 
-                success = await _sessionService.AddOrUpdateSessionAsync(
+                success = await _sessionService.UpdateSessionAsync(
+                    userId,
                     delivery.USERNAME,
                     currentAccessToken,
                     currentRefreshToken,
@@ -452,9 +511,9 @@ namespace DeliveryManager.Server.Controllers
         }
 
         [HttpPost]
-        [Route("reset-manifest-access")]
-        [Authorize]
-        public async Task<IActionResult> ResetManifestAccess([FromBody] DriverVerificationRequest delivery)
+        [Route("reset-manifest-access/{userId}")]
+        [Authorize(Policy = "SessionActive")]
+        public async Task<IActionResult> ResetManifestAccess([FromBody] DriverVerificationRequest delivery, long userId)
         {
             var accessToken = Request.Cookies["access_token"];
             if (string.IsNullOrEmpty(accessToken))
@@ -463,13 +522,7 @@ namespace DeliveryManager.Server.Controllers
                 return Unauthorized(new { message = "Session tokens missing. Please log in again." });
             }
 
-            var success = await _sessionService.ResetSessionByDeliveryManifestAsync(
-                delivery.USERNAME,
-                delivery.POWERUNIT,
-                delivery.MFSTDATE,
-                accessToken!
-            );
-
+            var success = await _sessionService.ResetSessionByIdAsync(userId);
             if (!success)
             {
                 _logger.LogError($"CheckManifestAccess: Failed to reset session access for user {delivery.USERNAME}.");

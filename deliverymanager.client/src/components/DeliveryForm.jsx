@@ -151,7 +151,7 @@ const DeliveryForm = () => {
             Logout();
             return;
         } else if (!DELIVERY) {
-            Logout();
+            Logout(session.id);
             return;
         }
 
@@ -311,7 +311,7 @@ const DeliveryForm = () => {
         if (unauthError) {
             failPopup("Unauthorized attempt to clear delivery.");
             setTimeout(() => {
-                Logout();
+                Logout(session.id);
             }, FAIL_WAIT)
             return;
         }
@@ -359,7 +359,7 @@ const DeliveryForm = () => {
         if (unauthError) {
             failPopup("Unauthorized attempt to update delivery.");
             setTimeout(() => {
-                Logout();
+                Logout(session.id);
             }, FAIL_WAIT)
             return;
         }
@@ -371,7 +371,7 @@ const DeliveryForm = () => {
         }
 
         // set popup and navigate back...
-        successPopup("deliveries_update_success",15000);
+        successPopup("deliveries_update_success",SUCCESS_WAIT);
         setTimeout(() => {
             navigate(`/deliveries`, { state: navigateData });
         }, SUCCESS_WAIT)
@@ -438,10 +438,19 @@ const DeliveryForm = () => {
                 credentials: 'include'
             });
 
-            if (response.status === 401 || response.status == 403) {
+            // catch unauth...
+            if (response.status === 401 || response.status === 403) {
+                failPopup("Unauthorized attempt to clear delivery.");
+                setTimeout(() => {
+                    Logout(session.id);
+                }, FAIL_WAIT)
+                return;
+            }
+
+            /*if (response.status === 401 || response.status == 403) {
                 console.error('Error retrieving image: Status ', response.status);
                 //Logout();
-            }
+            }*/
 
             if(!response.ok) { throw new Error('Failed to fetch image...'); }
 

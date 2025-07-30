@@ -130,6 +130,9 @@ const Popup = ({
     else if (popupType.includes("logout") || popupType.includes("return")) {
         popupClass = "popupGraphic";
     }
+    else if (popupType.includes("conflict")) {
+        popupClass = "popupSessionConflict";
+    }
 
     return (
         <div id="popup_overlay" className={`overlay ${overlayClass}`}>

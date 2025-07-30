@@ -93,6 +93,21 @@
     max-width: 250px;
 }
 
+.popupSessionConflict {
+    margin: auto; /* Good for centering in flex container */
+    width: 60%;
+    padding: 15px 20px;
+    background: #fff;
+    border-radius: 5px;
+    position: relative; /* For the close button positioning */
+
+    /* Add initial state for the inner box animation */
+    transform: scale(0.9); /* Start slightly smaller */
+    opacity: 0;   /*Start invisible*/
+    transition: transform 0.75s ease-in-out, opacity 0.75s ease-in-out; /* Animate these properties */
+    max-width: 350px;
+}
+
 .popupDeliveryManager,
 .popupCheckbox {
     margin: auto; /* Good for centering in flex container */
@@ -108,7 +123,8 @@
     transition: transform 0.75s ease-in-out, opacity 0.75s ease-in-out; /* Animate these properties */
 }
 .popupDeliveryManager.close,
-.popupCheckbox.close {
+.popupCheckbox.close,
+.popupSessionConflict.close {
     position: absolute;
     top: 20px;
     right: 30px;
@@ -131,7 +147,8 @@
 .overlay.overlay-visible .popupLogin,
 .overlay.overlay-visible .popupDeliveryManager,
 .overlay.overlay-visible .popupCheckbox,
-.overlay.overlay-visible .popupGraphic {
+.overlay.overlay-visible .popupGraphic,
+.overlay.overlay-visible .popupSessionConflict {
     transform: scale(1); /* Animate to full size */
     opacity: 1; /* Animate to full opacity */
 }

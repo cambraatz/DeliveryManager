@@ -50,10 +50,10 @@ async function parseErrorMessage(response) {
     return {status: errorStatus, message: errorMessage };
 }
 
-export async function validateAndAssignManifest(username, powerunit, mfstdate) {
+export async function validateAndAssignManifest(username, powerunit, mfstdate, userId) {
     let response;
     // could wrap in try/catch for more nuanced error handling...
-    response = await fetch(API_URL + "v1/deliveries/validate-and-assign", {
+    response = await fetch(API_URL + "v1/deliveries/validate-and-assign/" + userId, {
         body: JSON.stringify({
             USERNAME: username,
             POWERUNIT: powerunit,

@@ -12,9 +12,10 @@ export function AppProvider({ children }) {
   const [loading, setLoading] = useState(true); // loading state to prevent early rendering
   const [collapsed, setCollapsed] = useState(false); // default to open header state
   const [session,setSession] = useState({ // valid date/powerunit combination, assume to be active if not null
+    id: -1,
     username: "",
-    mfstdate: "",
     powerunit: "",
+    mfstdate: "",
     company: "",
     valid: false,
   });
