@@ -70,7 +70,7 @@ namespace DeliveryManager.Server.Controllers
             }
 
             // generate valid access/refresh tokens for dev session...
-            (string access, string refresh) = _tokenService.GenerateToken(username);
+            (string access, string refresh) = _tokenService.GenerateToken(username, userId);
 
             // fetch user credentials from local DB...
             User? user = await _userService.GetByUsernameAsync(username);

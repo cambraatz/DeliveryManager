@@ -23,14 +23,15 @@ namespace DeliveryManager.Server.Services
          *  creates Jwt Security Tokens to maintain 
          *  authorization throughout the session...
          */
-        public (string accessToken, string refreshToken) GenerateToken(string username)
+        public (string accessToken, string refreshToken) GenerateToken(string username, long userId)
         {
             var now = DateTimeOffset.UtcNow;
 
             List<Claim> baseClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("userId", userId.ToString())
             };
 
             var configuredAudiencesString = _config["Jwt:Audience"];
@@ -151,7 +152,6 @@ namespace DeliveryManager.Server.Services
 
                     ClaimsPrincipal refreshPrincipal = _handler.ValidateToken(refreshToken, refreshTokenParams, out var validatedRefreshToken);
                     var refreshTokenExp = DateTimeOffset.FromUnixTimeSeconds(((JwtSecurityToken)validatedRefreshToken).Payload.Expiration!.Value);
-
                     if (refreshTokenExp <= DateTimeOffset.UtcNow)
                     {
                         _logger.LogWarning("Refresh token expired for user: {Username}. Login required.", username);
@@ -160,7 +160,14 @@ namespace DeliveryManager.Server.Services
 
                     // refresh token is valid, generate new tokens...
                     _logger.LogInformation("Refresh token is valid for user: {Username}. Generating new tokens.", username);
-                    var (newAccess, newRefresh) = GenerateToken(username);
+                    var refreshedSessionIdClaim = refreshPrincipal.FindFirst("sessionId");
+                    if (refreshedSessionIdClaim == null || !long.TryParse(refreshedSessionIdClaim.Value, out long refreshedSessionId))
+                    {
+                        _logger.LogError("Refresh token is valid but missing or invalid sessionId claim for user: {Username}. Cannot generate new tokens.", username);
+                        return new(false, "Invalid refresh token: missing session ID.");
+                    }
+
+                    var (newAccess, newRefresh) = GenerateToken(username, refreshedSessionId);
 
                     // re-validate the new access token to get the principal for the response...
                     var newPrincipal = _handler.ValidateToken(newAccess, tokenParams, out var _);

@@ -6,7 +6,7 @@ namespace DeliveryManager.Server.Services.Interfaces
     public interface ITokenService
     {
         // generates tokens from provided username...
-        (string accessToken, string refreshToken) GenerateToken(string username);
+        (string accessToken, string refreshToken) GenerateToken(string username, long userId);
 
         // validates the access token, refreshes the tokens with refresh token when possible...
         TokenValidation ValidateTokens(string accessToken, string refreshToken, string userName, bool tryRefresh = true);
